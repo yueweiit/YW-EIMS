@@ -1,8 +1,7 @@
 {
   "compilerOptions": {
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
-    "resolvePackageJsonExports": true,
+    "module": "commonjs",
+    "moduleResolution": "node",
     "esModuleInterop": true,
     "isolatedModules": true,
     "declaration": true,
@@ -20,6 +19,18 @@
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": false,
     "strictBindCallApply": false,
-    "noFallthroughCasesInSwitch": false
+    "noFallthroughCasesInSwitch": false,
+    "paths": {
+      "@eims/common": ["libs/common/src"],
+      "@eims/common/*": ["libs/common/src/*"],
+      "@eims/config": ["libs/config/src"],
+      "@eims/config/*": ["libs/config/src/*"],
+      "@eims/database": ["libs/database/src"],
+      "@eims/database/*": ["libs/database/src/*"],
+      "@eims/auth": ["libs/auth/src"],
+      "@eims/auth/*": ["libs/auth/src/*"],
+      "@eims/user": ["libs/user/src"],
+      "@eims/user/*": ["libs/user/src/*"]
+    }
   }
 }
