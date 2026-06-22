@@ -76,6 +76,46 @@ export const generatedRoutes: GeneratedRoute[] = [
     }
   },
   {
+    name: 'material',
+    path: '/material',
+    component: 'layout.base',
+    meta: {
+      title: 'material',
+      i18nKey: 'route.material',
+      icon: 'mdi:package-variant-closed',
+      order: 2
+    },
+    children: [
+      {
+        name: 'material_code-rule',
+        path: '/material/code-rule',
+        component: 'view.material_code-rule',
+        meta: {
+          title: 'material_code-rule',
+          i18nKey: 'route.material_code-rule'
+        }
+      },
+      {
+        name: 'material_material',
+        path: '/material/material',
+        component: 'view.material_material',
+        meta: {
+          title: 'material_material',
+          i18nKey: 'route.material_material'
+        }
+      },
+      {
+        name: 'material_unit',
+        path: '/material/unit',
+        component: 'view.material_unit',
+        meta: {
+          title: 'material_unit',
+          i18nKey: 'route.material_unit'
+        }
+      }
+    ]
+  },
+  {
     name: 'system',
     path: '/system',
     component: 'layout.base',
