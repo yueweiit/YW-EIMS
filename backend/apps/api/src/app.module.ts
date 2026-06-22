@@ -5,10 +5,11 @@ import { ConfigModule } from '@eims/config';
 import { PrismaModule } from '@eims/database';
 import { AuthModule, JwtAuthGuard } from '@eims/auth';
 import { UserModule } from '@eims/user';
+import { MaterialModule } from '@eims/material';
 import { TransformInterceptor, AllExceptionFilter } from '@eims/common';
 
 @Module({
-  imports: [ConfigModule, PrismaModule, AuthModule, UserModule],
+  imports: [ConfigModule, PrismaModule, AuthModule, UserModule, MaterialModule],
   controllers: [AppController],
   providers: [
     {
