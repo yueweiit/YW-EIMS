@@ -19,6 +19,7 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "prisma:generate": "prisma generate --schema libs/database/prisma/schema.prisma",
+    "prisma:validate": "prisma validate --schema libs/database/prisma/schema.prisma",
     "prisma:migrate": "prisma migrate dev --schema libs/database/prisma/schema.prisma",
     "prisma:seed": "ts-node libs/database/prisma/seed.ts",
     "prisma:studio": "prisma studio --schema libs/database/prisma/schema.prisma"
@@ -63,23 +64,6 @@
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.20.0"
-  },
-  "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "json",
-      "ts"
-    ],
-    "rootDir": "src",
-    "testRegex": ".*\\.spec\\.ts$",
-    "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
-    },
-    "collectCoverageFrom": [
-      "**/*.(t|j)s"
-    ],
-    "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
