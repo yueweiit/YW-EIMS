@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '@eims/database';
+import type { JwtPayload } from './auth.types';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 
@@ -15,7 +16,9 @@ export class AuthService {
   ) {}
 
   async login(dto: LoginDto) {
-    const user = await this.prisma.user.findUnique({ where: { userName: dto.userName } });
+    const user = await this.prisma.user.findUnique({
+      where: { userName: dto.userName },
+    });
     if (!user) {
       throw new UnauthorizedException('用户名或密码错误');
     }
@@ -46,11 +49,15 @@ export class AuthService {
 
   async refreshToken(dto: RefreshTokenDto) {
     try {
-      const payload = await this.jwtService.verifyAsync<{ sub: number; userName: string }>(
+      const payload = await this.jwtService.verifyAsync<JwtPayload>(
         dto.refreshToken,
-        { secret: this.configService.get<string>('JWT_REFRESH_SECRET') },
+        {
+          secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+        },
       );
-      const user = await this.prisma.user.findUnique({ where: { id: payload.sub } });
+      const user = await this.prisma.user.findUnique({
+        where: { id: payload.sub },
+      });
       if (!user) {
         throw new UnauthorizedException('用户不存在');
       }
