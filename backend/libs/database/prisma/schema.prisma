@@ -11,16 +11,16 @@ datasource db {
 
 model User {
   id         Int      @id @default(autoincrement())
-  userName   String   @unique
+  userName   String   @unique @map("user_name")
   password   String
-  realName   String?
+  realName   String?  @map("real_name")
   roles      String[] @default([])
   buttons    String[] @default([])
   status     String   @default("1")
-  createBy   String   @default("system")
-  createTime DateTime @default(now())
-  updateBy   String?
-  updateTime DateTime @updatedAt
+  createBy   String   @default("system") @map("create_by")
+  createTime DateTime @default(now()) @map("create_time")
+  updateBy   String?  @map("update_by")
+  updateTime DateTime @updatedAt @map("update_time")
 
   @@schema("public")
   @@map("system_user")
