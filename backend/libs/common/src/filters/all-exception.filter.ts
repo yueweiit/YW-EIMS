@@ -1,4 +1,9 @@
-import { Catch, type ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  Catch,
+  type ArgumentsHost,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { BaseExceptionFilter } from '@nestjs/core';
 import type { Response } from 'express';
 
@@ -18,8 +23,9 @@ export class AllExceptionFilter extends BaseExceptionFilter {
       msg =
         typeof responseBody === 'string'
           ? responseBody
-          : (responseBody as { message?: string | string[] }).message?.toString() ||
-            'Request error';
+          : (
+              responseBody as { message?: string | string[] }
+            ).message?.toString() || 'Request error';
 
       if (status === HttpStatus.UNAUTHORIZED) {
         code = '9999';
