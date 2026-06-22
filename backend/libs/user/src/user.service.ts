@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import type { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '@eims/database';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -24,7 +25,7 @@ export class UserService {
 
   async findPage(query: QueryUserDto) {
     const { current = 1, size = 10, userName, status } = query;
-    const where: any = {};
+    const where: Prisma.UserWhereInput = {};
     if (userName) where.userName = { contains: userName };
     if (status) where.status = status;
 
@@ -68,14 +69,14 @@ export class UserService {
   }
 
   async update(id: number, dto: UpdateUserDto, currentUserName: string) {
-    const data: any = {
-      ...dto,
+    const { password, ...rest } = dto;
+    const data: Prisma.UserUpdateInput = {
+      ...rest,
       updateBy: currentUserName,
     };
-    if (dto.password) {
-      data.password = await bcrypt.hash(dto.password, 10);
+    if (password) {
+      data.password = await bcrypt.hash(password, 10);
     }
-    delete data.id;
 
     return this.prisma.user.update({
       where: { id },

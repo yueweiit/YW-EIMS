@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+} from '@nestjs/common';
 import { CurrentUser } from '@eims/auth';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -20,7 +29,10 @@ export class UserController {
   }
 
   @Post()
-  async create(@Body() dto: CreateUserDto, @CurrentUser('userName') userName: string) {
+  async create(
+    @Body() dto: CreateUserDto,
+    @CurrentUser('userName') userName: string,
+  ) {
     return this.userService.create(dto, userName);
   }
 
