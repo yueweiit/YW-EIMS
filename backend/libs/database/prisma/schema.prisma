@@ -19,4 +19,6 @@ model User {
   createTime DateTime @default(now())
   updateBy   String?
   updateTime DateTime @updatedAt
+
+  @@map("system_user")
 }
