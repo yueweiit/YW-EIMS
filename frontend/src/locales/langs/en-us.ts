@@ -231,7 +231,11 @@ const local: App.I18n.Schema = {
     'iframe-page': 'Iframe',
     home: 'Home',
     system: 'System',
-    system_user: 'User Management'
+    system_user: 'User Management',
+    material: 'Material Management',
+    material_material: 'Materials',
+    material_unit: 'Units',
+    'material_code-rule': 'Code Rules'
   },
   page: {
     login: {

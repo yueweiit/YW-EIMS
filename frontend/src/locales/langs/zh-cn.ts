@@ -227,7 +227,11 @@ const local: App.I18n.Schema = {
     'iframe-page': '外链页面',
     home: '首页',
     system: '系统管理',
-    system_user: '用户管理'
+    system_user: '用户管理',
+    material: '物料管理',
+    material_material: '物料主数据',
+    material_unit: '单位管理',
+    'material_code-rule': '编码规则'
   },
   page: {
     login: {
