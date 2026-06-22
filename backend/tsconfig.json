@@ -30,7 +30,9 @@
       "@eims/auth": ["libs/auth/src"],
       "@eims/auth/*": ["libs/auth/src/*"],
       "@eims/user": ["libs/user/src"],
-      "@eims/user/*": ["libs/user/src/*"]
+      "@eims/user/*": ["libs/user/src/*"],
+      "@eims/material": ["libs/material/src"],
+      "@eims/material/*": ["libs/material/src/*"]
     }
   }
 }

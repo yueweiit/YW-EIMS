@@ -11,6 +11,7 @@
     "config": { "type": "library", "root": "libs/config", "entryFile": "index", "sourceRoot": "libs/config/src", "compilerOptions": { "tsConfigPath": "libs/config/tsconfig.lib.json" } },
     "database": { "type": "library", "root": "libs/database", "entryFile": "index", "sourceRoot": "libs/database/src", "compilerOptions": { "tsConfigPath": "libs/database/tsconfig.lib.json" } },
     "auth": { "type": "library", "root": "libs/auth", "entryFile": "index", "sourceRoot": "libs/auth/src", "compilerOptions": { "tsConfigPath": "libs/auth/tsconfig.lib.json" } },
-    "user": { "type": "library", "root": "libs/user", "entryFile": "index", "sourceRoot": "libs/user/src", "compilerOptions": { "tsConfigPath": "libs/user/tsconfig.lib.json" } }
+    "user": { "type": "library", "root": "libs/user", "entryFile": "index", "sourceRoot": "libs/user/src", "compilerOptions": { "tsConfigPath": "libs/user/tsconfig.lib.json" } },
+    "material": { "type": "library", "root": "libs/material", "entryFile": "index", "sourceRoot": "libs/material/src", "compilerOptions": { "tsConfigPath": "libs/material/tsconfig.lib.json" } }
   }
 }
