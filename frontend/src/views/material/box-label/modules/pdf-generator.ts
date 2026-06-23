@@ -144,7 +144,7 @@ export async function generateBoxLabelPdf(products: BoxLabel.ProductData[]): Pro
 
     const docDefinition: TDocumentDefinitions = {
       pageSize: 'A5',
-      pageMargins: [30, 20, 30, 20],
+      pageMargins: [15, 15, 15, 15],
       content,
       defaultStyle: { font: FONT, fontSize: 11 }
     };
