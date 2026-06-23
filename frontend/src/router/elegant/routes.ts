@@ -87,6 +87,15 @@ export const generatedRoutes: GeneratedRoute[] = [
     },
     children: [
       {
+        name: 'material_box-label',
+        path: '/material/box-label',
+        component: 'view.material_box-label',
+        meta: {
+          title: 'material_box-label',
+          i18nKey: 'route.material_box-label'
+        }
+      },
+      {
         name: 'material_code-rule',
         path: '/material/code-rule',
         component: 'view.material_code-rule',
