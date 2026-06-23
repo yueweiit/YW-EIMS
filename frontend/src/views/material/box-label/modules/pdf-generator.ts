@@ -18,6 +18,7 @@ pdfMake.addFonts(ROBOTO_FONT_CONFIG);
 
 const FONT = 'SimHei';
 let simHeiLoadPromise: Promise<void> | null = null;
+let thisSideUpImage: string | null = null;
 
 /**
  * Load SimHei font and register it
@@ -33,7 +34,7 @@ function loadSimHeiFont(): Promise<void> {
   simHeiLoadPromise = (async () => {
     console.log('[PDF] Loading SimHei font...');
     const response = await fetch('/fonts/SimHei.ttf');
-    
+
     if (!response.ok) {
       // Reset promise on failure so it can be retried
       simHeiLoadPromise = null;
@@ -48,10 +49,10 @@ function loadSimHeiFont(): Promise<void> {
       binary += String.fromCharCode(bytes[i]);
     }
     const base64 = btoa(binary);
-    
+
     // Add font file to VFS
     pdfMake.addVirtualFileSystem({ 'SimHei.ttf': base64 });
-    
+
     // Register font family AFTER font is in VFS
     const simHeiConfig: TFontDictionary = {
       SimHei: {
@@ -62,11 +63,38 @@ function loadSimHeiFont(): Promise<void> {
       }
     };
     pdfMake.addFonts(simHeiConfig);
-    
+
     console.log('[PDF] SimHei font loaded and registered');
   })();
 
   return simHeiLoadPromise;
+}
+
+/**
+ * Load THIS-SIDE-UP image and convert to base64 data URI
+ */
+async function loadThisSideUpImage(): Promise<string> {
+  if (thisSideUpImage) {
+    return thisSideUpImage;
+  }
+
+  console.log('[PDF] Loading THIS-SIDE-UP image...');
+  const response = await fetch('/images/THIS-SIDE-UP.png');
+
+  if (!response.ok) {
+    throw new Error(`Image load failed: ${response.status}`);
+  }
+
+  const buffer = await response.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  thisSideUpImage = `data:image/png;base64,${btoa(binary)}`;
+
+  console.log('[PDF] THIS-SIDE-UP image loaded');
+  return thisSideUpImage;
 }
 
 // Fixed content for labels
@@ -88,6 +116,7 @@ export async function generateBoxLabelPdf(products: BoxLabel.ProductData[]): Pro
 
   try {
     await loadSimHeiFont();
+    const thisSideUpSrc = await loadThisSideUpImage();
 
     const content: Content[] = [];
 
@@ -97,46 +126,55 @@ export async function generateBoxLabelPdf(products: BoxLabel.ProductData[]): Pro
       }
 
       content.push(
-        // Title line: date/batch + spanish name + english name
-        { text: product.dateBatchEnglishName || '-', font: FONT, fontSize: 16, bold: true, margin: [0, 0, 0, 10] },
-        
-        // Model
-        { text: `MODEL 型号：${product.modelCode || '-'}`, font: FONT, fontSize: 11, margin: [0, 2, 0, 2] },
-        
-        // Specification
-        { text: `Especificaciones 规格：${product.specification || '-'}`, font: FONT, fontSize: 11, margin: [0, 2, 0, 2] },
-        
-        // Quantity
-        { text: `QTY 数量：${product.quantity || '-'} PIEZA`, font: FONT, fontSize: 11, margin: [0, 2, 0, 2] },
-        
-        // Gross weight
-        { text: `GW 毛重：${product.weightKg || '-'} KG`, font: FONT, fontSize: 11, margin: [0, 2, 0, 2] },
-        
-        // Box number
-        { text: `#NO 箱号：${product.boxNo || '-'}`, font: FONT, fontSize: 11, margin: [0, 2, 0, 8] },
-        
+        // Main content: left text + right images
+        {
+          columns: [
+            // Left: text content
+            {
+              width: '*',
+              stack: [
+                { text: product.dateBatchEnglishName || '-', font: FONT, fontSize: 16, bold: true, margin: [0, 0, 0, 10] },
+                { text: `MODEL 型号：${product.modelCode || '-'}`, font: FONT, fontSize: 11, margin: [0, 2, 0, 2] },
+                { text: `Especificaciones 规格：${product.specification || '-'}`, font: FONT, fontSize: 11, margin: [0, 2, 0, 2] },
+                { text: `QTY 数量：${product.quantity || '-'} PIEZA`, font: FONT, fontSize: 11, margin: [0, 2, 0, 2] },
+                { text: `GW 毛重：${product.weightKg || '-'} KG`, font: FONT, fontSize: 11, margin: [0, 2, 0, 2] },
+                { text: `#NO 箱号：${product.boxNo || '-'}`, font: FONT, fontSize: 11, margin: [0, 2, 0, 0] }
+              ]
+            },
+            // Right: QR code + THIS-SIDE-UP image
+            {
+              width: 100,
+              stack: [
+                { qr: product.modelCode || '-', fit: 80, eccLevel: 'M', alignment: 'center' },
+                { image: thisSideUpSrc, fit: [80, 80], alignment: 'center', margin: [0, 8, 0, 0] }
+              ]
+            }
+          ],
+          margin: [0, 0, 0, 8]
+        },
+
         // Separator
         { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 500, y2: 0, lineWidth: 0.5 }], margin: [0, 4, 0, 4] },
-        
+
         // Product name in Spanish
         { text: 'Nombre del producto:', font: FONT, fontSize: 10, margin: [0, 4, 0, 2] },
         { text: product.spanishName || '-', font: FONT, fontSize: 11, margin: [0, 0, 0, 6] },
-        
+
         // Fixed: Origin
         { text: FIXED.origin, font: FONT, fontSize: 10, margin: [0, 2, 0, 2] },
-        
+
         // Content (same as quantity)
         { text: `Contenido: ${product.quantity || '-'} PIEZA`, font: FONT, fontSize: 10, margin: [0, 2, 0, 6] },
-        
+
         // Separator
         { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 500, y2: 0, lineWidth: 0.5 }], margin: [0, 4, 0, 4] },
-        
+
         // Fixed: Importer
         { text: FIXED.importer, font: FONT, fontSize: 10, margin: [0, 2, 0, 2] },
-        
+
         // Fixed: Address
         { text: FIXED.address, font: FONT, fontSize: 9, margin: [0, 2, 0, 2] },
-        
+
         // Fixed: RFC
         { text: FIXED.rfc, font: FONT, fontSize: 10, margin: [0, 2, 0, 0] }
       );
