@@ -33,21 +33,12 @@ function handleDelete() {
     <div class="section-title">产品基本信息</div>
     <NForm label-placement="left" label-width="120px">
       <NGrid :cols="2" :x-gap="12">
-        <NGi>
-          <NFormItem label="日期/批次">
+        <NGi :span="2">
+          <NFormItem label="日期/批次/英文名称">
             <NInput
-              :value="product.dateBatch"
-              placeholder="请输入日期或批次号"
-              @update:value="val => updateField('dateBatch', val)"
-            />
-          </NFormItem>
-        </NGi>
-        <NGi>
-          <NFormItem label="英文名称">
-            <NInput
-              :value="product.englishName"
-              placeholder="请输入英文名称"
-              @update:value="val => updateField('englishName', val)"
+              :value="product.dateBatchEnglishName"
+              placeholder="请输入日期/批次/英文名称"
+              @update:value="val => updateField('dateBatchEnglishName', val)"
             />
           </NFormItem>
         </NGi>
@@ -69,7 +60,7 @@ function handleDelete() {
             />
           </NFormItem>
         </NGi>
-        <NGi :span="2">
+        <NGi>
           <NFormItem label="西语名称">
             <NInput
               :value="product.spanishName"

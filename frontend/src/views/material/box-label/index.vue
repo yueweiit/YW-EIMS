@@ -10,8 +10,7 @@ const products = ref<BoxLabel.ProductData[]>([createEmptyProduct()]);
 
 function createEmptyProduct(): BoxLabel.ProductData {
   return {
-    dateBatch: '',
-    englishName: '',
+    dateBatchEnglishName: '',
     modelCode: '',
     specification: '',
     spanishName: '',

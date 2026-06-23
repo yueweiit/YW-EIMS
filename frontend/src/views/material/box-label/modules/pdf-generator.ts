@@ -69,6 +69,14 @@ function loadSimHeiFont(): Promise<void> {
   return simHeiLoadPromise;
 }
 
+// Fixed content for labels
+const FIXED = {
+  origin: 'País de origen: Hecho en China',
+  importer: 'Importador: Yuewei S.A DE C.V',
+  address: 'Dirección: Eje oriente poniente manzana 5 lote 1, zona industrial Tizayuca, Tizayuca Hidalgo C.P 43804 México',
+  rfc: 'RFC: YUE190305H42'
+};
+
 /**
  * Generate box label PDF
  */
@@ -79,7 +87,6 @@ export async function generateBoxLabelPdf(products: BoxLabel.ProductData[]): Pro
   }
 
   try {
-    // Load font first, then register
     await loadSimHeiFont();
 
     const content: Content[] = [];
@@ -90,26 +97,48 @@ export async function generateBoxLabelPdf(products: BoxLabel.ProductData[]): Pro
       }
 
       content.push(
-        { text: '外箱标签 / BOX LABEL', font: FONT, fontSize: 18, bold: true, alignment: 'center', margin: [0, 0, 0, 10] },
-        { text: `产品 ${index + 1} / Product ${index + 1}`, font: FONT, fontSize: 14, color: '#555', alignment: 'center', margin: [0, 0, 0, 15] },
-        { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 500, y2: 0, lineWidth: 1 }] },
-        { text: '产品基本信息 / Product Information', font: FONT, fontSize: 12, bold: true, margin: [0, 10, 0, 8] },
-        createTable([
-          ['日期/批次 Date/Batch', product.dateBatch || '-'],
-          ['英文名称 English Name', product.englishName || '-'],
-          ['品名编码（型号）Model Code', product.modelCode || '-'],
-          ['规格 Specification', product.specification || '-'],
-          ['西语名称 Spanish Name', product.spanishName || '-']
-        ]),
-        { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 500, y2: 0, lineWidth: 0.5 }], margin: [0, 10, 0, 10] },
-        { text: '箱号数据 / Box Data', font: FONT, fontSize: 12, bold: true, margin: [0, 0, 0, 8] },
-        createTable([
-          ['箱号 Box No.', product.boxNo || '-'],
-          ['数量 Quantity', product.quantity || '-'],
-          ['重量 Weight (KG)', product.weightKg || '-']
-        ]),
-        { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 500, y2: 0, lineWidth: 1 }], margin: [0, 15, 0, 10] },
-        { text: `打印日期: ${new Date().toLocaleDateString('zh-CN')}`, font: FONT, fontSize: 9, color: '#888', alignment: 'right' }
+        // Title line: date/batch + spanish name + english name
+        { text: product.dateBatchEnglishName || '-', font: FONT, fontSize: 16, bold: true, margin: [0, 0, 0, 10] },
+        
+        // Model
+        { text: `MODEL 型号：${product.modelCode || '-'}`, font: FONT, fontSize: 11, margin: [0, 2, 0, 2] },
+        
+        // Specification
+        { text: `Especificaciones 规格：${product.specification || '-'}`, font: FONT, fontSize: 11, margin: [0, 2, 0, 2] },
+        
+        // Quantity
+        { text: `QTY 数量：${product.quantity || '-'} PIEZA`, font: FONT, fontSize: 11, margin: [0, 2, 0, 2] },
+        
+        // Gross weight
+        { text: `GW 毛重：${product.weightKg || '-'} KG`, font: FONT, fontSize: 11, margin: [0, 2, 0, 2] },
+        
+        // Box number
+        { text: `#NO 箱号：${product.boxNo || '-'}`, font: FONT, fontSize: 11, margin: [0, 2, 0, 8] },
+        
+        // Separator
+        { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 500, y2: 0, lineWidth: 0.5 }], margin: [0, 4, 0, 4] },
+        
+        // Product name in Spanish
+        { text: 'Nombre del producto:', font: FONT, fontSize: 10, margin: [0, 4, 0, 2] },
+        { text: product.spanishName || '-', font: FONT, fontSize: 11, margin: [0, 0, 0, 6] },
+        
+        // Fixed: Origin
+        { text: FIXED.origin, font: FONT, fontSize: 10, margin: [0, 2, 0, 2] },
+        
+        // Content (same as quantity)
+        { text: `Contenido: ${product.quantity || '-'} PIEZA`, font: FONT, fontSize: 10, margin: [0, 2, 0, 6] },
+        
+        // Separator
+        { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 500, y2: 0, lineWidth: 0.5 }], margin: [0, 4, 0, 4] },
+        
+        // Fixed: Importer
+        { text: FIXED.importer, font: FONT, fontSize: 10, margin: [0, 2, 0, 2] },
+        
+        // Fixed: Address
+        { text: FIXED.address, font: FONT, fontSize: 9, margin: [0, 2, 0, 2] },
+        
+        // Fixed: RFC
+        { text: FIXED.rfc, font: FONT, fontSize: 10, margin: [0, 2, 0, 0] }
       );
     });
 
@@ -127,26 +156,4 @@ export async function generateBoxLabelPdf(products: BoxLabel.ProductData[]): Pro
     console.error('[PDF] Error:', err);
     window.$message?.error('PDF 生成失败');
   }
-}
-
-function createTable(rows: string[][]): Content {
-  return {
-    table: {
-      widths: ['40%', '60%'],
-      body: rows.map(([label, value]) => [
-        { text: label, font: FONT, margin: [0, 4, 0, 4] },
-        { text: value, font: FONT, margin: [0, 4, 0, 4] }
-      ])
-    },
-    layout: {
-      hLineWidth: () => 0.5,
-      vLineWidth: () => 0.5,
-      hLineColor: () => '#ccc',
-      vLineColor: () => '#ccc',
-      paddingLeft: () => 8,
-      paddingRight: () => 8,
-      paddingTop: () => 4,
-      paddingBottom: () => 4
-    }
-  };
 }

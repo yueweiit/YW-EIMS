@@ -2,10 +2,8 @@
 declare namespace BoxLabel {
   /** Product data for box label */
   interface ProductData {
-    /** 日期/批次 */
-    dateBatch: string;
-    /** 英文名称 */
-    englishName: string;
+    /** 日期/批次/英文名称 */
+    dateBatchEnglishName: string;
     /** 品名编码（型号） */
     modelCode: string;
     /** 规格 */
