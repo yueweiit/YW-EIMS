@@ -133,58 +133,58 @@ export async function generateBoxLabelPdf(products: BoxLabel.ProductData[]): Pro
             {
               width: '*',
               stack: [
-                { text: product.dateBatchEnglishName || '-', font: FONT, fontSize: 16, bold: true, margin: [0, 0, 0, 10] },
-                { text: `MODEL 型号：${product.modelCode || '-'}`, font: FONT, fontSize: 11, margin: [0, 2, 0, 2] },
-                { text: `Especificaciones 规格：${product.specification || '-'}`, font: FONT, fontSize: 11, margin: [0, 2, 0, 2] },
-                { text: `QTY 数量：${product.quantity || '-'} PIEZA`, font: FONT, fontSize: 11, margin: [0, 2, 0, 2] },
-                { text: `GW 毛重：${product.weightKg || '-'} KG`, font: FONT, fontSize: 11, margin: [0, 2, 0, 2] },
-                { text: `#NO 箱号：${product.boxNo || '-'}`, font: FONT, fontSize: 11, margin: [0, 2, 0, 0] }
+                { text: product.dateBatchEnglishName || '-', font: FONT, fontSize: 32, bold: true, margin: [0, 0, 0, 20] },
+                { text: `MODEL 型号：${product.modelCode || '-'}`, font: FONT, fontSize: 20, margin: [0, 6, 0, 6] },
+                { text: `Especificaciones 规格：${product.specification || '-'}`, font: FONT, fontSize: 20, margin: [0, 6, 0, 6] },
+                { text: `QTY 数量：${product.quantity || '-'} PIEZA`, font: FONT, fontSize: 20, margin: [0, 6, 0, 6] },
+                { text: `GW 毛重：${product.weightKg || '-'} KG`, font: FONT, fontSize: 20, margin: [0, 6, 0, 6] },
+                { text: `#NO 箱号：${product.boxNo || '-'}`, font: FONT, fontSize: 20, margin: [0, 6, 0, 0] }
               ]
             },
             // Right: QR code + THIS-SIDE-UP image
             {
-              width: 100,
+              width: 180,
               stack: [
-                { qr: product.modelCode || '-', fit: 80, eccLevel: 'M', alignment: 'center' },
-                { image: thisSideUpSrc, fit: [80, 80], alignment: 'center', margin: [0, 8, 0, 0] }
+                { qr: product.modelCode || '-', fit: 150, eccLevel: 'M', alignment: 'center' },
+                { image: thisSideUpSrc, fit: [150, 150], alignment: 'center', margin: [0, 16, 0, 0] }
               ]
             }
           ],
-          margin: [0, 0, 0, 8]
+          margin: [0, 0, 0, 16]
         },
 
         // Separator
-        { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 500, y2: 0, lineWidth: 0.5 }], margin: [0, 4, 0, 4] },
+        { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 750, y2: 0, lineWidth: 1 }], margin: [0, 10, 0, 10] },
 
         // Product name in Spanish
-        { text: 'Nombre del producto:', font: FONT, fontSize: 10, margin: [0, 4, 0, 2] },
-        { text: product.spanishName || '-', font: FONT, fontSize: 11, margin: [0, 0, 0, 6] },
+        { text: 'Nombre del producto:', font: FONT, fontSize: 18, margin: [0, 10, 0, 6] },
+        { text: product.spanishName || '-', font: FONT, fontSize: 20, margin: [0, 0, 0, 14] },
 
         // Fixed: Origin
-        { text: FIXED.origin, font: FONT, fontSize: 10, margin: [0, 2, 0, 2] },
+        { text: FIXED.origin, font: FONT, fontSize: 16, margin: [0, 6, 0, 6] },
 
         // Content (same as quantity)
-        { text: `Contenido: ${product.quantity || '-'} PIEZA`, font: FONT, fontSize: 10, margin: [0, 2, 0, 6] },
+        { text: `Contenido: ${product.quantity || '-'} PIEZA`, font: FONT, fontSize: 16, margin: [0, 6, 0, 14] },
 
         // Separator
-        { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 500, y2: 0, lineWidth: 0.5 }], margin: [0, 4, 0, 4] },
+        { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 750, y2: 0, lineWidth: 1 }], margin: [0, 10, 0, 10] },
 
         // Fixed: Importer
-        { text: FIXED.importer, font: FONT, fontSize: 10, margin: [0, 2, 0, 2] },
+        { text: FIXED.importer, font: FONT, fontSize: 16, margin: [0, 6, 0, 6] },
 
         // Fixed: Address
-        { text: FIXED.address, font: FONT, fontSize: 9, margin: [0, 2, 0, 2] },
+        { text: FIXED.address, font: FONT, fontSize: 16, margin: [0, 6, 0, 6] },
 
         // Fixed: RFC
-        { text: FIXED.rfc, font: FONT, fontSize: 10, margin: [0, 2, 0, 0] }
+        { text: FIXED.rfc, font: FONT, fontSize: 16, margin: [0, 6, 0, 0] }
       );
     });
 
     const docDefinition: TDocumentDefinitions = {
-      pageSize: 'A5',
-      pageMargins: [15, 15, 15, 15],
+      pageSize: 'A4',
+      pageMargins: [30, 20, 30, 20],
       content,
-      defaultStyle: { font: FONT, fontSize: 11 }
+      defaultStyle: { font: FONT, fontSize: 18 }
     };
 
     console.log('[PDF] Creating document...');
