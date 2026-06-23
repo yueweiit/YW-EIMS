@@ -59,6 +59,7 @@
     "json5": "2.2.3",
     "naive-ui": "2.44.1",
     "nprogress": "0.2.0",
+    "pdfmake": "^0.3.11",
     "pinia": "3.0.4",
     "tailwind-merge": "3.6.0",
     "vue": "3.5.34",
@@ -74,6 +75,7 @@
     "@soybeanjs/eslint-config-vue": "^0.0.2",
     "@types/node": "25.7.0",
     "@types/nprogress": "0.2.3",
+    "@types/pdfmake": "^0.3.3",
     "@vitejs/plugin-vue": "6.0.6",
     "@vitejs/plugin-vue-jsx": "5.1.5",
     "consola": "3.4.2",
@@ -95,8 +97,7 @@
     "vite-plugin-vue-transition-root-validator": "^0.1.0",
     "vue-tsc": "3.2.8"
   },
-  "simple-git-hooks": {
-  },
+  "simple-git-hooks": {},
   "engines": {
     "node": ">=20.19.0",
     "pnpm": ">=10.5.0"
