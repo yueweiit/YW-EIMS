@@ -235,7 +235,8 @@ const local: App.I18n.Schema = {
     material: 'Material Management',
     material_material: 'Materials',
     material_unit: 'Units',
-    'material_code-rule': 'Code Rules'
+    'material_code-rule': 'Code Rules',
+    'material_box-label': 'Box Label Generator'
   },
   page: {
     login: {

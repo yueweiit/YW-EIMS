@@ -231,7 +231,8 @@ const local: App.I18n.Schema = {
     material: '物料管理',
     material_material: '物料主数据',
     material_unit: '单位管理',
-    'material_code-rule': '编码规则'
+    'material_code-rule': '编码规则',
+    'material_box-label': '外箱标签生成'
   },
   page: {
     login: {
