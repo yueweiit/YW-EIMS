@@ -1,58 +1,72 @@
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
-import type { TDocumentDefinitions, TFontDictionary } from 'pdfmake/interfaces';
+import type { Content, TDocumentDefinitions, TFontDictionary } from 'pdfmake/interfaces';
 
-// Initialize pdfmake VFS using typed API
+// Initialize pdfmake VFS with default Roboto fonts
 pdfMake.addVirtualFileSystem(pdfFonts);
 
-// Configure font families using typed API
-const fontConfig: TFontDictionary = {
+// Roboto font config (already in VFS)
+const ROBOTO_FONT_CONFIG: TFontDictionary = {
   Roboto: {
     normal: 'Roboto-Regular.ttf',
     bold: 'Roboto-Medium.ttf',
     italics: 'Roboto-Italic.ttf',
     bolditalics: 'Roboto-MediumItalic.ttf'
-  },
-  SimHei: {
-    normal: 'SimHei.ttf',
-    bold: 'SimHei.ttf',
-    italics: 'SimHei.ttf',
-    bolditalics: 'SimHei.ttf'
   }
 };
-pdfMake.addFonts(fontConfig);
+pdfMake.addFonts(ROBOTO_FONT_CONFIG);
 
 const FONT = 'SimHei';
+let simHeiLoadPromise: Promise<void> | null = null;
 
 /**
- * Load SimHei font and add to VFS
+ * Load SimHei font and register it
+ * Uses Promise caching to prevent concurrent fetch requests
  */
-async function loadSimHeiFont(): Promise<void> {
-  // Skip if already loaded
-  if (pdfFonts['SimHei.ttf']) {
-    return;
+function loadSimHeiFont(): Promise<void> {
+  // Return existing promise if already loading or loaded
+  if (simHeiLoadPromise) {
+    return simHeiLoadPromise;
   }
 
-  console.log('[PDF] Loading SimHei font...');
-  const response = await fetch('/fonts/SimHei.ttf');
-  
-  if (!response.ok) {
-    throw new Error(`Font load failed: ${response.status}`);
-  }
+  // Create and cache the promise
+  simHeiLoadPromise = (async () => {
+    console.log('[PDF] Loading SimHei font...');
+    const response = await fetch('/fonts/SimHei.ttf');
+    
+    if (!response.ok) {
+      // Reset promise on failure so it can be retried
+      simHeiLoadPromise = null;
+      throw new Error(`Font load failed: ${response.status}`);
+    }
 
-  // Get font as ArrayBuffer and convert to base64
-  const buffer = await response.arrayBuffer();
-  const bytes = new Uint8Array(buffer);
-  let binary = '';
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  const base64 = btoa(binary);
-  
-  // Add to VFS using typed API
-  pdfMake.addVirtualFileSystem({ 'SimHei.ttf': base64 });
-  
-  console.log('[PDF] SimHei font loaded');
+    // Convert to base64
+    const buffer = await response.arrayBuffer();
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    for (let i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    const base64 = btoa(binary);
+    
+    // Add font file to VFS
+    pdfMake.addVirtualFileSystem({ 'SimHei.ttf': base64 });
+    
+    // Register font family AFTER font is in VFS
+    const simHeiConfig: TFontDictionary = {
+      SimHei: {
+        normal: 'SimHei.ttf',
+        bold: 'SimHei.ttf',
+        italics: 'SimHei.ttf',
+        bolditalics: 'SimHei.ttf'
+      }
+    };
+    pdfMake.addFonts(simHeiConfig);
+    
+    console.log('[PDF] SimHei font loaded and registered');
+  })();
+
+  return simHeiLoadPromise;
 }
 
 /**
@@ -65,10 +79,10 @@ export async function generateBoxLabelPdf(products: BoxLabel.ProductData[]): Pro
   }
 
   try {
-    // Ensure font is loaded
+    // Load font first, then register
     await loadSimHeiFont();
 
-    const content: any[] = [];
+    const content: Content[] = [];
 
     products.forEach((product, index) => {
       if (index > 0) {
@@ -115,7 +129,7 @@ export async function generateBoxLabelPdf(products: BoxLabel.ProductData[]): Pro
   }
 }
 
-function createTable(rows: string[][]): any {
+function createTable(rows: string[][]): Content {
   return {
     table: {
       widths: ['40%', '60%'],
