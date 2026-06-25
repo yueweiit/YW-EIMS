@@ -25,5 +25,12 @@ export const views: Record<LastLevelRouteKey, RouteComponent | (() => Promise<Ro
   "material_code-rule": () => import("@/views/material/code-rule/index.vue"),
   material_material: () => import("@/views/material/material/index.vue"),
   material_unit: () => import("@/views/material/unit/index.vue"),
+  "mold-product_color": () => import("@/views/mold-product/color/index.vue"),
+  "mold-product_mold-code": () => import("@/views/mold-product/mold-code/index.vue"),
+  "mold-product_mold-material": () => import("@/views/mold-product/mold-material/index.vue"),
+  "mold-product_mold": () => import("@/views/mold-product/mold/index.vue"),
+  "mold-product_phone-model": () => import("@/views/mold-product/phone-model/index.vue"),
+  "mold-product_product-code": () => import("@/views/mold-product/product-code/index.vue"),
+  "mold-product_product": () => import("@/views/mold-product/product/index.vue"),
   system_user: () => import("@/views/system/user/index.vue"),
 };

@@ -236,7 +236,15 @@ const local: App.I18n.Schema = {
     material_material: 'Materials',
     material_unit: 'Units',
     'material_code-rule': 'Code Rules',
-    'material_box-label': 'Box Label Generator'
+    'material_box-label': 'Box Label Generator',
+    'mold-product': 'Mold Products',
+    'mold-product_phone-model': 'Phone Models',
+    'mold-product_color': 'Colors',
+    'mold-product_mold-material': 'Mold Materials',
+    'mold-product_mold-code': 'Mold Codes',
+    'mold-product_mold': 'Molds',
+    'mold-product_product-code': 'Product Codes',
+    'mold-product_product': 'Products'
   },
   page: {
     login: {

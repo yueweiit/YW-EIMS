@@ -174,6 +174,14 @@ const routeMap: RouteMap = {
   "material_code-rule": "/material/code-rule",
   "material_material": "/material/material",
   "material_unit": "/material/unit",
+  "mold-product": "/mold-product",
+  "mold-product_color": "/mold-product/color",
+  "mold-product_mold": "/mold-product/mold",
+  "mold-product_mold-code": "/mold-product/mold-code",
+  "mold-product_mold-material": "/mold-product/mold-material",
+  "mold-product_phone-model": "/mold-product/phone-model",
+  "mold-product_product": "/mold-product/product",
+  "mold-product_product-code": "/mold-product/product-code",
   "system": "/system",
   "system_user": "/system/user"
 };

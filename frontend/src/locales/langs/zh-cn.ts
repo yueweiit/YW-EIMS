@@ -232,7 +232,15 @@ const local: App.I18n.Schema = {
     material_material: '物料主数据',
     material_unit: '单位管理',
     'material_code-rule': '编码规则',
-    'material_box-label': '外箱标签生成'
+    'material_box-label': '外箱标签生成',
+    'mold-product': '模具产品',
+    'mold-product_phone-model': '手机型号',
+    'mold-product_color': '颜色管理',
+    'mold-product_mold-material': '材质管理',
+    'mold-product_mold-code': '模具编码',
+    'mold-product_mold': '模具管理',
+    'mold-product_product-code': '产品编码',
+    'mold-product_product': '产品管理'
   },
   page: {
     login: {

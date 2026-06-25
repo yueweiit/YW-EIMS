@@ -125,6 +125,82 @@ export const generatedRoutes: GeneratedRoute[] = [
     ]
   },
   {
+    name: 'mold-product',
+    path: '/mold-product',
+    component: 'layout.base',
+    meta: {
+      title: 'mold-product',
+      i18nKey: 'route.mold-product',
+      icon: 'mdi:cube-outline',
+      order: 3
+    },
+    children: [
+      {
+        name: 'mold-product_color',
+        path: '/mold-product/color',
+        component: 'view.mold-product_color',
+        meta: {
+          title: 'mold-product_color',
+          i18nKey: 'route.mold-product_color'
+        }
+      },
+      {
+        name: 'mold-product_mold',
+        path: '/mold-product/mold',
+        component: 'view.mold-product_mold',
+        meta: {
+          title: 'mold-product_mold',
+          i18nKey: 'route.mold-product_mold'
+        }
+      },
+      {
+        name: 'mold-product_mold-code',
+        path: '/mold-product/mold-code',
+        component: 'view.mold-product_mold-code',
+        meta: {
+          title: 'mold-product_mold-code',
+          i18nKey: 'route.mold-product_mold-code'
+        }
+      },
+      {
+        name: 'mold-product_mold-material',
+        path: '/mold-product/mold-material',
+        component: 'view.mold-product_mold-material',
+        meta: {
+          title: 'mold-product_mold-material',
+          i18nKey: 'route.mold-product_mold-material'
+        }
+      },
+      {
+        name: 'mold-product_phone-model',
+        path: '/mold-product/phone-model',
+        component: 'view.mold-product_phone-model',
+        meta: {
+          title: 'mold-product_phone-model',
+          i18nKey: 'route.mold-product_phone-model'
+        }
+      },
+      {
+        name: 'mold-product_product',
+        path: '/mold-product/product',
+        component: 'view.mold-product_product',
+        meta: {
+          title: 'mold-product_product',
+          i18nKey: 'route.mold-product_product'
+        }
+      },
+      {
+        name: 'mold-product_product-code',
+        path: '/mold-product/product-code',
+        component: 'view.mold-product_product-code',
+        meta: {
+          title: 'mold-product_product-code',
+          i18nKey: 'route.mold-product_product-code'
+        }
+      }
+    ]
+  },
+  {
     name: 'system',
     path: '/system',
     component: 'layout.base',
