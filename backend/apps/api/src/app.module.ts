@@ -6,10 +6,11 @@ import { PrismaModule } from '@eims/database';
 import { AuthModule, JwtAuthGuard } from '@eims/auth';
 import { UserModule } from '@eims/user';
 import { MaterialModule } from '@eims/material';
+import { MoldProductModule } from '@eims/mold-product';
 import { TransformInterceptor, AllExceptionFilter } from '@eims/common';
 
 @Module({
-  imports: [ConfigModule, PrismaModule, AuthModule, UserModule, MaterialModule],
+  imports: [ConfigModule, PrismaModule, AuthModule, UserModule, MaterialModule, MoldProductModule],
   controllers: [AppController],
   providers: [
     {

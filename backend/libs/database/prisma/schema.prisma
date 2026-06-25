@@ -6,7 +6,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  schemas  = ["public", "material"]
+  schemas  = ["public", "material", "mold"]
 }
 
 model User {
@@ -22,48 +22,159 @@ model User {
   updateBy   String?  @map("update_by")
   updateTime DateTime @updatedAt @map("update_time")
 
-  @@schema("public")
   @@map("system_user")
+  @@schema("public")
 }
 
 /// 物料申请主数据表（存储所有物料申请记录）
 model Material {
-  id             Int       @id @default(autoincrement())
-  applicant      String    @db.VarChar(50)
-  applicationDate DateTime? @default(now()) @db.Date @map("application_date")
-  materialName   String    @db.VarChar(500) @map("material_name")
-  specifications String?   @db.VarChar(1000)
-  unit           String?   @db.VarChar(20)
-  code           String?   @unique @db.VarChar(50)
-  codePrefix     String?   @db.VarChar(10) @map("code_prefix")
-  explainContent String?   @db.VarChar(100) @map("explain_content")
-  unitCode       String?   @db.VarChar(3) @map("unit_code")
-  unitRef        Unit?     @relation(fields: [unitCode], references: [unitCode], onDelete: SetNull, onUpdate: Cascade)
+  id              Int       @id @default(autoincrement())
+  applicant       String    @db.VarChar(50)
+  applicationDate DateTime? @default(now()) @map("application_date") @db.Date
+  materialName    String    @map("material_name") @db.VarChar(500)
+  specifications  String?   @db.VarChar(1000)
+  unit            String?   @db.VarChar(20)
+  code            String?   @unique @db.VarChar(50)
+  codePrefix      String?   @map("code_prefix") @db.VarChar(10)
+  explainContent  String?   @map("explain_content") @db.VarChar(100)
+  unitCode        String?   @map("unit_code") @db.VarChar(3)
+  unitRef         Unit?     @relation(fields: [unitCode], references: [unitCode], onDelete: SetNull, onUpdate: Cascade)
 
   @@index([applicant])
   @@index([applicationDate])
   @@index([codePrefix])
   @@index([unitCode])
   @@index([materialName])
-  @@schema("material")
   @@map("materials")
+  @@schema("material")
 }
 
 /// 存储单位编码与名称的映射表，编码统一为两位数格式（个位数补零）
 model Unit {
-  unitCode  String     @id @db.VarChar(3) @map("unit_code")
+  unitCode  String     @id @map("unit_code") @db.VarChar(3)
   unit      String     @unique @db.VarChar(50)
   materials Material[]
 
-  @@schema("material")
   @@map("units")
+  @@schema("material")
 }
 
 /// 编码前缀字典表（存储字母前缀及对应含义）
 model MaterialCodeRule {
-  codePrefix     String @id @db.VarChar(10) @map("code_prefix")
-  explainContent String @db.VarChar(100) @map("explain_content")
+  codePrefix     String @id @map("code_prefix") @db.VarChar(10)
+  explainContent String @map("explain_content") @db.VarChar(100)
 
-  @@schema("material")
   @@map("material_code_rules")
+  @@schema("material")
+}
+
+// ============ MOLD SCHEMA ============
+
+/// 手机编码序列表（保证 phoneCode 并发安全生成）
+model PhoneCodeSequence {
+  id           Int @id @default(autoincrement())
+  currentValue Int @default(0) @map("current_value")
+
+  @@map("phone_code_sequence")
+  @@schema("mold")
+}
+
+/// 手机型号表
+model PhoneModel {
+  id             Int     @id @default(autoincrement())
+  phoneCode      String  @unique @map("phone_code") @db.VarChar(20)
+  phoneName      String  @unique @map("phone_name") @db.VarChar(200)
+  phoneShortName String? @map("phone_short_name") @db.VarChar(200)
+
+  @@index([phoneName])
+  @@map("phone_models")
+  @@schema("mold")
+}
+
+/// 颜色表
+model Color {
+  id        Int    @id @default(autoincrement())
+  colorCode String @unique @map("color_code") @db.VarChar(10)
+  colorName String @map("color_name") @db.VarChar(100)
+
+  @@map("colors")
+  @@schema("mold")
+}
+
+/// 材质表
+model MoldMaterial {
+  id       Int    @id @default(autoincrement())
+  typeCode String @unique @map("type_code") @db.VarChar(10)
+  typeName String @map("type_name") @db.VarChar(50)
+
+  @@map("type")
+  @@schema("mold")
+}
+
+/// 模具编码表（一个 moldType 可对应多条记录）
+model MoldCode {
+  id         Int    @id @default(autoincrement())
+  moldCode   String @unique @map("mold_code") @db.VarChar(30)
+  moldType   String @map("mold_type") @db.VarChar(100)
+  moldName   String @map("mold_name") @db.VarChar(200)
+  moldPrefix String @map("mold_prefix") @db.VarChar(20)
+  typeName   String @map("type_name") @db.VarChar(50)
+  typeCode   String @map("type_code") @db.VarChar(10)
+
+  @@index([moldType])
+  @@map("mold_codes")
+  @@schema("mold")
+}
+
+/// 模具表（品目主数据）
+model Mold {
+  id        Int    @id @default(autoincrement())
+  moldType  String @map("mold_type") @db.VarChar(100)
+  moldName  String @map("mold_name") @db.VarChar(200)
+  moldCode  String @map("mold_code") @db.VarChar(30)
+  phoneName String @map("phone_name") @db.VarChar(200)
+  phoneCode String @map("phone_code") @db.VarChar(20)
+  typeCode  String @map("type_code") @db.VarChar(10)
+  typeName  String @map("type_name") @db.VarChar(50)
+  itemCode  String @unique @map("item_code") @db.VarChar(50)
+
+  @@unique([moldCode, phoneCode])
+  @@index([moldCode])
+  @@index([phoneCode])
+  @@map("molds")
+  @@schema("mold")
+}
+
+/// 产品编码表
+model ProductCode {
+  id          Int    @id @default(autoincrement())
+  productCode String @unique @map("product_code") @db.VarChar(20)
+  productType String @map("product_type") @db.VarChar(100)
+  productName String @map("product_name") @db.VarChar(200)
+  colorName   String @map("color_name") @db.VarChar(100)
+  colorCode   String @map("color_code") @db.VarChar(10)
+
+  @@index([productType])
+  @@map("product_codes")
+  @@schema("mold")
+}
+
+/// 产品表（品目主数据）
+model Product {
+  id             Int    @id @default(autoincrement())
+  productType    String @map("product_type") @db.VarChar(100)
+  productName    String @map("product_name") @db.VarChar(200)
+  productCode    String @map("product_code") @db.VarChar(20)
+  phoneShortName String @map("phone_short_name") @db.VarChar(200)
+  phoneCode      String @map("phone_code") @db.VarChar(20)
+  colorName      String @map("color_name") @db.VarChar(100)
+  colorCode      String @map("color_code") @db.VarChar(10)
+  itemCode       String @unique @map("item_code") @db.VarChar(50)
+
+  @@unique([productCode, phoneCode, colorCode])
+  @@index([productCode])
+  @@index([phoneCode])
+  @@index([colorCode])
+  @@map("products")
+  @@schema("mold")
 }

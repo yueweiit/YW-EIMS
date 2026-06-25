@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -103,6 +103,15 @@ async function main() {
   console.log(
     `Seed completed: ${MATERIAL_CODE_RULES.length} material code rules upserted`,
   );
+
+  // 手机编码序列表初始化（当前最大值 1204，新手机从 1205 开始）
+  await prisma.phoneCodeSequence.upsert({
+    where: { id: 1 },
+    update: {},
+    create: { id: 1, currentValue: 1204 },
+  });
+
+  console.log('Seed completed: phone code sequence initialized (currentValue=1204)');
 }
 
 main()
