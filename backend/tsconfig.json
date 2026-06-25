@@ -32,7 +32,9 @@
       "@eims/user": ["libs/user/src"],
       "@eims/user/*": ["libs/user/src/*"],
       "@eims/material": ["libs/material/src"],
-      "@eims/material/*": ["libs/material/src/*"]
+      "@eims/material/*": ["libs/material/src/*"],
+      "@eims/mold-product": ["libs/mold-product/src"],
+      "@eims/mold-product/*": ["libs/mold-product/src/*"]
     }
   }
 }

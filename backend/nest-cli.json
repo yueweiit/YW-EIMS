@@ -12,6 +12,7 @@
     "database": { "type": "library", "root": "libs/database", "entryFile": "index", "sourceRoot": "libs/database/src", "compilerOptions": { "tsConfigPath": "libs/database/tsconfig.lib.json" } },
     "auth": { "type": "library", "root": "libs/auth", "entryFile": "index", "sourceRoot": "libs/auth/src", "compilerOptions": { "tsConfigPath": "libs/auth/tsconfig.lib.json" } },
     "user": { "type": "library", "root": "libs/user", "entryFile": "index", "sourceRoot": "libs/user/src", "compilerOptions": { "tsConfigPath": "libs/user/tsconfig.lib.json" } },
-    "material": { "type": "library", "root": "libs/material", "entryFile": "index", "sourceRoot": "libs/material/src", "compilerOptions": { "tsConfigPath": "libs/material/tsconfig.lib.json" } }
+    "material": { "type": "library", "root": "libs/material", "entryFile": "index", "sourceRoot": "libs/material/src", "compilerOptions": { "tsConfigPath": "libs/material/tsconfig.lib.json" } },
+    "mold-product": { "type": "library", "root": "libs/mold-product", "entryFile": "index", "sourceRoot": "libs/mold-product/src", "compilerOptions": { "tsConfigPath": "libs/mold-product/tsconfig.lib.json" } }
   }
 }
