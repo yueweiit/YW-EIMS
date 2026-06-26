@@ -98,17 +98,21 @@ const rules = computed<FormRules>(() => ({
 }));
 
 async function loadMaterialOptions() {
-  const { data, error } = await fetchMoldMaterialPage({ current: 1, size: 1000 });
-  if (!error && data) {
-    materialOptions.value = data.records.map(item => ({
-      label: item.typeName,
-      value: item.typeName
-    }));
-    const map = new Map<string, string>();
-    data.records.forEach(item => {
-      map.set(item.typeName, item.typeCode);
-    });
-    materialTypeCodeMap.value = map;
+  try {
+    const { data, error } = await fetchMoldMaterialPage({ current: 1, size: 1000 });
+    if (!error && data) {
+      materialOptions.value = data.records.map(item => ({
+        label: item.typeName,
+        value: item.typeName
+      }));
+      const map = new Map<string, string>();
+      data.records.forEach(item => {
+        map.set(item.typeName, item.typeCode);
+      });
+      materialTypeCodeMap.value = map;
+    }
+  } catch {
+    window.$message?.error('加载材质列表失败');
   }
 }
 
@@ -148,10 +152,9 @@ function getSubmitBody() {
 }
 
 async function handleSubmit() {
-  await validate();
-
   loading.value = true;
   try {
+    await validate();
     const body = getSubmitBody();
     if (props.type === 'add') {
       const { error } = await fetchCreateMoldCode(body);

@@ -83,7 +83,7 @@ const rules = computed<FormRules>(() => ({
     {
       required: true,
       message: '请输入颜色编码',
-      trigger: 'change'
+      trigger: 'blur'
     }
   ],
   colorName: [
@@ -132,9 +132,13 @@ watch(visible, val => {
 });
 
 async function loadColorList() {
-  const { data, error } = await fetchColorPage({ current: 1, size: 1000 });
-  if (!error && data) {
-    colorList.value = data.records;
+  try {
+    const { data, error } = await fetchColorPage({ current: 1, size: 1000 });
+    if (!error && data) {
+      colorList.value = data.records;
+    }
+  } catch {
+    window.$message?.error('加载颜色列表失败');
   }
 }
 
@@ -164,10 +168,9 @@ function getSubmitBody() {
 }
 
 async function handleSubmit() {
-  await validate();
-
   loading.value = true;
   try {
+    await validate();
     const body = getSubmitBody();
     if (props.type === 'add') {
       const { error } = await fetchCreateProductCode(body);

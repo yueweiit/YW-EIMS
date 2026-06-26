@@ -90,12 +90,16 @@ watch(visible, val => {
 });
 
 async function loadMoldCodeOptions() {
-  const { data, error } = await fetchMoldCodePage({ current: 1, size: 1000 });
-  if (!error && data) {
-    moldCodeOptions.value = data.records.map(item => ({
-      label: `${item.moldCode} - ${item.moldName}`,
-      value: item.moldCode
-    }));
+  try {
+    const { data, error } = await fetchMoldCodePage({ current: 1, size: 1000 });
+    if (!error && data) {
+      moldCodeOptions.value = data.records.map(item => ({
+        label: `${item.moldCode} - ${item.moldName}`,
+        value: item.moldCode
+      }));
+    }
+  } catch {
+    window.$message?.error('加载模具编码列表失败');
   }
 }
 
@@ -105,10 +109,9 @@ function getSubmitBody() {
 }
 
 async function handleSubmit() {
-  await validate();
-
   loading.value = true;
   try {
+    await validate();
     const body = getSubmitBody();
     if (props.type === 'add') {
       const { error } = await fetchCreateMold(body);

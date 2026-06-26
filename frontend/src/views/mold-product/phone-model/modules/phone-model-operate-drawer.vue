@@ -93,10 +93,9 @@ function getSubmitBody() {
 }
 
 async function handleSubmit() {
-  await validate();
-
   loading.value = true;
   try {
+    await validate();
     const body = getSubmitBody();
     if (props.type === 'add') {
       const { error } = await fetchCreatePhoneModel(body);

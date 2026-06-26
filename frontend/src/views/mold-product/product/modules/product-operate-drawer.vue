@@ -90,20 +90,24 @@ watch(visible, val => {
 });
 
 async function loadProductTypeOptions() {
-  const { data, error } = await fetchProductCodePage({ current: 1, size: 1000 });
-  if (!error && data) {
-    // 按 productType 去重
-    const seen = new Set<string>();
-    productTypeOptions.value = data.records
-      .filter(item => {
-        if (seen.has(item.productType)) return false;
-        seen.add(item.productType);
-        return true;
-      })
-      .map(item => ({
-        label: item.productType,
-        value: item.productType
-      }));
+  try {
+    const { data, error } = await fetchProductCodePage({ current: 1, size: 1000 });
+    if (!error && data) {
+      // 按 productType 去重
+      const seen = new Set<string>();
+      productTypeOptions.value = data.records
+        .filter(item => {
+          if (seen.has(item.productType)) return false;
+          seen.add(item.productType);
+          return true;
+        })
+        .map(item => ({
+          label: item.productType,
+          value: item.productType
+        }));
+    }
+  } catch {
+    window.$message?.error('加载产品类型列表失败');
   }
 }
 
@@ -113,15 +117,14 @@ function getSubmitBody() {
 }
 
 async function handleSubmit() {
-  await validate();
-
   loading.value = true;
   try {
+    await validate();
     const body = getSubmitBody();
     if (props.type === 'add') {
       const { data, error } = await fetchCreateProduct(body);
       if (!error) {
-        const count = Array.isArray(data) ? data.length : 1;
+        const count = Array.isArray(data) ? data.length : data ? 1 : 0;
         window.$message?.success(`成功生成 ${count} 条品目`);
         visible.value = false;
         emit('submitted');
