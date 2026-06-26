@@ -38,7 +38,8 @@ const columns: DataTableColumns<Api.ProductCode.ProductCodeRecord> = [
     minWidth: 140,
     ellipsis: {
       tooltip: true
-    }
+    },
+    render: row => row.productCode || '-'
   },
   {
     key: 'productType',
@@ -46,7 +47,8 @@ const columns: DataTableColumns<Api.ProductCode.ProductCodeRecord> = [
     minWidth: 140,
     ellipsis: {
       tooltip: true
-    }
+    },
+    render: row => row.productType || '-'
   },
   {
     key: 'productName',
@@ -54,7 +56,8 @@ const columns: DataTableColumns<Api.ProductCode.ProductCodeRecord> = [
     minWidth: 180,
     ellipsis: {
       tooltip: true
-    }
+    },
+    render: row => row.productName || '-'
   },
   {
     key: 'colorCode',

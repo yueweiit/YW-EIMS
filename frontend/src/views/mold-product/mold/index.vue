@@ -64,7 +64,8 @@ const columns: DataTableColumns<Api.Mold.MoldRecord> = [
     minWidth: 140,
     ellipsis: {
       tooltip: true
-    }
+    },
+    render: row => row.phoneName || '-'
   },
   {
     key: 'phoneCode',

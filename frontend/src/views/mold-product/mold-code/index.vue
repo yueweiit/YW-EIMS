@@ -38,7 +38,8 @@ const columns: DataTableColumns<Api.MoldCode.MoldCodeRecord> = [
     minWidth: 140,
     ellipsis: {
       tooltip: true
-    }
+    },
+    render: row => row.moldCode || '-'
   },
   {
     key: 'moldType',
@@ -46,7 +47,8 @@ const columns: DataTableColumns<Api.MoldCode.MoldCodeRecord> = [
     minWidth: 120,
     ellipsis: {
       tooltip: true
-    }
+    },
+    render: row => row.moldType || '-'
   },
   {
     key: 'moldName',
@@ -54,7 +56,8 @@ const columns: DataTableColumns<Api.MoldCode.MoldCodeRecord> = [
     minWidth: 160,
     ellipsis: {
       tooltip: true
-    }
+    },
+    render: row => row.moldName || '-'
   },
   {
     key: 'moldPrefix',
@@ -62,7 +65,8 @@ const columns: DataTableColumns<Api.MoldCode.MoldCodeRecord> = [
     minWidth: 120,
     ellipsis: {
       tooltip: true
-    }
+    },
+    render: row => row.moldPrefix || '-'
   },
   {
     key: 'typeCode',
@@ -70,7 +74,8 @@ const columns: DataTableColumns<Api.MoldCode.MoldCodeRecord> = [
     minWidth: 120,
     ellipsis: {
       tooltip: true
-    }
+    },
+    render: row => row.typeCode || '-'
   },
   {
     key: 'typeName',
@@ -78,7 +83,8 @@ const columns: DataTableColumns<Api.MoldCode.MoldCodeRecord> = [
     minWidth: 140,
     ellipsis: {
       tooltip: true
-    }
+    },
+    render: row => row.typeName || '-'
   },
   {
     key: 'operate',
