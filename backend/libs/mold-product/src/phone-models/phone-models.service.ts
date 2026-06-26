@@ -1,9 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '@eims/database';
 import { CreatePhoneModelDto } from './dto/create-phone-model.dto';
 import { UpdatePhoneModelDto } from './dto/update-phone-model.dto';
 import { QueryPhoneModelDto } from './dto/query-phone-model.dto';
+import { handlePrismaError } from '../helpers';
 
 @Injectable()
 export class PhoneModelsService {
@@ -36,13 +37,17 @@ export class PhoneModelsService {
 
   async create(dto: CreatePhoneModelDto) {
     const phoneCode = await this.generatePhoneCode();
-    return this.prisma.phoneModel.create({
-      data: {
-        phoneName: dto.phoneName,
-        phoneShortName: dto.phoneShortName ?? null,
-        phoneCode,
-      },
-    });
+    try {
+      return await this.prisma.phoneModel.create({
+        data: {
+          phoneName: dto.phoneName,
+          phoneShortName: dto.phoneShortName ?? null,
+          phoneCode,
+        },
+      });
+    } catch (e) {
+      handlePrismaError(e, '手机型号');
+    }
   }
 
   async update(id: number, dto: UpdatePhoneModelDto) {
@@ -53,12 +58,32 @@ export class PhoneModelsService {
     if (dto.phoneName !== undefined) data.phoneName = dto.phoneName;
     if (dto.phoneShortName !== undefined) data.phoneShortName = dto.phoneShortName;
 
-    return this.prisma.phoneModel.update({ where: { id }, data });
+    try {
+      return await this.prisma.phoneModel.update({ where: { id }, data });
+    } catch (e) {
+      handlePrismaError(e, '手机型号');
+    }
   }
 
   async remove(id: number) {
     const existing = await this.prisma.phoneModel.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException('手机型号不存在');
+
+    const [moldCount, productCount] = await Promise.all([
+      this.prisma.mold.count({ where: { phoneCode: existing.phoneCode } }),
+      this.prisma.product.count({ where: { phoneCode: existing.phoneCode } }),
+    ]);
+    if (moldCount > 0) {
+      throw new ConflictException(
+        `无法删除手机型号 ${existing.phoneName}：该型号被模具表的 ${moldCount} 条记录引用`,
+      );
+    }
+    if (productCount > 0) {
+      throw new ConflictException(
+        `无法删除手机型号 ${existing.phoneName}：该型号被产品表的 ${productCount} 条记录引用`,
+      );
+    }
+
     await this.prisma.phoneModel.delete({ where: { id } });
     return null;
   }

@@ -48,6 +48,18 @@ export class MoldMaterialsService {
     const existing = await this.prisma.moldMaterial.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException('材质不存在');
 
+    // 如果修改了 typeCode，检查是否被 mold_codes 引用
+    if (dto.typeCode !== undefined && dto.typeCode !== existing.typeCode) {
+      const refCount = await this.prisma.moldCode.count({
+        where: { typeCode: existing.typeCode },
+      });
+      if (refCount > 0) {
+        throw new ConflictException(
+          `无法修改材质编码 ${existing.typeCode}：该编码被模具编码表的 ${refCount} 条记录引用`,
+        );
+      }
+    }
+
     try {
       return await this.prisma.moldMaterial.update({ where: { id }, data: dto });
     } catch (e) {

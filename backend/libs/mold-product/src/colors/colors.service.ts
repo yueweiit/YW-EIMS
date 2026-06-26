@@ -48,6 +48,24 @@ export class ColorsService {
     const existing = await this.prisma.color.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException('颜色不存在');
 
+    // 如果修改了 colorCode，检查是否被 product_codes 或 products 引用
+    if (dto.colorCode !== undefined && dto.colorCode !== existing.colorCode) {
+      const [productCodeCount, productCount] = await Promise.all([
+        this.prisma.productCode.count({ where: { colorCode: existing.colorCode } }),
+        this.prisma.product.count({ where: { colorCode: existing.colorCode } }),
+      ]);
+      if (productCodeCount > 0) {
+        throw new ConflictException(
+          `无法修改颜色编码 ${existing.colorCode}：该编码被产品编码表的 ${productCodeCount} 条记录引用`,
+        );
+      }
+      if (productCount > 0) {
+        throw new ConflictException(
+          `无法修改颜色编码 ${existing.colorCode}：该编码被产品表的 ${productCount} 条记录引用`,
+        );
+      }
+    }
+
     try {
       return await this.prisma.color.update({ where: { id }, data: dto });
     } catch (e) {

@@ -94,43 +94,46 @@ export class ProductsService {
   }
 
   async update(id: number, dto: UpdateProductDto) {
-    const existing = await this.prisma.product.findUnique({ where: { id } });
-    if (!existing) throw new NotFoundException('产品不存在');
-
-    const data: Record<string, unknown> = {};
-
-    if (dto.productType !== undefined && dto.productType !== existing.productType) {
-      const productCodeRecord = await this.prisma.productCode.findFirst({
-        where: { productType: dto.productType },
-      });
-      if (!productCodeRecord) {
-        throw new BadRequestException(`产品类型 ${dto.productType} 不存在`);
-      }
-      data.productType = productCodeRecord.productType;
-      data.productName = productCodeRecord.productName;
-      data.productCode = productCodeRecord.productCode;
-      data.colorName = productCodeRecord.colorName;
-      data.colorCode = productCodeRecord.colorCode;
-    }
-
-    if (dto.phoneShortName !== undefined && dto.phoneShortName !== existing.phoneShortName) {
-      const phoneModel = await this.phoneModelsService.findByShortNameOrCreate(
-        null,
-        dto.phoneShortName,
-      );
-      data.phoneShortName = phoneModel.phoneShortName ?? phoneModel.phoneName;
-      data.phoneCode = phoneModel.phoneCode;
-    }
-
-    // 重新计算 itemCode
-    const productCodeForItem = (data.productCode as string) ?? existing.productCode;
-    const phoneCodeForItem = (data.phoneCode as string) ?? existing.phoneCode;
-    const colorCodeForItem = (data.colorCode as string) ?? existing.colorCode;
-    data.itemCode = (productCodeForItem + phoneCodeForItem + colorCodeForItem).toUpperCase();
-
     try {
-      return await this.prisma.product.update({ where: { id }, data });
+      return await this.prisma.$transaction(async (tx) => {
+        const existing = await tx.product.findUnique({ where: { id } });
+        if (!existing) throw new NotFoundException('产品不存在');
+
+        const data: Record<string, unknown> = {};
+
+        if (dto.productType !== undefined && dto.productType !== existing.productType) {
+          const productCodeRecord = await tx.productCode.findFirst({
+            where: { productType: dto.productType },
+          });
+          if (!productCodeRecord) {
+            throw new BadRequestException(`产品类型 ${dto.productType} 不存在`);
+          }
+          data.productType = productCodeRecord.productType;
+          data.productName = productCodeRecord.productName;
+          data.productCode = productCodeRecord.productCode;
+          data.colorName = productCodeRecord.colorName;
+          data.colorCode = productCodeRecord.colorCode;
+        }
+
+        if (dto.phoneShortName !== undefined && dto.phoneShortName !== existing.phoneShortName) {
+          const phoneModel = await this.phoneModelsService.findByShortNameOrCreate(
+            tx,
+            dto.phoneShortName,
+          );
+          data.phoneShortName = phoneModel.phoneShortName ?? phoneModel.phoneName;
+          data.phoneCode = phoneModel.phoneCode;
+        }
+
+        // 重新计算 itemCode
+        const productCodeForItem = (data.productCode as string) ?? existing.productCode;
+        const phoneCodeForItem = (data.phoneCode as string) ?? existing.phoneCode;
+        const colorCodeForItem = (data.colorCode as string) ?? existing.colorCode;
+        data.itemCode = (productCodeForItem + phoneCodeForItem + colorCodeForItem).toUpperCase();
+
+        return tx.product.update({ where: { id }, data });
+      });
     } catch (e) {
+      if (e instanceof NotFoundException || e instanceof BadRequestException) throw e;
       handlePrismaError(e, '产品');
     }
   }

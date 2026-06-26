@@ -83,18 +83,6 @@ export class MoldCodesService {
     const existing = await this.prisma.moldCode.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException('模具编码不存在');
 
-    // 如果要修改 moldCode，检查是否被 molds 表引用
-    if (dto.moldCode && dto.moldCode !== existing.moldCode) {
-      const refCount = await this.prisma.mold.count({
-        where: { moldCode: existing.moldCode },
-      });
-      if (refCount > 0) {
-        throw new ConflictException(
-          `无法修改模具编码 ${existing.moldCode}：该编码被模具表的 ${refCount} 条记录引用`,
-        );
-      }
-    }
-
     const data: Record<string, unknown> = {};
     if (dto.moldType !== undefined) data.moldType = dto.moldType;
     if (dto.moldName !== undefined) data.moldName = dto.moldName;
@@ -112,8 +100,18 @@ export class MoldCodesService {
 
       // 如果同时修改了前缀，用新前缀；否则用原前缀
       const prefix = dto.moldPrefix ?? existing.moldPrefix;
+      data.moldPrefix = prefix;
       const newMoldCode = (prefix + material.typeCode).toUpperCase();
       if (newMoldCode !== existing.moldCode) {
+        // 检查旧编码是否被 molds 引用
+        const refCount = await this.prisma.mold.count({
+          where: { moldCode: existing.moldCode },
+        });
+        if (refCount > 0) {
+          throw new ConflictException(
+            `无法修改模具编码 ${existing.moldCode}：该编码被模具表的 ${refCount} 条记录引用`,
+          );
+        }
         // 检查新编码是否冲突
         const conflict = await this.prisma.moldCode.findUnique({
           where: { moldCode: newMoldCode },
@@ -127,6 +125,15 @@ export class MoldCodesService {
       // 只改前缀，用原 typeCode
       const newMoldCode = (dto.moldPrefix + existing.typeCode).toUpperCase();
       if (newMoldCode !== existing.moldCode) {
+        // 检查旧编码是否被 molds 引用
+        const refCount = await this.prisma.mold.count({
+          where: { moldCode: existing.moldCode },
+        });
+        if (refCount > 0) {
+          throw new ConflictException(
+            `无法修改模具编码 ${existing.moldCode}：该编码被模具表的 ${refCount} 条记录引用`,
+          );
+        }
         const conflict = await this.prisma.moldCode.findUnique({
           where: { moldCode: newMoldCode },
         });

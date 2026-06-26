@@ -83,42 +83,45 @@ export class MoldsService {
   }
 
   async update(id: number, dto: UpdateMoldDto) {
-    const existing = await this.prisma.mold.findUnique({ where: { id } });
-    if (!existing) throw new NotFoundException('模具不存在');
-
-    const data: Record<string, unknown> = {};
-
-    if (dto.moldCode !== undefined && dto.moldCode !== existing.moldCode) {
-      const moldCodeRecord = await this.prisma.moldCode.findUnique({
-        where: { moldCode: dto.moldCode },
-      });
-      if (!moldCodeRecord) {
-        throw new NotFoundException(`模具编码 ${dto.moldCode} 不存在`);
-      }
-      data.moldCode = moldCodeRecord.moldCode;
-      data.moldType = moldCodeRecord.moldType;
-      data.moldName = moldCodeRecord.moldName;
-      data.typeCode = moldCodeRecord.typeCode;
-      data.typeName = moldCodeRecord.typeName;
-    }
-
-    if (dto.phoneName !== undefined && dto.phoneName !== existing.phoneName) {
-      const phoneModel = await this.phoneModelsService.findByPhoneNameOrCreate(
-        null,
-        dto.phoneName,
-      );
-      data.phoneName = phoneModel.phoneName;
-      data.phoneCode = phoneModel.phoneCode;
-    }
-
-    // 重新计算 itemCode
-    const moldCodeForItem = (data.moldCode as string) ?? existing.moldCode;
-    const phoneCodeForItem = (data.phoneCode as string) ?? existing.phoneCode;
-    data.itemCode = (moldCodeForItem + phoneCodeForItem).toUpperCase();
-
     try {
-      return await this.prisma.mold.update({ where: { id }, data });
+      return await this.prisma.$transaction(async (tx) => {
+        const existing = await tx.mold.findUnique({ where: { id } });
+        if (!existing) throw new NotFoundException('模具不存在');
+
+        const data: Record<string, unknown> = {};
+
+        if (dto.moldCode !== undefined && dto.moldCode !== existing.moldCode) {
+          const moldCodeRecord = await tx.moldCode.findUnique({
+            where: { moldCode: dto.moldCode },
+          });
+          if (!moldCodeRecord) {
+            throw new NotFoundException(`模具编码 ${dto.moldCode} 不存在`);
+          }
+          data.moldCode = moldCodeRecord.moldCode;
+          data.moldType = moldCodeRecord.moldType;
+          data.moldName = moldCodeRecord.moldName;
+          data.typeCode = moldCodeRecord.typeCode;
+          data.typeName = moldCodeRecord.typeName;
+        }
+
+        if (dto.phoneName !== undefined && dto.phoneName !== existing.phoneName) {
+          const phoneModel = await this.phoneModelsService.findByPhoneNameOrCreate(
+            tx,
+            dto.phoneName,
+          );
+          data.phoneName = phoneModel.phoneName;
+          data.phoneCode = phoneModel.phoneCode;
+        }
+
+        // 重新计算 itemCode
+        const moldCodeForItem = (data.moldCode as string) ?? existing.moldCode;
+        const phoneCodeForItem = (data.phoneCode as string) ?? existing.phoneCode;
+        data.itemCode = (moldCodeForItem + phoneCodeForItem).toUpperCase();
+
+        return tx.mold.update({ where: { id }, data });
+      });
     } catch (e) {
+      if (e instanceof NotFoundException) throw e;
       handlePrismaError(e, '模具');
     }
   }
