@@ -2,6 +2,7 @@
 import { computed, nextTick, reactive, ref, watch } from 'vue';
 import type { FormInst, FormRules } from 'naive-ui';
 import { NButton, NDrawer, NDrawerContent, NForm, NFormItem, NInput, NSelect, NSpace } from 'naive-ui';
+import { REG_USER_NAME } from '@/constants/reg';
 import { fetchCreateUser, fetchUpdateUser } from '@/service/api';
 import { $t } from '@/locales';
 
@@ -48,6 +49,20 @@ const rules = computed<FormRules>(() => ({
       required: true,
       message: $t('form.userName.required'),
       trigger: 'blur'
+    },
+    {
+      validator: (_rule, value: string) => {
+        if (props.type === 'edit' && props.rowData && value === props.rowData.userName) {
+          return true;
+        }
+
+        if (!value || REG_USER_NAME.test(value)) {
+          return true;
+        }
+
+        return new Error($t('form.userName.invalid'));
+      },
+      trigger: ['input', 'blur']
     }
   ],
   password:
