@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  ForbiddenException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
@@ -21,6 +25,10 @@ export class AuthService {
     });
     if (!user) {
       throw new UnauthorizedException('用户名或密码错误');
+    }
+
+    if (user.status === '2') {
+      throw new ForbiddenException('账号已禁用，请联系管理员');
     }
 
     const isPasswordValid = await bcrypt.compare(dto.password, user.password);
