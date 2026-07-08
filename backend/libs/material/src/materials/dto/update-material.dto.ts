@@ -13,8 +13,8 @@ export class UpdateMaterialDto {
 
   @IsString()
   @IsOptional()
-  @MaxLength(50)
-  code?: string;
+  @MaxLength(10)
+  codePrefix?: string;
 
   @IsString()
   @IsOptional()

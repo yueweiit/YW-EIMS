@@ -133,7 +133,7 @@ watch(visible, val => {
 
 async function loadColorList() {
   try {
-    const { data, error } = await fetchColorPage({ current: 1, size: 1000 });
+    const { data, error } = await fetchColorPage({ current: 1, size: 100 });
     if (!error && data) {
       colorList.value = data.records;
     }

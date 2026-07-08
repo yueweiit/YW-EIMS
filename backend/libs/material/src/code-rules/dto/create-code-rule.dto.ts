@@ -1,4 +1,5 @@
-import { IsString, IsNotEmpty, MaxLength } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsInt, Min, Max, MaxLength } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateCodeRuleDto {
   @IsString()
@@ -10,4 +11,11 @@ export class CreateCodeRuleDto {
   @IsNotEmpty()
   @MaxLength(100)
   explainContent: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(10)
+  @Type(() => Number)
+  prefixLength?: number;
 }

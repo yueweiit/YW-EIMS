@@ -51,8 +51,8 @@ declare namespace Api {
       applicant: string;
       /** material name */
       materialName: string;
-      /** material code */
-      code?: string;
+      /** code prefix */
+      codePrefix: string;
       /** unit */
       unit?: string;
       /** specifications */
@@ -69,8 +69,15 @@ declare namespace Api {
       specifications?: string;
       /** unit */
       unit?: string;
-      /** material code */
-      code?: string;
+      /** code prefix */
+      codePrefix?: string;
+    }
+
+    /** import result */
+    interface ImportResult {
+      success: number;
+      failed: number;
+      errors: string[];
     }
   }
 }

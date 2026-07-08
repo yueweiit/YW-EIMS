@@ -91,7 +91,7 @@ watch(visible, val => {
 
 async function loadMoldCodeOptions() {
   try {
-    const { data, error } = await fetchMoldCodePage({ current: 1, size: 1000 });
+    const { data, error } = await fetchMoldCodePage({ current: 1, size: 100 });
     if (!error && data) {
       moldCodeOptions.value = data.records.map(item => ({
         label: `${item.moldCode} - ${item.moldName}`,

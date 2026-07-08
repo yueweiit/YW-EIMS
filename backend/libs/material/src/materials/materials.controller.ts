@@ -13,6 +13,7 @@ import { MaterialsService } from './materials.service';
 import { CreateMaterialDto } from './dto/create-material.dto';
 import { UpdateMaterialDto } from './dto/update-material.dto';
 import { QueryMaterialDto } from './dto/query-material.dto';
+import { ImportMaterialDto } from './dto/import-material.dto';
 
 @Controller('material')
 export class MaterialsController {
@@ -26,6 +27,11 @@ export class MaterialsController {
   @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id: number) {
     return this.materialsService.findOne(id);
+  }
+
+  @Post('import')
+  async import(@Body() dto: ImportMaterialDto) {
+    return this.materialsService.batchCreate(dto.rows);
   }
 
   @Post()

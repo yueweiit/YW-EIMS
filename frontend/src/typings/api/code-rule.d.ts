@@ -11,6 +11,8 @@ declare namespace Api {
       codePrefix: string;
       /** explain content */
       explainContent: string;
+      /** prefix length for code generation (null = use full prefix) */
+      prefixLength: number | null;
     }
 
     /** query params of code rule page */
@@ -27,12 +29,16 @@ declare namespace Api {
       codePrefix: string;
       /** explain content */
       explainContent: string;
+      /** prefix length for code generation */
+      prefixLength?: number;
     }
 
     /** update code rule params */
     interface UpdateParams {
       /** explain content */
       explainContent?: string;
+      /** prefix length for code generation */
+      prefixLength?: number;
     }
   }
 }

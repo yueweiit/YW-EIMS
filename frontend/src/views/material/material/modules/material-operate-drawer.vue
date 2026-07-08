@@ -2,7 +2,7 @@
 import { computed, nextTick, reactive, ref, watch } from 'vue';
 import type { FormRules } from 'naive-ui';
 import { NButton, NDrawer, NDrawerContent, NForm, NFormItem, NInput, NSelect, NSpace, NText } from 'naive-ui';
-import { fetchCreateMaterial, fetchUnitPage, fetchUpdateMaterial } from '@/service/api';
+import { fetchCreateMaterial, fetchUnitPage, fetchUpdateMaterial, fetchCodeRulePage } from '@/service/api';
 import { useNaiveForm } from '@/hooks/common/form';
 
 defineOptions({
@@ -29,27 +29,25 @@ const visible = defineModel<boolean>('visible', { default: false });
 const { formRef, validate, restoreValidation } = useNaiveForm();
 const loading = ref(false);
 const unitOptions = ref<{ label: string; value: string }[]>([]);
+const prefixOptions = ref<{ label: string; value: string }[]>([]);
 
 const defaultForm: Api.Material.CreateParams & {
   applicationDate?: string | null;
-  codePrefix?: string | null;
   explainContent?: string | null;
   unitCode?: string | null;
 } = {
   applicant: '',
   materialName: '',
-  code: '',
+  codePrefix: undefined,
   unit: undefined,
   specifications: '',
   applicationDate: null,
-  codePrefix: null,
   explainContent: null,
   unitCode: null
 };
 
 const formModel = reactive<Api.Material.CreateParams & {
   applicationDate?: string | null;
-  codePrefix?: string | null;
   explainContent?: string | null;
   unitCode?: string | null;
 }>({ ...defaultForm });
@@ -81,11 +79,11 @@ const rules = computed<FormRules>(() => ({
       trigger: 'blur'
     }
   ],
-  code: [
+  codePrefix: [
     {
-      max: 50,
-      message: '物料编码长度不能超过50个字符',
-      trigger: 'blur'
+      required: true,
+      message: '请选择编码前缀',
+      trigger: 'change'
     }
   ],
   specifications: [
@@ -108,11 +106,10 @@ function setFormFromRow(row: Api.Material.MaterialRecord) {
   Object.assign(formModel, {
     applicant: row.applicant,
     materialName: row.materialName,
-    code: row.code || '',
+    codePrefix: row.codePrefix || undefined,
     unit: row.unit || undefined,
     specifications: row.specifications || '',
     applicationDate: row.applicationDate,
-    codePrefix: row.codePrefix,
     explainContent: row.explainContent,
     unitCode: row.unitCode
   });
@@ -132,7 +129,7 @@ watch(visible, val => {
 });
 
 async function loadUnitOptions() {
-  const { data, error } = await fetchUnitPage({ current: 1, size: 1000 });
+  const { data, error } = await fetchUnitPage({ current: 1, size: 100 });
   if (!error && data) {
     unitOptions.value = data.records.map(u => ({
       label: u.unit,
@@ -141,9 +138,22 @@ async function loadUnitOptions() {
   }
 }
 
+async function loadPrefixOptions() {
+  const { data, error } = await fetchCodeRulePage({ current: 1, size: 100 });
+  if (!error && data) {
+    prefixOptions.value = data.records.map(r => {
+      const effectivePrefix = r.prefixLength ? r.codePrefix.substring(0, r.prefixLength) : r.codePrefix;
+      return {
+        label: `${effectivePrefix} - ${r.explainContent}`,
+        value: r.codePrefix
+      };
+    });
+  }
+}
+
 function getSubmitBody() {
-  const { applicant, materialName, code, unit, specifications } = formModel;
-  return { applicant, materialName, code, unit, specifications };
+  const { applicant, materialName, codePrefix, unit, specifications } = formModel;
+  return { applicant, materialName, codePrefix, unit, specifications };
 }
 
 async function handleSubmit() {
@@ -173,6 +183,7 @@ async function handleSubmit() {
 }
 
 loadUnitOptions();
+loadPrefixOptions();
 </script>
 
 <template>
@@ -187,8 +198,12 @@ loadUnitOptions();
           <NInput v-model:value="formModel.materialName" placeholder="请输入物料名称" />
         </NFormItem>
 
-        <NFormItem label="物料编码" path="code">
-          <NInput v-model:value="formModel.code" placeholder="请输入物料编码" />
+        <NFormItem label="编码前缀" path="codePrefix">
+          <NSelect
+            v-model:value="formModel.codePrefix"
+            :options="prefixOptions"
+            placeholder="请选择编码前缀"
+          />
         </NFormItem>
 
         <NFormItem label="单位" path="unit">
@@ -211,10 +226,6 @@ loadUnitOptions();
         <template v-if="props.type === 'edit'">
           <NFormItem label="申请日期">
             <NText>{{ formModel.applicationDate || '-' }}</NText>
-          </NFormItem>
-
-          <NFormItem label="编码前缀">
-            <NText>{{ formModel.codePrefix || '-' }}</NText>
           </NFormItem>
 
           <NFormItem label="前缀说明">

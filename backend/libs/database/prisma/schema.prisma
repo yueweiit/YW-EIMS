@@ -61,8 +61,9 @@ model Unit {
 
 /// 编码前缀字典表（存储字母前缀及对应含义）
 model MaterialCodeRule {
-  codePrefix     String @id @map("code_prefix") @db.VarChar(10)
-  explainContent String @map("explain_content") @db.VarChar(100)
+  codePrefix     String  @id @map("code_prefix") @db.VarChar(10)
+  explainContent String  @map("explain_content") @db.VarChar(100)
+  prefixLength   Int?    @map("prefix_length")
 
   @@map("material_code_rules")
   @@schema("material")

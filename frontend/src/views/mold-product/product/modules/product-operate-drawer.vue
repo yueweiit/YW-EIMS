@@ -91,7 +91,7 @@ watch(visible, val => {
 
 async function loadProductTypeOptions() {
   try {
-    const { data, error } = await fetchProductCodePage({ current: 1, size: 1000 });
+    const { data, error } = await fetchProductCodePage({ current: 1, size: 100 });
     if (!error && data) {
       // 按 productType 去重
       const seen = new Set<string>();

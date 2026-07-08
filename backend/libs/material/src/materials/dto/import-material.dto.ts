@@ -1,6 +1,7 @@
-import { IsString, IsNotEmpty, IsOptional, MaxLength } from 'class-validator';
+import { IsArray, ValidateNested, IsString, IsNotEmpty, IsOptional, MaxLength } from 'class-validator';
+import { Type } from 'class-transformer';
 
-export class CreateMaterialDto {
+export class ImportMaterialRowDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(50)
@@ -25,4 +26,11 @@ export class CreateMaterialDto {
   @IsOptional()
   @MaxLength(1000)
   specifications?: string;
+}
+
+export class ImportMaterialDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ImportMaterialRowDto)
+  rows: ImportMaterialRowDto[];
 }

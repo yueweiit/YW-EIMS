@@ -51,6 +51,13 @@ const columns: DataTableColumns<Api.CodeRule.CodeRuleRecord> = [
     render: row => row.explainContent || '-'
   },
   {
+    key: 'prefixLength',
+    title: '编码位数',
+    width: 100,
+    align: 'center',
+    render: row => row.prefixLength ?? '完整前缀'
+  },
+  {
     key: 'operate',
     title: $t('common.operate'),
     width: 160,

@@ -99,7 +99,7 @@ const rules = computed<FormRules>(() => ({
 
 async function loadMaterialOptions() {
   try {
-    const { data, error } = await fetchMoldMaterialPage({ current: 1, size: 1000 });
+    const { data, error } = await fetchMoldMaterialPage({ current: 1, size: 100 });
     if (!error && data) {
       materialOptions.value = data.records.map(item => ({
         label: item.typeName,

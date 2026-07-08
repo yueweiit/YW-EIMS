@@ -1,9 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '@eims/database';
 import { CreateMaterialDto } from './dto/create-material.dto';
 import { UpdateMaterialDto } from './dto/update-material.dto';
 import { QueryMaterialDto } from './dto/query-material.dto';
+import type { ImportMaterialRowDto } from './dto/import-material.dto';
 
 @Injectable()
 export class MaterialsService {
@@ -54,13 +55,14 @@ export class MaterialsService {
   }
 
   async create(dto: CreateMaterialDto) {
-    const codePrefix = dto.code
-      ? (/^[A-Za-z]+/.exec(dto.code)?.[0]?.toUpperCase() ?? null)
-      : null;
-    const rule = codePrefix
-      ? await this.prisma.materialCodeRule.findUnique({ where: { codePrefix } })
-      : null;
-    const explainContent = rule?.explainContent ?? '未定义前缀说明';
+    const codePrefix = dto.codePrefix.toUpperCase();
+    const rule = await this.prisma.materialCodeRule.findUnique({ where: { codePrefix } });
+    if (!rule) throw new NotFoundException(`编码前缀 ${codePrefix} 不存在`);
+    const explainContent = rule.explainContent;
+    const codeKey = rule.prefixLength
+      ? codePrefix.substring(0, rule.prefixLength)
+      : codePrefix;
+    const code = await this.generateCode(codeKey);
     const unitRecord = dto.unit
       ? await this.prisma.unit.findFirst({ where: { unit: dto.unit } })
       : null;
@@ -70,7 +72,7 @@ export class MaterialsService {
       data: {
         applicant: dto.applicant,
         materialName: dto.materialName,
-        code: dto.code,
+        code,
         unit: dto.unit,
         specifications: dto.specifications,
         codePrefix,
@@ -87,7 +89,6 @@ export class MaterialsService {
     const data: Prisma.MaterialUncheckedUpdateInput = {
       applicant: dto.applicant,
       materialName: dto.materialName,
-      code: dto.code,
       unit: dto.unit,
       specifications: dto.specifications,
     };
@@ -97,14 +98,17 @@ export class MaterialsService {
       if (data[k] === undefined) delete data[k];
     }
 
-    if (dto.code) {
-      data.codePrefix = /^[A-Za-z]+/.exec(dto.code)?.[0]?.toUpperCase() ?? null;
-      const rule = data.codePrefix
-        ? await this.prisma.materialCodeRule.findUnique({
-            where: { codePrefix: data.codePrefix },
-          })
-        : null;
-      data.explainContent = rule?.explainContent ?? '未定义前缀说明';
+    if (dto.codePrefix) {
+      data.codePrefix = dto.codePrefix.toUpperCase();
+      const rule = await this.prisma.materialCodeRule.findUnique({
+        where: { codePrefix: data.codePrefix },
+      });
+      if (!rule) throw new NotFoundException(`编码前缀 ${data.codePrefix} 不存在`);
+      data.explainContent = rule.explainContent;
+      const codeKey = rule.prefixLength
+        ? data.codePrefix.substring(0, rule.prefixLength)
+        : data.codePrefix;
+      data.code = await this.generateCode(codeKey);
     }
 
     if (dto.unit) {
@@ -130,6 +134,73 @@ export class MaterialsService {
     const currentNum = parseInt(latest.code.slice(prefix.length), 10);
     const nextNum = currentNum + 1;
     return `${prefix}${String(nextNum).padStart(6, '0')}`;
+  }
+
+  async batchCreate(rows: ImportMaterialRowDto[]) {
+    if (!rows.length) throw new BadRequestException('导入数据不能为空');
+
+    const rules = await this.prisma.materialCodeRule.findMany();
+    const ruleMap = new Map(rules.map(r => [r.codePrefix, r]));
+
+    const units = await this.prisma.unit.findMany();
+    const unitMap = new Map(units.map(u => [u.unit, u]));
+
+    const errors: string[] = [];
+    const toCreate: {
+      applicant: string;
+      materialName: string;
+      code: string;
+      unit: string | null;
+      specifications: string | null;
+      codePrefix: string;
+      explainContent: string;
+      unitCode: string | null;
+    }[] = [];
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      const line = i + 2;
+      const prefix = row.codePrefix.toUpperCase();
+      const rule = ruleMap.get(prefix);
+
+      if (!rule) {
+        errors.push(`第${line}行: 编码前缀 "${row.codePrefix}" 不存在`);
+        continue;
+      }
+
+      const codeKey = rule.prefixLength
+        ? prefix.substring(0, rule.prefixLength)
+        : prefix;
+      const code = await this.generateCode(codeKey);
+
+      const unitRecord = row.unit ? unitMap.get(row.unit) : null;
+      if (row.unit && !unitRecord) {
+        errors.push(`第${line}行: 单位 "${row.unit}" 不存在，已跳过单位`);
+      }
+
+      toCreate.push({
+        applicant: row.applicant,
+        materialName: row.materialName,
+        code,
+        unit: row.unit || null,
+        specifications: row.specifications || null,
+        codePrefix: prefix,
+        explainContent: rule.explainContent,
+        unitCode: unitRecord?.unitCode ?? null,
+      });
+    }
+
+    if (toCreate.length > 0) {
+      await this.prisma.$transaction(
+        toCreate.map(data => this.prisma.material.create({ data }))
+      );
+    }
+
+    return {
+      success: toCreate.length,
+      failed: errors.length,
+      errors,
+    };
   }
 
   async remove(id: number) {

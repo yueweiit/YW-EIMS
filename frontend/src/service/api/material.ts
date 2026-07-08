@@ -42,3 +42,12 @@ export function fetchGetMaterial(id: number) {
     method: 'get'
   });
 }
+
+/** import materials from excel */
+export function fetchImportMaterials(data: Api.Material.CreateParams[]) {
+  return request<Api.Material.ImportResult>({
+    url: '/material/import',
+    method: 'post',
+    data
+  });
+}
