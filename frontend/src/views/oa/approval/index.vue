@@ -102,6 +102,9 @@ function handleKeydown(e: KeyboardEvent) {
         <NButton type="primary" :loading="loading" @click="handleSearch">
           {{ $t('page.oa.approval.search') }}
         </NButton>
+        <NButton v-if="detail" type="primary" @click="handlePushToErp">
+          {{ $t('page.oa.approval.pushToErp') }}
+        </NButton>
       </NSpace>
     </NCard>
 
@@ -169,14 +172,6 @@ function handleKeydown(e: KeyboardEvent) {
         </NTimeline>
       </NCard>
 
-      <!-- Push button -->
-      <NCard :bordered="false">
-        <NSpace justify="end">
-          <NButton type="primary" @click="handlePushToErp">
-            {{ $t('page.oa.approval.pushToErp') }}
-          </NButton>
-        </NSpace>
-      </NCard>
     </template>
 
     <!-- ERP Sync Drawer -->

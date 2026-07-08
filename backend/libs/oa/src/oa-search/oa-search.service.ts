@@ -27,20 +27,28 @@ export class OaSearchService {
   }
 
   async searchSupplier(keyword: string) {
-    if (!keyword) return [];
+    if (keyword) {
+      return this.prisma.erpSupplier.findMany({
+        where: {
+          OR: [
+            { code: { contains: keyword } },
+            { name: { contains: keyword } },
+          ],
+        },
+        select: {
+          code: true,
+          name: true,
+        },
+        take: 10,
+      });
+    }
 
     return this.prisma.erpSupplier.findMany({
-      where: {
-        OR: [
-          { code: { contains: keyword } },
-          { name: { contains: keyword } },
-        ],
-      },
       select: {
         code: true,
         name: true,
       },
-      take: 10,
+      take: 20,
     });
   }
 

@@ -61,10 +61,10 @@ watch(visible, val => {
 });
 
 async function handleSupplierSearch(query: string) {
-  if (!query.trim()) return;
+  if (!query.trim() && supplierOptions.value.length) return;
   supplierLoading.value = true;
   try {
-    const { data, error } = await fetchSearchSupplier(query);
+    const { data, error } = await fetchSearchSupplier(query || '');
     if (!error && data) {
       supplierOptions.value = data.map((item: any) => ({
         label: `${item.code || item.vendorCode} - ${item.name || item.vendorName}`,
@@ -74,6 +74,12 @@ async function handleSupplierSearch(query: string) {
     }
   } finally {
     supplierLoading.value = false;
+  }
+}
+
+function handleSupplierDropdownOpen(open: boolean) {
+  if (open && supplierOptions.value.length === 0) {
+    handleSupplierSearch('');
   }
 }
 
@@ -140,6 +146,7 @@ async function handleSubmit() {
             :placeholder="$t('page.oa.approval.erpSync.supplierPlaceholder')"
             @search="handleSupplierSearch"
             @update:value="handleSupplierUpdate"
+            @update:show="handleSupplierDropdownOpen"
           />
         </NFormItem>
 
