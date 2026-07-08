@@ -201,6 +201,28 @@ export const generatedRoutes: GeneratedRoute[] = [
     ]
   },
   {
+    name: 'oa',
+    path: '/oa',
+    component: 'layout.base',
+    meta: {
+      title: 'oa',
+      i18nKey: 'route.oa',
+      icon: 'mdi:clipboard-check',
+      order: 5
+    },
+    children: [
+      {
+        name: 'oa_approval',
+        path: '/oa/approval',
+        component: 'view.oa_approval',
+        meta: {
+          title: 'oa_approval',
+          i18nKey: 'route.oa_approval'
+        }
+      }
+    ]
+  },
+  {
     name: 'system',
     path: '/system',
     component: 'layout.base',

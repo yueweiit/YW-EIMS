@@ -182,6 +182,8 @@ const routeMap: RouteMap = {
   "mold-product_phone-model": "/mold-product/phone-model",
   "mold-product_product": "/mold-product/product",
   "mold-product_product-code": "/mold-product/product-code",
+  "oa": "/oa",
+  "oa_approval": "/oa/approval",
   "system": "/system",
   "system_user": "/system/user"
 };

@@ -36,6 +36,8 @@ declare module "@elegant-router/types" {
     "mold-product_phone-model": "/mold-product/phone-model";
     "mold-product_product": "/mold-product/product";
     "mold-product_product-code": "/mold-product/product-code";
+    "oa": "/oa";
+    "oa_approval": "/oa/approval";
     "system": "/system";
     "system_user": "/system/user";
   };
@@ -77,6 +79,7 @@ declare module "@elegant-router/types" {
     | "login"
     | "material"
     | "mold-product"
+    | "oa"
     | "system"
   >;
 
@@ -111,6 +114,7 @@ declare module "@elegant-router/types" {
     | "mold-product_phone-model"
     | "mold-product_product-code"
     | "mold-product_product"
+    | "oa_approval"
     | "system_user"
   >;
 

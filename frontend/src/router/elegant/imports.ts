@@ -32,5 +32,6 @@ export const views: Record<LastLevelRouteKey, RouteComponent | (() => Promise<Ro
   "mold-product_phone-model": () => import("@/views/mold-product/phone-model/index.vue"),
   "mold-product_product-code": () => import("@/views/mold-product/product-code/index.vue"),
   "mold-product_product": () => import("@/views/mold-product/product/index.vue"),
+  oa_approval: () => import("@/views/oa/approval/index.vue"),
   system_user: () => import("@/views/system/user/index.vue"),
 };

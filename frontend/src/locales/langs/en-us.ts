@@ -244,7 +244,9 @@ const local: App.I18n.Schema = {
     'mold-product_mold-code': 'Mold Codes',
     'mold-product_mold': 'Molds',
     'mold-product_product-code': 'Product Codes',
-    'mold-product_product': 'Products'
+    'mold-product_product': 'Products',
+    oa: 'OA Management',
+    oa_approval: 'OA Approval'
   },
   page: {
     login: {
@@ -321,6 +323,41 @@ const local: App.I18n.Schema = {
         desc5: 'Soybean just wrote some of the workbench pages casually, and it was enough to see!'
       },
       creativity: 'Creativity'
+    },
+    oa: {
+      approval: {
+        searchPlaceholder: 'Enter OA approval code',
+        search: 'Search',
+        basicInfo: 'Basic Info',
+        formFields: 'Form Fields',
+        timeline: 'Approval Timeline',
+        pushToErp: 'Push to ERP',
+        noResult: 'No approval record found',
+        formName: 'Form Name',
+        approvalCode: 'Approval Code',
+        approvalStatus: 'Status',
+        creator: 'Creator',
+        creatorDept: 'Department',
+        createTime: 'Create Time',
+        ccList: 'CC',
+        viewInDingtalk: 'View in DingTalk',
+        erpSync: {
+          title: 'Push to ERP',
+          org: 'Organization',
+          orgPlaceholder: 'Select organization',
+          supplier: 'Supplier',
+          supplierPlaceholder: 'Search supplier',
+          docDate: 'Document Date',
+          docDatePlaceholder: 'Select document date',
+          oaCode: 'OA Code',
+          waybill: 'Waybill',
+          waybillPlaceholder: 'Enter waybill number',
+          remark: 'Remark',
+          remarkPlaceholder: 'Enter remark',
+          pushSuccess: 'Push successful',
+          pushFailed: 'Push failed'
+        }
+      }
     }
   },
   form: {

@@ -240,7 +240,9 @@ const local: App.I18n.Schema = {
     'mold-product_mold-code': '模具编码',
     'mold-product_mold': '模具管理',
     'mold-product_product-code': '产品编码',
-    'mold-product_product': '产品管理'
+    'mold-product_product': '产品管理',
+    oa: 'OA管理',
+    oa_approval: 'OA审批查询'
   },
   page: {
     login: {
@@ -317,6 +319,41 @@ const local: App.I18n.Schema = {
         desc5: 'Soybean 刚才把工作台页面随便写了一些，凑合能看了！'
       },
       creativity: '创意'
+    },
+    oa: {
+      approval: {
+        searchPlaceholder: '请输入OA审批编号',
+        search: '查询',
+        basicInfo: '基本信息',
+        formFields: '表单字段',
+        timeline: '审批流程',
+        pushToErp: '推送到ERP',
+        noResult: '未找到审批记录',
+        formName: '表单名称',
+        approvalCode: '审批编号',
+        approvalStatus: '审批状态',
+        creator: '创建人',
+        creatorDept: '创建人部门',
+        createTime: '创建时间',
+        ccList: '抄送人',
+        viewInDingtalk: '在钉钉中查看',
+        erpSync: {
+          title: '推送到ERP',
+          org: '组织',
+          orgPlaceholder: '请选择组织',
+          supplier: '供应商',
+          supplierPlaceholder: '搜索供应商',
+          docDate: '凭证日期',
+          docDatePlaceholder: '请选择凭证日期',
+          oaCode: 'OA编号',
+          waybill: '运单号',
+          waybillPlaceholder: '请输入运单号',
+          remark: '备注',
+          remarkPlaceholder: '请输入备注',
+          pushSuccess: '推送成功',
+          pushFailed: '推送失败'
+        }
+      }
     }
   },
   form: {
