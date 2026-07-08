@@ -135,7 +135,7 @@ export async function generateBoxLabelPdf(products: BoxLabel.ProductData[]): Pro
               stack: [
                 { text: product.dateBatchEnglishName || '-', font: FONT, fontSize: 32, bold: true, margin: [0, 0, 0, 20] },
                 { text: `MODEL 型号：${product.modelCode || '-'}`, font: FONT, fontSize: 20, margin: [0, 6, 0, 6] },
-                { text: `Especificaciones 规格：${product.specification || '-'}`, font: FONT, fontSize: 20, margin: [0, 6, 0, 6] },
+                { text: `Especificaciones 规格/颜色：${product.specification || '-'}`, font: FONT, fontSize: 20, margin: [0, 6, 0, 6] },
                 { text: `QTY 数量：${product.quantity || '-'} PIEZA`, font: FONT, fontSize: 20, margin: [0, 6, 0, 6] },
                 { text: `GW 毛重：${product.weightKg || '-'} KG`, font: FONT, fontSize: 20, margin: [0, 6, 0, 6] },
                 { text: `#NO 箱号：${product.boxNo || '-'}`, font: FONT, fontSize: 20, margin: [0, 6, 0, 0] }

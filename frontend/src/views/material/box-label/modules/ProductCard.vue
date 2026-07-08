@@ -52,10 +52,10 @@ function handleDelete() {
           </NFormItem>
         </NGi>
         <NGi>
-          <NFormItem label="规格">
+          <NFormItem label="规格/颜色">
             <NInput
               :value="product.specification"
-              placeholder="请输入规格"
+              placeholder="请输入规格/颜色"
               @update:value="val => updateField('specification', val)"
             />
           </NFormItem>

@@ -3,9 +3,11 @@ import { ref } from 'vue';
 import { NButton, NCard, NSpace } from 'naive-ui';
 import ProductCard from './modules/ProductCard.vue';
 import { generateBoxLabelPdf } from './modules/pdf-generator';
+import { parseExcelFile, downloadTemplate } from './modules/excel-importer';
 
 defineOptions({ name: 'BoxLabel' });
 
+const fileInputRef = ref<HTMLInputElement | null>(null);
 const products = ref<BoxLabel.ProductData[]>([createEmptyProduct()]);
 
 function createEmptyProduct(): BoxLabel.ProductData {
@@ -37,6 +39,27 @@ function updateProduct(index: number, value: BoxLabel.ProductData) {
 function handleGeneratePdf() {
   generateBoxLabelPdf(products.value);
 }
+
+function triggerFileInput() {
+  fileInputRef.value?.click();
+}
+
+async function handleFileChange(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
+
+  try {
+    const result = await parseExcelFile(file);
+    products.value = result.products;
+    window.$message?.success(`成功导入 ${result.products.length} 条产品数据`);
+  } catch (err) {
+    window.$message?.error(err instanceof Error ? err.message : '导入失败');
+  } finally {
+    // Reset input so the same file can be re-imported
+    input.value = '';
+  }
+}
 </script>
 
 <template>
@@ -61,6 +84,19 @@ function handleGeneratePdf() {
 
       <!-- Bottom Action Area -->
       <NSpace justify="center" class="action-area">
+        <input
+          ref="fileInputRef"
+          type="file"
+          accept=".xlsx,.xls,.csv"
+          style="display: none"
+          @change="handleFileChange"
+        />
+        <NButton type="info" ghost @click="triggerFileInput">
+          📥 导入 Excel
+        </NButton>
+        <NButton type="default" ghost @click="downloadTemplate">
+          📄 下载模板
+        </NButton>
         <NButton type="primary" ghost @click="addProduct">
           + 添加更多产品
         </NButton>
