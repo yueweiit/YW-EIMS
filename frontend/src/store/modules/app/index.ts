@@ -21,7 +21,7 @@ export const useAppStore = defineStore(SetupStoreId.App, () => {
   const { bool: reloadFlag, setBool: setReloadFlag } = useBoolean(true);
   const { bool: fullContent, toggle: toggleFullContent } = useBoolean();
   const { bool: contentXScrollable, setBool: setContentXScrollable } = useBoolean();
-  const { bool: siderCollapse, setBool: setSiderCollapse, toggle: toggleSiderCollapse } = useBoolean();
+  const { bool: siderCollapse, setBool: setSiderCollapse, toggle: toggleSiderCollapse } = useBoolean(true);
   const {
     bool: mixSiderFixed,
     setBool: setMixSiderFixed,

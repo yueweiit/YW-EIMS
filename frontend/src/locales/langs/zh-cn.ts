@@ -318,7 +318,18 @@ const local: App.I18n.Schema = {
         desc4: 'Soybean 正在忙于为soybean-admin写项目说明文档！',
         desc5: 'Soybean 刚才把工作台页面随便写了一些，凑合能看了！'
       },
-      creativity: '创意'
+      creativity: '创意',
+      internalModules: '内部功能',
+      subModules: '个子模块',
+      externalSystemsTitle: '外部系统',
+      openInNewWindow: '新窗口打开',
+      externalSystems: {
+        budget: '预算系统',
+        erp: 'ERP系统',
+        mes: 'MES系统',
+        crm: 'CRM系统',
+        lemos: 'lemos系统'
+      }
     },
     oa: {
       approval: {

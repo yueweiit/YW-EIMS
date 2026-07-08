@@ -322,7 +322,18 @@ const local: App.I18n.Schema = {
         desc4: 'Soybean is busy writing project documentation for soybean-admin!',
         desc5: 'Soybean just wrote some of the workbench pages casually, and it was enough to see!'
       },
-      creativity: 'Creativity'
+      creativity: 'Creativity',
+      internalModules: 'Internal Modules',
+      subModules: 'sub-modules',
+      externalSystemsTitle: 'External Systems',
+      openInNewWindow: 'Open in new window',
+      externalSystems: {
+        budget: 'Budget System',
+        erp: 'ERP System',
+        mes: 'MES System',
+        crm: 'CRM System',
+        lemos: 'lemos System'
+      }
     },
     oa: {
       approval: {
