@@ -6,7 +6,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  schemas  = ["public", "material", "mold"]
+  schemas  = ["public", "material", "mold", "oa"]
 }
 
 model User {
@@ -177,4 +177,83 @@ model Product {
   @@index([colorCode])
   @@map("products")
   @@schema("mold")
+}
+
+// ============ OA SCHEMA ============
+
+/// OA审批编号与钉钉实例ID映射缓存表
+model OaMapping {
+  oaCode          String    @id @map("oa_code") @db.VarChar(100)
+  instanceId      String    @map("instance_id") @db.VarChar(100)
+  processCode     String?   @map("process_code") @db.VarChar(100)
+  formName        String?   @map("form_name") @db.VarChar(255)
+  dingCreateTime  DateTime? @map("ding_create_time")
+  updateTime      DateTime? @default(now()) @map("update_time") @db.Timestamp()
+
+  @@map("oa_mapping")
+  @@schema("oa")
+}
+
+/// 钉钉员工表
+model DingEmployee {
+  dingUserid String  @id @map("ding_userid") @db.VarChar(100)
+  empName    String? @map("emp_name") @db.VarChar(200)
+  deptId     Int?    @map("dept_id")
+  title      String? @db.VarChar(200)
+  isBoss     String? @map("is_boss") @db.VarChar(10)
+
+  @@map("ding_employee")
+  @@schema("oa")
+}
+
+/// 钉钉部门表
+model DingDepartment {
+  deptId        Int     @id @map("dept_id")
+  deptName      String? @map("dept_name") @db.VarChar(200)
+  parentDeptId  Int?    @map("parent_dept_id")
+
+  @@map("ding_department")
+  @@schema("oa")
+}
+
+/// ERP供应商缓存表
+model ErpSupplier {
+  code       String    @id @db.VarChar(100)
+  name       String?   @db.VarChar(255)
+  updateTime DateTime? @default(now()) @map("update_time") @db.Timestamp()
+
+  @@map("erp_supplier")
+  @@schema("oa")
+}
+
+/// ERP物料缓存表
+model ErpMaterial {
+  code          String    @id @db.VarChar(100)
+  name          String?   @db.VarChar(255)
+  specification String?   @db.VarChar(500)
+  updateTime    DateTime? @default(now()) @map("update_time") @db.Timestamp()
+
+  @@map("erp_material")
+  @@schema("oa")
+}
+
+/// ERP计量单位缓存表
+model ErpUnit {
+  code       String    @id @db.VarChar(100)
+  name       String?   @db.VarChar(255)
+  updateTime DateTime? @default(now()) @map("update_time") @db.Timestamp()
+
+  @@map("erp_unit")
+  @@schema("oa")
+}
+
+/// ERP税率缓存表
+model ErpTax {
+  code       String    @id @db.VarChar(100)
+  name       String?   @db.VarChar(255)
+  rateValue  Decimal?  @map("rate_value") @db.Decimal(10, 4)
+  updateTime DateTime? @default(now()) @map("update_time") @db.Timestamp()
+
+  @@map("erp_tax")
+  @@schema("oa")
 }

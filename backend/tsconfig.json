@@ -34,7 +34,9 @@
       "@eims/material": ["libs/material/src"],
       "@eims/material/*": ["libs/material/src/*"],
       "@eims/mold-product": ["libs/mold-product/src"],
-      "@eims/mold-product/*": ["libs/mold-product/src/*"]
+      "@eims/mold-product/*": ["libs/mold-product/src/*"],
+      "@eims/oa": ["libs/oa/src"],
+      "@eims/oa/*": ["libs/oa/src/*"]
     }
   }
 }
