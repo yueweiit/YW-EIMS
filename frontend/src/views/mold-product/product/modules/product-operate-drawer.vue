@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, nextTick, reactive, ref, watch } from 'vue';
 import type { FormRules } from 'naive-ui';
-import { NButton, NDrawer, NDrawerContent, NForm, NFormItem, NInput, NSelect, NSpace } from 'naive-ui';
-import { fetchCreateProduct, fetchProductCodePage, fetchUpdateProduct } from '@/service/api';
+import { NButton, NDrawer, NDrawerContent, NForm, NFormItem, NSelect, NSpace } from 'naive-ui';
+import { fetchCreateProduct, fetchPhoneModelPage, fetchProductCodePage, fetchUpdateProduct } from '@/service/api';
 import { useNaiveForm } from '@/hooks/common/form';
 
 defineOptions({
@@ -29,6 +29,11 @@ const visible = defineModel<boolean>('visible', { default: false });
 const { formRef, validate, restoreValidation } = useNaiveForm();
 const loading = ref(false);
 const productTypeOptions = ref<{ label: string; value: string }[]>([]);
+const phoneShortNameOptions = ref<{ label: string; value: string }[]>([]);
+const phoneShortNameLoading = ref(false);
+const phoneShortNamePage = ref(1);
+const phoneShortNameTotal = ref(0);
+const phoneShortNameSearchText = ref('');
 
 const defaultForm: Api.Product.CreateParams = {
   productType: '',
@@ -50,13 +55,8 @@ const rules = computed<FormRules>(() => ({
   phoneShortName: [
     {
       required: true,
-      message: '请输入手机简称',
-      trigger: 'blur'
-    },
-    {
-      max: 100,
-      message: '手机简称长度不能超过100个字符',
-      trigger: 'blur'
+      message: '请选择手机简称',
+      trigger: 'change'
     }
   ]
 }));
@@ -81,6 +81,7 @@ function setFormFromRow(row: Api.Product.ProductRecord) {
 watch(visible, val => {
   if (val) {
     loadProductTypeOptions();
+    loadPhoneShortNameOptions();
     if (props.type === 'edit' && props.rowData) {
       setFormFromRow(props.rowData);
     } else {
@@ -108,6 +109,54 @@ async function loadProductTypeOptions() {
     }
   } catch {
     window.$message?.error('加载产品类型列表失败');
+  }
+}
+
+async function loadPhoneShortNameOptions(searchText = '', reset = true) {
+  if (reset) {
+    phoneShortNamePage.value = 1;
+    phoneShortNameOptions.value = [];
+  }
+  phoneShortNameSearchText.value = searchText;
+  phoneShortNameLoading.value = true;
+  try {
+    const { data, error } = await fetchPhoneModelPage({
+      current: phoneShortNamePage.value,
+      size: 5,
+      phoneName: searchText || undefined
+    });
+    if (!error && data) {
+      const newOptions = data.records
+        .filter(item => item.phoneShortName)
+        .map(item => ({
+          label: item.phoneShortName!,
+          value: item.phoneShortName!
+        }));
+      if (reset) {
+        phoneShortNameOptions.value = newOptions;
+      } else {
+        phoneShortNameOptions.value = [...phoneShortNameOptions.value, ...newOptions];
+      }
+      phoneShortNameTotal.value = data.total;
+    }
+  } catch {
+    window.$message?.error('加载手机型号列表失败');
+  } finally {
+    phoneShortNameLoading.value = false;
+  }
+}
+
+function handlePhoneShortNameSearch(query: string) {
+  loadPhoneShortNameOptions(query, true);
+}
+
+function handlePhoneShortNameScroll(e: Event) {
+  const target = e.target as HTMLElement;
+  if (target.scrollHeight - target.scrollTop - target.clientHeight < 20) {
+    if (phoneShortNameOptions.value.length < phoneShortNameTotal.value) {
+      phoneShortNamePage.value++;
+      loadPhoneShortNameOptions(phoneShortNameSearchText.value, false);
+    }
   }
 }
 
@@ -157,7 +206,17 @@ async function handleSubmit() {
         </NFormItem>
 
         <NFormItem label="手机简称" path="phoneShortName">
-          <NInput v-model:value="formModel.phoneShortName" placeholder="请输入手机简称" />
+          <NSelect
+            v-model:value="formModel.phoneShortName"
+            :options="phoneShortNameOptions"
+            placeholder="请选择手机简称"
+            filterable
+            remote
+            :loading="phoneShortNameLoading"
+            :clearable="true"
+            @search="handlePhoneShortNameSearch"
+            @scroll="handlePhoneShortNameScroll"
+          />
         </NFormItem>
       </NForm>
 
