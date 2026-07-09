@@ -5,6 +5,7 @@ import { PhoneModelsService } from '../phone-models/phone-models.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { QueryProductDto } from './dto/query-product.dto';
+import { ImportProductRowDto } from './dto/import-product.dto';
 import { handlePrismaError } from '../helpers';
 
 @Injectable()
@@ -136,6 +137,37 @@ export class ProductsService {
       if (e instanceof NotFoundException || e instanceof BadRequestException) throw e;
       handlePrismaError(e, '产品');
     }
+  }
+
+  async batchCreate(rows: ImportProductRowDto[]) {
+    if (!rows.length) throw new BadRequestException('导入数据不能为空');
+
+    const errors: string[] = [];
+    const allCreated: Product[] = [];
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      const line = i + 2;
+
+      try {
+        const result = await this.create({
+          productType: row.productType,
+          phoneShortName: row.phoneShortName,
+        });
+        if (Array.isArray(result)) {
+          allCreated.push(...result);
+        }
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        errors.push(`第${line}行: ${msg}`);
+      }
+    }
+
+    return {
+      success: allCreated.length,
+      failed: errors.length,
+      errors,
+    };
   }
 
   async remove(id: number) {

@@ -42,3 +42,12 @@ export function fetchGetProduct(id: number) {
     method: 'get'
   });
 }
+
+/** import products from excel */
+export function fetchImportProducts(data: Api.Product.ImportParams) {
+  return request<{ success: number; failed: number; errors: string[] }>({
+    url: '/mold-product/products/import',
+    method: 'post',
+    data
+  });
+}

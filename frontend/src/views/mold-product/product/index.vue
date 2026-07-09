@@ -3,9 +3,10 @@ import { h, reactive, ref } from 'vue';
 import type { DataTableColumns } from 'naive-ui';
 import { NButton, NCard, NDataTable, NPopconfirm, NSpace, NPagination } from 'naive-ui';
 import { useLoading } from '@sa/hooks';
-import { fetchDeleteProduct, fetchProductPage } from '@/service/api';
+import { fetchDeleteProduct, fetchImportProducts, fetchProductCodePage, fetchProductPage } from '@/service/api';
 import ProductOperateDrawer from './modules/product-operate-drawer.vue';
 import ProductSearch from './modules/product-search.vue';
+import { downloadTemplate, exportProducts, parseExcelFile } from './modules/product-excel-importer';
 
 defineOptions({
   name: 'ProductManage'
@@ -23,6 +24,8 @@ const total = ref(0);
 const drawerVisible = ref(false);
 const drawerType = ref<NaiveUI.TableOperateType>('add');
 const editRow = ref<Api.Product.ProductRecord | null>(null);
+const fileInputRef = ref<HTMLInputElement | null>(null);
+const importing = ref(false);
 
 const columns: DataTableColumns<Api.Product.ProductRecord> = [
   {
@@ -199,6 +202,66 @@ function handlePageSizeChange(size: number) {
 }
 
 getData();
+
+async function handleDownloadTemplate() {
+  try {
+    const { data, error } = await fetchProductCodePage({ current: 1, size: 100 });
+    if (!error && data) {
+      downloadTemplate({
+        productCodes: data.records.map(r => ({
+          productType: r.productType,
+          productCode: r.productCode,
+          productName: r.productName,
+          colorName: r.colorName,
+          colorCode: r.colorCode
+        }))
+      });
+    } else {
+      downloadTemplate();
+    }
+  } catch {
+    downloadTemplate();
+  }
+}
+
+async function handleExport() {
+  const { data, error } = await fetchProductPage({ current: 1, size: 100, ...queryParams });
+  if (!error && data) {
+    exportProducts(data.records);
+    window.$message?.success('导出成功');
+  }
+}
+
+function triggerFileInput() {
+  fileInputRef.value?.click();
+}
+
+async function handleFileChange(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
+
+  importing.value = true;
+  try {
+    const result = await parseExcelFile(file);
+    const { data, error } = await fetchImportProducts({ rows: result.rows });
+    if (!error && data) {
+      let msg = `导入完成：成功 ${data.success} 条`;
+      if (data.failed > 0) {
+        msg += `，失败 ${data.failed} 条`;
+        window.$message?.warning(msg, { duration: 8000, closable: true });
+      } else {
+        window.$message?.success(msg);
+      }
+      getData();
+    }
+  } catch (e) {
+    window.$message?.error(e instanceof Error ? e.message : '导入失败');
+  } finally {
+    importing.value = false;
+    input.value = '';
+  }
+}
 </script>
 
 <template>
@@ -206,9 +269,13 @@ getData();
     <NCard :bordered="false">
       <NSpace justify="space-between" align="center" wrap>
         <ProductSearch v-model:model-value="queryParams" @search="handleSearch" @reset="handleReset" />
-        <NButton type="primary" @click="handleAdd">
-          新增
-        </NButton>
+        <NSpace>
+          <input ref="fileInputRef" type="file" accept=".xlsx,.xls,.csv" style="display: none" @change="handleFileChange" />
+          <NButton type="info" ghost :loading="importing" @click="triggerFileInput">导入 Excel</NButton>
+          <NButton type="default" ghost @click="handleDownloadTemplate">下载模板</NButton>
+          <NButton type="success" ghost @click="handleExport">导出 Excel</NButton>
+          <NButton type="primary" @click="handleAdd">新增</NButton>
+        </NSpace>
       </NSpace>
     </NCard>
 

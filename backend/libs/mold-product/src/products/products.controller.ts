@@ -13,6 +13,7 @@ import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { QueryProductDto } from './dto/query-product.dto';
+import { ImportProductDto } from './dto/import-product.dto';
 
 @Controller('mold-product/products')
 export class ProductsController {
@@ -21,6 +22,11 @@ export class ProductsController {
   @Get('page')
   async findPage(@Query() query: QueryProductDto) {
     return this.productsService.findPage(query);
+  }
+
+  @Post('import')
+  async import(@Body() dto: ImportProductDto) {
+    return this.productsService.batchCreate(dto.rows);
   }
 
   @Get(':id')

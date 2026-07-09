@@ -52,5 +52,11 @@ declare namespace Api {
       /** phone short name */
       phoneShortName?: string;
     }
+
+    /** import product params */
+    interface ImportParams {
+      /** rows to import */
+      rows: { productType: string; phoneShortName: string }[];
+    }
   }
 }
