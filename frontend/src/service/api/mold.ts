@@ -42,3 +42,12 @@ export function fetchGetMold(id: number) {
     method: 'get'
   });
 }
+
+/** import molds from excel */
+export function fetchImportMolds(data: Api.Mold.ImportParams) {
+  return request<{ success: number; failed: number; errors: string[] }>({
+    url: '/mold-product/molds/import',
+    method: 'post',
+    data
+  });
+}

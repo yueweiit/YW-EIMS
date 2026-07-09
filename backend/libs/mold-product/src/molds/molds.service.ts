@@ -1,9 +1,10 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@eims/database';
 import { PhoneModelsService } from '../phone-models/phone-models.service';
 import { CreateMoldDto } from './dto/create-mold.dto';
 import { UpdateMoldDto } from './dto/update-mold.dto';
 import { QueryMoldDto } from './dto/query-mold.dto';
+import { ImportMoldRowDto } from './dto/import-mold.dto';
 import { handlePrismaError } from '../helpers';
 
 @Injectable()
@@ -124,6 +125,76 @@ export class MoldsService {
       if (e instanceof NotFoundException) throw e;
       handlePrismaError(e, '模具');
     }
+  }
+
+  async batchCreate(rows: ImportMoldRowDto[]) {
+    if (!rows.length) throw new BadRequestException('导入数据不能为空');
+
+    const moldCodes = await this.prisma.moldCode.findMany();
+    const moldCodeMap = new Map(moldCodes.map(r => [r.moldCode, r]));
+
+    const errors: string[] = [];
+    const toCreate: {
+      moldType: string;
+      moldName: string;
+      moldCode: string;
+      phoneName: string;
+      phoneCode: string;
+      typeCode: string;
+      typeName: string;
+      itemCode: string;
+    }[] = [];
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      const line = i + 2;
+      const moldCodeRecord = moldCodeMap.get(row.moldCode);
+
+      if (!moldCodeRecord) {
+        errors.push(`第${line}行: 模具编码 "${row.moldCode}" 不存在`);
+        continue;
+      }
+
+      try {
+        const phoneModel = await this.phoneModelsService.findByPhoneNameOrCreate(
+          null,
+          row.phoneName,
+        );
+        const itemCode = (moldCodeRecord.moldCode + phoneModel.phoneCode).toUpperCase();
+
+        // 检查是否已存在相同的 itemCode
+        const existing = await this.prisma.mold.findUnique({ where: { itemCode } });
+        if (existing) {
+          errors.push(`第${line}行: 模具 "${row.moldCode}" + 手机 "${row.phoneName}" 已存在（项目编码: ${itemCode}）`);
+          continue;
+        }
+
+        toCreate.push({
+          moldType: moldCodeRecord.moldType,
+          moldName: moldCodeRecord.moldName,
+          moldCode: moldCodeRecord.moldCode,
+          phoneName: phoneModel.phoneName,
+          phoneCode: phoneModel.phoneCode,
+          typeCode: moldCodeRecord.typeCode,
+          typeName: moldCodeRecord.typeName,
+          itemCode,
+        });
+      } catch {
+        errors.push(`第${line}行: 处理手机名称 "${row.phoneName}" 失败`);
+      }
+    }
+
+    if (toCreate.length > 0) {
+      await this.prisma.$transaction(
+        toCreate.map(data => this.prisma.mold.create({ data }))
+      );
+    }
+
+    return {
+      success: toCreate.length,
+      failed: errors.length,
+      errors,
+    };
   }
 
   async remove(id: number) {

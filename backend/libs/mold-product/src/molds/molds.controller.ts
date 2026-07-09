@@ -13,6 +13,7 @@ import { MoldsService } from './molds.service';
 import { CreateMoldDto } from './dto/create-mold.dto';
 import { UpdateMoldDto } from './dto/update-mold.dto';
 import { QueryMoldDto } from './dto/query-mold.dto';
+import { ImportMoldDto } from './dto/import-mold.dto';
 
 @Controller('mold-product/molds')
 export class MoldsController {
@@ -21,6 +22,11 @@ export class MoldsController {
   @Get('page')
   async findPage(@Query() query: QueryMoldDto) {
     return this.moldsService.findPage(query);
+  }
+
+  @Post('import')
+  async import(@Body() dto: ImportMoldDto) {
+    return this.moldsService.batchCreate(dto.rows);
   }
 
   @Get(':id')

@@ -52,5 +52,11 @@ declare namespace Api {
       /** phone name */
       phoneName?: string;
     }
+
+    /** import mold params */
+    interface ImportParams {
+      /** rows to import */
+      rows: { moldCode: string; phoneName: string }[];
+    }
   }
 }
