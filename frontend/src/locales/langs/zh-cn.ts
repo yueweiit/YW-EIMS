@@ -321,7 +321,7 @@ const local: App.I18n.Schema = {
       creativity: '创意',
       internalModules: '内部功能',
       subModules: '个子模块',
-      externalSystemsTitle: '外部系统',
+      externalSystemsTitle: '系统',
       openInNewWindow: '新窗口打开',
       externalSystems: {
         budget: '预算系统',
