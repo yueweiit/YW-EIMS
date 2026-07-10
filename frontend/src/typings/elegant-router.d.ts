@@ -40,6 +40,7 @@ declare module "@elegant-router/types" {
     "oa_approval": "/oa/approval";
     "oa_box-label": "/oa/box-label";
     "system": "/system";
+    "system_erpnext-sync-log": "/system/erpnext-sync-log";
     "system_user": "/system/user";
   };
 
@@ -117,6 +118,7 @@ declare module "@elegant-router/types" {
     | "mold-product_product"
     | "oa_approval"
     | "oa_box-label"
+    | "system_erpnext-sync-log"
     | "system_user"
   >;
 

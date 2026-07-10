@@ -232,6 +232,7 @@ const local: App.I18n.Schema = {
     home: 'Home',
     system: 'System',
     system_user: 'User Management',
+    'system_erpnext-sync-log': 'ERPNext Sync Log',
     material: 'Material Management',
     material_material: 'Materials',
     material_unit: 'Units',

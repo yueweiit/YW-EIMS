@@ -228,6 +228,7 @@ const local: App.I18n.Schema = {
     home: '首页',
     system: '系统管理',
     system_user: '用户管理',
+    'system_erpnext-sync-log': 'ERPNext同步日志',
     material: '物料管理',
     material_material: '物料主数据',
     material_unit: '单位管理',

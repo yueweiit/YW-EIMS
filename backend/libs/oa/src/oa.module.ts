@@ -13,10 +13,12 @@ import { DingtalkSyncService } from './dingtalk-sync/dingtalk-sync.service';
 import { ErpNextService } from './erpnext/erpnext.service';
 import { ErpNextMappingController } from './erpnext-mapping/erpnext-mapping.controller';
 import { ErpNextMappingService } from './erpnext-mapping/erpnext-mapping.service';
+import { ErpNextSyncLogController } from './erpnext-sync-log/erpnext-sync-log.controller';
+import { ErpNextSyncLogService } from './erpnext-sync-log/erpnext-sync-log.service';
 
 @Module({
   imports: [HttpModule],
-  controllers: [OaApprovalController, OaSearchController, ErpNextMappingController],
+  controllers: [OaApprovalController, OaSearchController, ErpNextMappingController, ErpNextSyncLogController],
   providers: [
     DingTalkService,
     ErpService,
@@ -28,6 +30,7 @@ import { ErpNextMappingService } from './erpnext-mapping/erpnext-mapping.service
     DingtalkOaDbService,
     DingtalkSyncService,
     ErpNextMappingService,
+    ErpNextSyncLogService,
   ],
   exports: [DingTalkService, ErpService, ErpNextService, OaApprovalService, OaSearchService],
 })

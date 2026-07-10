@@ -271,3 +271,26 @@ model ErpNextMapping {
   @@map("erp_next_mappings")
   @@schema("oa")
 }
+
+/// ERPNext 同步日志表
+model ErpNextSyncLog {
+  id             Int       @id @default(autoincrement())
+  entityType     String    @map("entity_type") @db.VarChar(20)
+  entityCode     String    @map("entity_code") @db.VarChar(100)
+  entityName     String?   @map("entity_name") @db.VarChar(200)
+  itemGroup      String?   @map("item_group") @db.VarChar(100)
+  status         String    @default("PENDING") @db.VarChar(20)
+  message        String?   @db.Text
+  requestPayload Json?     @map("request_payload")
+  responseData   Json?     @map("response_data")
+  retryCount     Int       @default(0) @map("retry_count")
+  lastTriedAt    DateTime? @map("last_tried_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  @@index([entityType])
+  @@index([status])
+  @@index([entityCode])
+  @@map("erp_next_sync_logs")
+  @@schema("oa")
+}

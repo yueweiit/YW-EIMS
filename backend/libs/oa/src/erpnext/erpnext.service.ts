@@ -177,17 +177,22 @@ export class ErpNextService implements OnModuleInit {
 
   // ─── ERPNext API call ──────────────────────────────────
 
-  private async createItem(payload: ErpNextItemPayload): Promise<ErpNextSyncResult> {
+  async createItem(payload: ErpNextItemPayload, options?: { skipLog?: boolean }): Promise<ErpNextSyncResult> {
     if (!this.authToken) {
-      return {
+      const result: ErpNextSyncResult = {
         success: false,
         skipped: true,
         message: 'ERPNext 未配置 ERPNEXT_AUTH_TOKEN，已跳过创建物料',
       };
+      if (!options?.skipLog) {
+        try { await this.writeLog(payload, result); } catch (e) { this.logger.error(`Failed to write sync log: ${e}`); }
+      }
+      return result;
     }
 
     this.logger.log(`创建物料: item_code=${payload.item_code}, item_group=${payload.item_group}`);
 
+    let syncResult: ErpNextSyncResult;
     try {
       const response: AxiosResponse = await lastValueFrom(
         this.httpService.post(this.apiUrl, payload, {
@@ -199,7 +204,7 @@ export class ErpNextService implements OnModuleInit {
         }),
       );
 
-      return {
+      syncResult = {
         success: true,
         message: 'ERPNext 物料创建成功',
         itemCode: payload.item_code,
@@ -224,7 +229,7 @@ export class ErpNextService implements OnModuleInit {
         responseData?.exc_type === 'DuplicateEntryError'
       ) {
         this.logger.warn(`物料已存在: item_code=${payload.item_code}`);
-        return {
+        syncResult = {
           success: true,
           skipped: true,
           message: 'Item already exists',
@@ -232,21 +237,49 @@ export class ErpNextService implements OnModuleInit {
           itemGroup: payload.item_group,
           status: statusCode,
         };
+      } else {
+        this.logger.error(
+          `创建物料失败: item_code=${payload.item_code}, status=${statusCode || ''}, message=${serverMessage || axiosError.message}`,
+        );
+        syncResult = {
+          success: false,
+          message: (typeof serverMessage === 'string' ? serverMessage : null) || axiosError.message || 'ERPNext 物料创建失败',
+          status: statusCode,
+          itemCode: payload.item_code,
+          itemGroup: payload.item_group,
+          data: responseData,
+        };
       }
-
-      this.logger.error(
-        `创建物料失败: item_code=${payload.item_code}, status=${statusCode || ''}, message=${serverMessage || axiosError.message}`,
-      );
-
-      return {
-        success: false,
-        message: (typeof serverMessage === 'string' ? serverMessage : null) || axiosError.message || 'ERPNext 物料创建失败',
-        status: statusCode,
-        itemCode: payload.item_code,
-        itemGroup: payload.item_group,
-        data: responseData,
-      };
     }
+
+    if (!options?.skipLog) {
+      try { await this.writeLog(payload, syncResult); } catch (e) { this.logger.error(`Failed to write sync log: ${e}`); }
+    }
+
+    return syncResult;
+  }
+
+  private async writeLog(payload: ErpNextItemPayload, result: ErpNextSyncResult) {
+    await this.prisma.erpNextSyncLog.create({
+      data: {
+        entityType: this.inferEntityType(payload),
+        entityCode: result.itemCode || payload.item_code,
+        entityName: payload.item_name,
+        itemGroup: result.itemGroup || payload.item_group,
+        status: result.success ? (result.skipped ? 'SKIPPED' : 'SUCCESS') : 'FAILED',
+        message: result.message,
+        requestPayload: payload as any,
+        responseData: result.data ? { data: result.data } : (result.status ? { status: result.status } : undefined),
+        lastTriedAt: new Date(),
+      },
+    });
+  }
+
+  private inferEntityType(payload: ErpNextItemPayload): string {
+    const code = payload.item_code || '';
+    if (code.startsWith('MJ') || code.startsWith('mj')) return 'MOLD';
+    if (code.startsWith('CP') || code.startsWith('cp')) return 'PRODUCT';
+    return 'MATERIAL';
   }
 
   // ─── Helpers ───────────────────────────────────────────

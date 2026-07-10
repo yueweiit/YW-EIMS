@@ -186,6 +186,7 @@ const routeMap: RouteMap = {
   "oa_approval": "/oa/approval",
   "oa_box-label": "/oa/box-label",
   "system": "/system",
+  "system_erpnext-sync-log": "/system/erpnext-sync-log",
   "system_user": "/system/user"
 };
 

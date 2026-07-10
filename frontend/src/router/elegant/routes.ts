@@ -241,6 +241,15 @@ export const generatedRoutes: GeneratedRoute[] = [
     },
     children: [
       {
+        name: 'system_erpnext-sync-log',
+        path: '/system/erpnext-sync-log',
+        component: 'view.system_erpnext-sync-log',
+        meta: {
+          title: 'system_erpnext-sync-log',
+          i18nKey: 'route.system_erpnext-sync-log'
+        }
+      },
+      {
         name: 'system_user',
         path: '/system/user',
         component: 'view.system_user',
