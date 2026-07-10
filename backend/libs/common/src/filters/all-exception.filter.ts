@@ -3,12 +3,15 @@ import {
   type ArgumentsHost,
   HttpException,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import { BaseExceptionFilter } from '@nestjs/core';
 import type { Response } from 'express';
 
 @Catch()
 export class AllExceptionFilter extends BaseExceptionFilter {
+  private readonly logger = new Logger(AllExceptionFilter.name);
+
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
@@ -34,6 +37,9 @@ export class AllExceptionFilter extends BaseExceptionFilter {
       } else if (status === HttpStatus.BAD_REQUEST) {
         code = '1001';
       }
+    } else {
+      const error = exception instanceof Error ? exception : new Error(String(exception));
+      this.logger.error(error.message, error.stack);
     }
 
     response.status(status).json({
