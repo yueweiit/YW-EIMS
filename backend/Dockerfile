@@ -4,6 +4,7 @@ RUN corepack enable && corepack prepare pnpm@10.5.0 --activate
 WORKDIR /app
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY nest-cli.json tsconfig.json ./
 COPY apps ./apps
 COPY libs ./libs
 

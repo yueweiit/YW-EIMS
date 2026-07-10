@@ -1,2 +1,4 @@
 .omo
 sql/reference
+.env
+.gitignore
