@@ -1,4 +1,4 @@
-FROM node:20-alpine AS build
+FROM node:22-alpine AS build
 
 RUN corepack enable && corepack prepare pnpm@10.5.0 --activate
 WORKDIR /app
@@ -12,7 +12,7 @@ RUN pnpm install --frozen-lockfile
 RUN pnpm prisma:generate
 RUN pnpm build
 
-FROM node:20-alpine AS runtime
+FROM node:22-alpine AS runtime
 
 RUN corepack enable && corepack prepare pnpm@10.5.0 --activate
 WORKDIR /app
