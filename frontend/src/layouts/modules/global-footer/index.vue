@@ -6,8 +6,8 @@ defineOptions({
 
 <template>
   <DarkModeContainer class="h-full flex-center">
-    <a href="https://github.com/yueweiit" target="_blank" rel="noopener noreferrer">
-      Copyright © 2026 Yuewei IT
+    <a href="#" target="_blank" rel="noopener noreferrer">
+      Copyright © 2026 YUEWEI企业信息管理系统
     </a>
   </DarkModeContainer>
 </template>
