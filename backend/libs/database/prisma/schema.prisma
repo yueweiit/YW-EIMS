@@ -258,3 +258,16 @@ model ErpTax {
   @@map("erp_tax")
   @@schema("oa")
 }
+
+/// ERPNext映射配置表
+model ErpNextMapping {
+  id          Int    @id @default(autoincrement())
+  type        String @db.VarChar(30)
+  sourceKey   String @map("source_key") @db.VarChar(50)
+  targetValue String @map("target_value") @db.VarChar(200)
+
+  @@unique([type, sourceKey])
+  @@index([type])
+  @@map("erp_next_mappings")
+  @@schema("oa")
+}

@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import type { Product } from '@prisma/client';
 import { PrismaService } from '@eims/database';
+import { ErpNextService } from '@eims/oa';
 import { PhoneModelsService } from '../phone-models/phone-models.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -10,9 +11,12 @@ import { handlePrismaError } from '../helpers';
 
 @Injectable()
 export class ProductsService {
+  private readonly logger = new Logger(ProductsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly phoneModelsService: PhoneModelsService,
+    private readonly erpNextService: ErpNextService,
   ) {}
 
   async findPage(query: QueryProductDto) {
@@ -47,7 +51,7 @@ export class ProductsService {
 
   async create(dto: CreateProductDto) {
     try {
-      return await this.prisma.$transaction(async (tx) => {
+      const products = await this.prisma.$transaction(async (tx) => {
         // 1. 按产品类型查产品编码表（查出所有匹配记录）
         const productCodeRecords = await tx.productCode.findMany({
           where: { productType: dto.productType },
@@ -88,6 +92,13 @@ export class ProductsService {
 
         return created;
       });
+
+      // 事务提交后批量同步 ERPNext（best-effort）
+      this.erpNextService.syncProducts(products).catch((err) =>
+        this.logger.error(`ERPNext sync failed: ${err}`),
+      );
+
+      return products;
     } catch (e) {
       if (e instanceof NotFoundException || e instanceof BadRequestException) throw e;
       handlePrismaError(e, '产品');
@@ -161,6 +172,13 @@ export class ProductsService {
         const msg = e instanceof Error ? e.message : String(e);
         errors.push(`第${line}行: ${msg}`);
       }
+    }
+
+    // 批量同步 ERPNext（best-effort）
+    if (allCreated.length > 0) {
+      this.erpNextService.syncProducts(allCreated).catch((err) =>
+        this.logger.error(`ERPNext batch sync failed: ${err}`),
+      );
     }
 
     return {

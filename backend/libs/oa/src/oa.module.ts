@@ -10,20 +10,25 @@ import { OaSearchController } from './oa-search/oa-search.controller';
 import { MaterialMatcher } from './helpers/material-matcher';
 import { DingtalkOaDbService } from './dingtalk-oa-db/dingtalk-oa-db.service';
 import { DingtalkSyncService } from './dingtalk-sync/dingtalk-sync.service';
+import { ErpNextService } from './erpnext/erpnext.service';
+import { ErpNextMappingController } from './erpnext-mapping/erpnext-mapping.controller';
+import { ErpNextMappingService } from './erpnext-mapping/erpnext-mapping.service';
 
 @Module({
   imports: [HttpModule],
-  controllers: [OaApprovalController, OaSearchController],
+  controllers: [OaApprovalController, OaSearchController, ErpNextMappingController],
   providers: [
     DingTalkService,
     ErpService,
     ErpSyncService,
+    ErpNextService,
     OaApprovalService,
     OaSearchService,
     MaterialMatcher,
     DingtalkOaDbService,
     DingtalkSyncService,
+    ErpNextMappingService,
   ],
-  exports: [DingTalkService, ErpService, OaApprovalService, OaSearchService],
+  exports: [DingTalkService, ErpService, ErpNextService, OaApprovalService, OaSearchService],
 })
 export class OaModule {}

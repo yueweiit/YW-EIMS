@@ -1,5 +1,7 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import type { Mold } from '@prisma/client';
 import { PrismaService } from '@eims/database';
+import { ErpNextService } from '@eims/oa';
 import { PhoneModelsService } from '../phone-models/phone-models.service';
 import { CreateMoldDto } from './dto/create-mold.dto';
 import { UpdateMoldDto } from './dto/update-mold.dto';
@@ -9,9 +11,12 @@ import { handlePrismaError } from '../helpers';
 
 @Injectable()
 export class MoldsService {
+  private readonly logger = new Logger(MoldsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly phoneModelsService: PhoneModelsService,
+    private readonly erpNextService: ErpNextService,
   ) {}
 
   async findPage(query: QueryMoldDto) {
@@ -45,7 +50,7 @@ export class MoldsService {
 
   async create(dto: CreateMoldDto) {
     try {
-      return await this.prisma.$transaction(async (tx) => {
+      const mold = await this.prisma.$transaction(async (tx) => {
         // 1. 查找模具编码
         const moldCodeRecord = await tx.moldCode.findUnique({
           where: { moldCode: dto.moldCode },
@@ -77,6 +82,13 @@ export class MoldsService {
           },
         });
       });
+
+      // 事务提交后同步 ERPNext（best-effort）
+      this.erpNextService.syncMold(mold).catch((err) =>
+        this.logger.error(`ERPNext sync failed for mold ${mold.itemCode}: ${err}`),
+      );
+
+      return mold;
     } catch (e) {
       if (e instanceof NotFoundException) throw e;
       handlePrismaError(e, '模具');
@@ -184,9 +196,17 @@ export class MoldsService {
       }
     }
 
+    let createdMolds: Mold[] = [];
     if (toCreate.length > 0) {
-      await this.prisma.$transaction(
+      createdMolds = await this.prisma.$transaction(
         toCreate.map(data => this.prisma.mold.create({ data }))
+      );
+    }
+
+    // 事务提交后批量同步 ERPNext（best-effort）
+    if (createdMolds.length > 0) {
+      this.erpNextService.syncMolds(createdMolds).catch((err) =>
+        this.logger.error(`ERPNext batch sync failed: ${err}`),
       );
     }
 

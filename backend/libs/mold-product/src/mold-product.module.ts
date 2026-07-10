@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { OaModule } from '@eims/oa';
 import { PhoneModelsController } from './phone-models/phone-models.controller';
 import { PhoneModelsService } from './phone-models/phone-models.service';
 import { ColorsController } from './colors/colors.controller';
@@ -15,6 +16,7 @@ import { ProductsController } from './products/products.controller';
 import { ProductsService } from './products/products.service';
 
 @Module({
+  imports: [OaModule],
   controllers: [
     PhoneModelsController,
     ColorsController,

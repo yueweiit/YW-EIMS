@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '@eims/database';
+import { ErpNextService } from '@eims/oa';
 import { CreateMaterialDto } from './dto/create-material.dto';
 import { UpdateMaterialDto } from './dto/update-material.dto';
 import { QueryMaterialDto } from './dto/query-material.dto';
@@ -8,7 +9,12 @@ import type { ImportMaterialRowDto } from './dto/import-material.dto';
 
 @Injectable()
 export class MaterialsService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(MaterialsService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly erpNextService: ErpNextService,
+  ) {}
 
   async findPage(query: QueryMaterialDto) {
     const {
@@ -68,7 +74,7 @@ export class MaterialsService {
       : null;
     const unitCode = unitRecord?.unitCode ?? null;
 
-    return this.prisma.material.create({
+    const material = await this.prisma.material.create({
       data: {
         applicant: dto.applicant,
         materialName: dto.materialName,
@@ -80,6 +86,12 @@ export class MaterialsService {
         unitCode,
       },
     });
+
+    this.erpNextService.syncMaterial(material).catch(err => {
+      this.logger.error(`ERPNext sync failed for material ${material.code}: ${err}`);
+    });
+
+    return material;
   }
 
   async update(id: number, dto: UpdateMaterialDto) {
@@ -191,9 +203,13 @@ export class MaterialsService {
     }
 
     if (toCreate.length > 0) {
-      await this.prisma.$transaction(
+      const createdMaterials = await this.prisma.$transaction(
         toCreate.map(data => this.prisma.material.create({ data }))
       );
+
+      this.erpNextService.syncMaterials(createdMaterials).catch(err => {
+        this.logger.error(`ERPNext batch sync failed for materials: ${err}`);
+      });
     }
 
     return {
