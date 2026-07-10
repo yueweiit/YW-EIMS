@@ -24,4 +24,4 @@ COPY --from=build /app/dist ./dist
 COPY --from=build /app/libs/database/prisma ./libs/database/prisma
 
 EXPOSE 3000
-CMD ["sh", "-c", "pnpm exec prisma migrate deploy --schema libs/database/prisma/schema.prisma && node dist/apps/api/main.js"]
+CMD ["sh", "-c", "pnpm exec prisma migrate deploy --schema libs/database/prisma/schema.prisma && pnpm prisma:seed && node dist/apps/api/main.js"]

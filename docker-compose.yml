@@ -44,7 +44,7 @@ services:
     depends_on:
       - backend
     ports:
-      - "127.0.0.1:${APP_PORT:-8001}:80"
+      - "${APP_PORT:-8003}:80"
 
 volumes:
   eims-postgres-data:
