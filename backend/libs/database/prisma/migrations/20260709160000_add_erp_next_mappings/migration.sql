@@ -1,3 +1,6 @@
+-- CreateSchema
+CREATE SCHEMA IF NOT EXISTS "oa";
+
 -- CreateTable
 CREATE TABLE "oa"."erp_next_mappings" (
     "id" SERIAL NOT NULL,
