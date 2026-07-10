@@ -122,6 +122,13 @@ export const request = createFlatRequest(
         return;
       }
 
+      // A 409 represents a business conflict (for example, deleting data that is still referenced),
+      // so present the backend's explanation as a warning instead of a generic request error.
+      if (error.response?.status === 409) {
+        window.$message?.warning(message);
+        return;
+      }
+
       showErrorMsg(request.state, message);
     }
   }
