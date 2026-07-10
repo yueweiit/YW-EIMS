@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@eims/database';
 import { DingTalkService } from '../dingtalk/dingtalk.service';
 import { ErpService } from '../erp/erp.service';
@@ -318,6 +318,11 @@ export class OaApprovalService {
   }
 
   async syncToErp(dto: SyncErpDto, oaDetails: Record<string, any>) {
+    const approvalStatus = oaDetails['审批状态'] || '';
+    if (approvalStatus && approvalStatus !== 'COMPLETED' && approvalStatus !== '已完成') {
+      throw new BadRequestException(`审批状态为 ${approvalStatus}，仅已完成审批允许推送`);
+    }
+
     const orgCode = dto.org === '星铭' ? '80' : '81';
     const deptCode = dto.org === '星铭' ? '8001' : '8101';
 
@@ -337,6 +342,10 @@ export class OaApprovalService {
       } catch {
         // skip
       }
+    }
+
+    if (!tableRows.length) {
+      throw new BadRequestException('未识别到可推送的明细行');
     }
 
     // Build purchase order lines
