@@ -87,15 +87,6 @@ export const generatedRoutes: GeneratedRoute[] = [
     },
     children: [
       {
-        name: 'material_box-label',
-        path: '/material/box-label',
-        component: 'view.material_box-label',
-        meta: {
-          title: 'material_box-label',
-          i18nKey: 'route.material_box-label'
-        }
-      },
-      {
         name: 'material_code-rule',
         path: '/material/code-rule',
         component: 'view.material_code-rule',
@@ -142,6 +133,15 @@ export const generatedRoutes: GeneratedRoute[] = [
         meta: {
           title: 'mold-product_color',
           i18nKey: 'route.mold-product_color'
+        }
+      },
+      {
+        name: 'mold-product_erpnext-mapping',
+        path: '/mold-product/erpnext-mapping',
+        component: 'view.mold-product_erpnext-mapping',
+        meta: {
+          title: 'mold-product_erpnext-mapping',
+          i18nKey: 'route.mold-product_erpnext-mapping'
         }
       },
       {
@@ -218,6 +218,15 @@ export const generatedRoutes: GeneratedRoute[] = [
         meta: {
           title: 'oa_approval',
           i18nKey: 'route.oa_approval'
+        }
+      },
+      {
+        name: 'oa_box-label',
+        path: '/oa/box-label',
+        component: 'view.oa_box-label',
+        meta: {
+          title: 'oa_box-label',
+          i18nKey: 'route.oa_box-label'
         }
       }
     ]

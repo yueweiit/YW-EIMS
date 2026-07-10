@@ -12,3 +12,4 @@ export * from './mold';
 export * from './product-code';
 export * from './product';
 export * from './oa';
+export * from './erpnext-mapping';

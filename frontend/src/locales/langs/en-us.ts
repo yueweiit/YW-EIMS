@@ -236,7 +236,6 @@ const local: App.I18n.Schema = {
     material_material: 'Materials',
     material_unit: 'Units',
     'material_code-rule': 'Code Rules',
-    'material_box-label': 'Box Label Generator',
     'mold-product': 'Mold Products',
     'mold-product_phone-model': 'Phone Models',
     'mold-product_color': 'Colors',
@@ -245,7 +244,9 @@ const local: App.I18n.Schema = {
     'mold-product_mold': 'Molds',
     'mold-product_product-code': 'Product Codes',
     'mold-product_product': 'Products',
+    'mold-product_erpnext-mapping': 'ERPNext Mapping',
     oa: 'OA Management',
+    'oa_box-label': 'Box Label Generator',
     oa_approval: 'OA Approval'
   },
   page: {

@@ -170,12 +170,12 @@ const routeMap: RouteMap = {
   "iframe-page": "/iframe-page/:url",
   "login": "/login/:module(pwd-login|code-login|register|reset-pwd|bind-wechat)?",
   "material": "/material",
-  "material_box-label": "/material/box-label",
   "material_code-rule": "/material/code-rule",
   "material_material": "/material/material",
   "material_unit": "/material/unit",
   "mold-product": "/mold-product",
   "mold-product_color": "/mold-product/color",
+  "mold-product_erpnext-mapping": "/mold-product/erpnext-mapping",
   "mold-product_mold": "/mold-product/mold",
   "mold-product_mold-code": "/mold-product/mold-code",
   "mold-product_mold-material": "/mold-product/mold-material",
@@ -184,6 +184,7 @@ const routeMap: RouteMap = {
   "mold-product_product-code": "/mold-product/product-code",
   "oa": "/oa",
   "oa_approval": "/oa/approval",
+  "oa_box-label": "/oa/box-label",
   "system": "/system",
   "system_user": "/system/user"
 };
