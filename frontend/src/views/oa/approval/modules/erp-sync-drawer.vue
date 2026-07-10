@@ -95,8 +95,10 @@ const approvalStatus = computed(() => {
   return props.oaDetails?.['审批状态'] || props.oaDetails?.['瀹℃壒鐘舵€?'] || '';
 });
 
+const blockedStatuses = ['CANCELLED', 'REJECTED', '撤销', '已撤销', '拒绝', '已拒绝'];
+
 const canPush = computed(() => {
-  return !approvalStatus.value || approvalStatus.value === 'COMPLETED' || approvalStatus.value === '已完成';
+  return !approvalStatus.value || !blockedStatuses.some(s => approvalStatus.value.toUpperCase().includes(s.toUpperCase()));
 });
 
 const previewRows = computed(() => {
@@ -215,7 +217,7 @@ async function handleSubmit() {
     }
 
     if (!canPush.value) {
-      window.$message?.error(`审批状态为 ${approvalStatus.value}，仅已完成审批允许推送`);
+      window.$message?.error(`审批状态为 ${approvalStatus.value}，撤销/拒绝的审批不允许推送`);
       return;
     }
 
@@ -323,7 +325,7 @@ async function handleSubmit() {
       </NForm>
 
       <NAlert v-if="!canPush" type="warning" class="mb-12px">
-        当前审批状态为 {{ approvalStatus || '-' }}，仅已完成审批允许推送到 ERP。
+        当前审批状态为 {{ approvalStatus || '-' }}，撤销/拒绝的审批不允许推送到 ERP。
       </NAlert>
 
       <NCard size="small" :bordered="true" title="推送明细预览">

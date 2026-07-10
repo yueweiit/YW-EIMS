@@ -319,8 +319,9 @@ export class OaApprovalService {
 
   async syncToErp(dto: SyncErpDto, oaDetails: Record<string, any>) {
     const approvalStatus = oaDetails['审批状态'] || '';
-    if (approvalStatus && approvalStatus !== 'COMPLETED' && approvalStatus !== '已完成') {
-      throw new BadRequestException(`审批状态为 ${approvalStatus}，仅已完成审批允许推送`);
+    const blockedStatuses = ['CANCELLED', 'REJECTED', '撤销', '已撤销', '拒绝', '已拒绝'];
+    if (approvalStatus && blockedStatuses.some(s => approvalStatus.toUpperCase().includes(s.toUpperCase()))) {
+      throw new BadRequestException(`审批状态为 ${approvalStatus}，撤销/拒绝的审批不允许推送`);
     }
 
     const orgCode = dto.org === '星铭' ? '80' : '81';
