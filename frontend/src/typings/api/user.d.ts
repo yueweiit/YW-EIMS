@@ -10,6 +10,8 @@ declare namespace Api {
       userName: string;
       /** real name */
       realName: string | null;
+      /** DingTalk OAuth subject bound to this user */
+      dingTalkSubject: string | null;
       /** role codes */
       roles: string[];
       /** button codes */
@@ -32,6 +34,8 @@ declare namespace Api {
       password: string;
       /** real name */
       realName?: string;
+      /** DingTalk OAuth subject bound to this user */
+      dingTalkSubject?: string;
       /** role codes */
       roles?: string[];
       /** button codes */
@@ -48,6 +52,8 @@ declare namespace Api {
       password?: string;
       /** real name */
       realName?: string;
+      /** DingTalk OAuth subject bound to this user */
+      dingTalkSubject?: string;
       /** role codes */
       roles?: string[];
       /** button codes */

@@ -34,6 +34,7 @@ const defaultForm: Api.User.CreateParams = {
   userName: '',
   password: '',
   realName: '',
+  dingTalkSubject: '',
   roles: ['R_USER'],
   buttons: [],
   status: '1'
@@ -100,6 +101,7 @@ function setFormFromRow(row: Api.User.UserRecord) {
     userName: row.userName,
     password: '',
     realName: row.realName || '',
+    dingTalkSubject: row.dingTalkSubject || '',
     roles: row.roles,
     buttons: row.buttons,
     status: row.status || '1'
@@ -165,6 +167,13 @@ async function handleSubmit() {
 
         <NFormItem label="真实姓名" path="realName">
           <NInput v-model:value="formModel.realName" placeholder="请输入真实姓名" />
+        </NFormItem>
+
+        <NFormItem label="钉钉用户标识" path="dingTalkSubject">
+          <NInput
+            v-model:value="formModel.dingTalkSubject"
+            placeholder="填写钉钉 OAuth 返回的 unionId/openId"
+          />
         </NFormItem>
 
         <NFormItem label="角色" path="roles">

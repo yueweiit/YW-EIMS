@@ -12,6 +12,7 @@ const USER_SELECT = {
   realName: true,
   roles: true,
   buttons: true,
+  dingTalkSubject: true,
   status: true,
   createBy: true,
   createTime: true,
@@ -61,6 +62,7 @@ export class UserService {
         realName: dto.realName,
         roles: dto.roles ?? [],
         buttons: dto.buttons ?? [],
+        dingTalkSubject: dto.dingTalkSubject?.trim() || null,
         status: dto.status ?? '1',
         createBy: currentUserName,
       },
@@ -69,11 +71,14 @@ export class UserService {
   }
 
   async update(id: number, dto: UpdateUserDto, currentUserName: string) {
-    const { password, ...rest } = dto;
+    const { password, dingTalkSubject, ...rest } = dto;
     const data: Prisma.UserUpdateInput = {
       ...rest,
       updateBy: currentUserName,
     };
+    if (dingTalkSubject !== undefined) {
+      data.dingTalkSubject = dingTalkSubject.trim() || null;
+    }
     if (password) {
       data.password = await bcrypt.hash(password, 10);
     }

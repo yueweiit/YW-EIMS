@@ -13,6 +13,10 @@ export class UpdateUserDto {
   @IsOptional()
   realName?: string;
 
+  @IsString()
+  @IsOptional()
+  dingTalkSubject?: string;
+
   @IsString({ each: true })
   @IsOptional()
   roles?: string[];
