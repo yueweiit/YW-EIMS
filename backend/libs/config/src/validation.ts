@@ -10,4 +10,9 @@ export const validationSchema = Joi.object({
   JWT_EXPIRES_IN: Joi.string().default('2h'),
   JWT_REFRESH_SECRET: Joi.string().required(),
   JWT_REFRESH_EXPIRES_IN: Joi.string().default('7d'),
+  DINGTALK_OAUTH_CLIENT_ID: Joi.string().allow('').default(''),
+  DINGTALK_OAUTH_CLIENT_SECRET: Joi.string().allow('').default(''),
+  DINGTALK_OAUTH_REDIRECT_URI: Joi.string().uri().allow('').default(''),
+  DINGTALK_OAUTH_SCOPES: Joi.string().default('openid'),
+  EIMS_FRONTEND_URL: Joi.string().uri().default('http://localhost:9527'),
 });

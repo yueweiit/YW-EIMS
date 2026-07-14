@@ -3,6 +3,7 @@ import {
   ForbiddenException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { createHash } from 'node:crypto';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
@@ -73,6 +74,59 @@ export class AuthService {
     } catch {
       throw new UnauthorizedException('refresh token expired or invalid');
     }
+  }
+
+  async findEnabledUserByDingTalkSubject(subject: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { dingTalkSubject: subject },
+      select: { id: true, status: true },
+    });
+    if (!user) {
+      throw new UnauthorizedException('该钉钉账号尚未绑定 EIMS 用户');
+    }
+    if (user.status === '2') {
+      throw new ForbiddenException('EIMS 用户已被禁用');
+    }
+    return user.id;
+  }
+
+  hashLoginTicket(ticket: string) {
+    return createHash('sha256').update(ticket).digest('hex');
+  }
+
+  async exchangeLoginTicket(ticket: string) {
+    const ticketHash = this.hashLoginTicket(ticket);
+    const now = new Date();
+    const record = await this.prisma.authLoginTicket.findUnique({
+      where: { ticketHash },
+      select: { id: true, userId: true, expiresAt: true, consumedAt: true },
+    });
+
+    if (!record || record.consumedAt || record.expiresAt <= now) {
+      throw new UnauthorizedException('钉钉登录票据无效或已过期');
+    }
+
+    const consumed = await this.prisma.authLoginTicket.updateMany({
+      where: {
+        id: record.id,
+        consumedAt: null,
+        expiresAt: { gt: now },
+      },
+      data: { consumedAt: now },
+    });
+    if (consumed.count !== 1) {
+      throw new UnauthorizedException('钉钉登录票据已被使用');
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: record.userId },
+      select: { id: true, userName: true, status: true },
+    });
+    if (!user || user.status === '2') {
+      throw new UnauthorizedException('用户不存在或已被禁用');
+    }
+
+    return this.generateTokens(user.id, user.userName);
   }
 
   private async generateTokens(userId: number, userName: string) {
