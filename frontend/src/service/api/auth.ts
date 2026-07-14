@@ -1,4 +1,7 @@
 import { request } from '../request';
+import { getServiceBaseURL } from '@/utils/service';
+
+const isHttpProxy = import.meta.env.DEV && import.meta.env.VITE_HTTP_PROXY === 'Y';
 
 /**
  * Login
@@ -34,6 +37,21 @@ export function fetchRefreshToken(refreshToken: string) {
     data: {
       refreshToken
     }
+  });
+}
+
+/** Get the DingTalk OAuth authorization URL. */
+export function getDingTalkAuthorizationUrl() {
+  const { baseURL } = getServiceBaseURL(import.meta.env, isHttpProxy);
+  return `${baseURL}/auth/dingtalk/authorize`;
+}
+
+/** Exchange a one-time DingTalk login ticket for the application JWT pair. */
+export function fetchDingTalkLoginToken(ticket: string) {
+  return request<Api.Auth.LoginToken>({
+    url: '/auth/dingtalk/exchange',
+    method: 'post',
+    data: { ticket }
   });
 }
 

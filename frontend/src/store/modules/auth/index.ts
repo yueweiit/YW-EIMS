@@ -2,7 +2,7 @@ import { computed, reactive, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { defineStore } from 'pinia';
 import { useLoading } from '@sa/hooks';
-import { fetchGetUserInfo, fetchLogin } from '@/service/api';
+import { fetchDingTalkLoginToken, fetchGetUserInfo, fetchLogin } from '@/service/api';
 import { useRouterPush } from '@/hooks/common/router';
 import { localStg } from '@/utils/storage';
 import { SetupStoreId } from '@/enum';
@@ -128,6 +128,28 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     endLoading();
   }
 
+  async function loginWithDingTalkTicket(ticket: string, redirect = true) {
+    startLoading();
+
+    const { data: loginToken, error } = await fetchDingTalkLoginToken(ticket);
+    if (!error && loginToken) {
+      const pass = await loginByToken(loginToken);
+
+      if (pass) {
+        const isClear = checkTabClear();
+        await redirectFromLogin(redirect && !isClear);
+
+        window.$notification?.success({
+          title: $t('page.login.common.loginSuccess'),
+          content: $t('page.login.common.welcomeBack', { userName: userInfo.userName }),
+          duration: 4500
+        });
+      }
+    }
+
+    endLoading();
+  }
+
   async function loginByToken(loginToken: Api.Auth.LoginToken) {
     // 1. stored in the localStorage, the later requests need it in headers
     localStg.set('token', loginToken.token);
@@ -179,6 +201,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     loginLoading,
     resetStore,
     login,
+    loginWithDingTalkTicket,
     initUserInfo
   };
 });

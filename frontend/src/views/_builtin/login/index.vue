@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import type { Component } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { getPaletteColorByNumber, mixColor } from '@sa/color';
 import { loginModuleRecord } from '@/constants/app';
 import { useAppStore } from '@/store/modules/app';
 import { useThemeStore } from '@/store/modules/theme';
 import { $t } from '@/locales';
+import { useAuthStore } from '@/store/modules/auth';
 import PwdLogin from './modules/pwd-login.vue';
 import CodeLogin from './modules/code-login.vue';
 import Register from './modules/register.vue';
@@ -21,6 +23,9 @@ const props = defineProps<Props>();
 
 const appStore = useAppStore();
 const themeStore = useThemeStore();
+const authStore = useAuthStore();
+const route = useRoute();
+const router = useRouter();
 
 interface LoginModule {
   label: App.I18n.I18nKey;
@@ -47,6 +52,27 @@ const bgColor = computed(() => {
   const ratio = themeStore.darkMode ? 0.5 : 0.2;
 
   return mixColor(COLOR_WHITE, themeStore.themeColor, ratio);
+});
+
+function getQueryString(value: unknown) {
+  return typeof value === 'string' ? value : '';
+}
+
+onMounted(async () => {
+  const ticket = getQueryString(route.query.dingtalk_ticket);
+  const error = getQueryString(route.query.dingtalk_error);
+
+  if (ticket) {
+    await authStore.loginWithDingTalkTicket(ticket);
+    const query = { ...route.query };
+    delete query.dingtalk_ticket;
+    await router.replace({ name: 'login', query });
+  } else if (error) {
+    window.$message?.error('钉钉登录失败，请确认账号已绑定或联系管理员');
+    const query = { ...route.query };
+    delete query.dingtalk_error;
+    await router.replace({ name: 'login', query });
+  }
 });
 </script>
 

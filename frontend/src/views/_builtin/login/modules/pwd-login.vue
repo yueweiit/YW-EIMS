@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive } from 'vue';
 import { loginModuleRecord } from '@/constants/app';
+import { getDingTalkAuthorizationUrl } from '@/service/api';
 import { useAuthStore } from '@/store/modules/auth';
 import { useRouterPush } from '@/hooks/common/router';
 import { useFormRules, useNaiveForm } from '@/hooks/common/form';
@@ -37,6 +38,10 @@ const rules = computed<Record<keyof FormModel, App.Global.FormRule[]>>(() => {
 async function handleSubmit() {
   await validate();
   await authStore.login(model.userName, model.password);
+}
+
+function handleDingTalkLogin() {
+  window.location.assign(getDingTalkAuthorizationUrl());
 }
 
 type AccountKey = 'super' | 'admin' | 'user';
@@ -96,6 +101,9 @@ async function handleAccountLogin(account: Account) {
       </div>
       <NButton type="primary" size="large" round block :loading="authStore.loginLoading" @click="handleSubmit">
         {{ $t('common.confirm') }}
+      </NButton>
+      <NButton size="large" round block :loading="authStore.loginLoading" @click="handleDingTalkLogin">
+        钉钉登录
       </NButton>
       <div class="flex-y-center justify-between gap-12px">
         <NButton class="flex-1" block @click="toggleLoginModule('code-login')">
