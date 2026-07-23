@@ -10,6 +10,7 @@ const USER_SELECT = {
   id: true,
   userName: true,
   realName: true,
+  email: true,
   roles: true,
   buttons: true,
   dingTalkSubject: true,
@@ -60,6 +61,7 @@ export class UserService {
         userName: dto.userName,
         password: hashedPassword,
         realName: dto.realName,
+        email: this.normalizeEmail(dto.email),
         roles: dto.roles ?? [],
         buttons: dto.buttons ?? [],
         dingTalkSubject: dto.dingTalkSubject?.trim() || null,
@@ -71,13 +73,16 @@ export class UserService {
   }
 
   async update(id: number, dto: UpdateUserDto, currentUserName: string) {
-    const { password, dingTalkSubject, ...rest } = dto;
+    const { password, dingTalkSubject, email, ...rest } = dto;
     const data: Prisma.UserUpdateInput = {
       ...rest,
       updateBy: currentUserName,
     };
     if (dingTalkSubject !== undefined) {
       data.dingTalkSubject = dingTalkSubject.trim() || null;
+    }
+    if (email !== undefined) {
+      data.email = this.normalizeEmail(email);
     }
     if (password) {
       data.password = await bcrypt.hash(password, 10);
@@ -93,5 +98,9 @@ export class UserService {
   async remove(id: number) {
     await this.prisma.user.delete({ where: { id } });
     return null;
+  }
+
+  private normalizeEmail(email?: string) {
+    return email?.trim().toLowerCase() || null;
   }
 }

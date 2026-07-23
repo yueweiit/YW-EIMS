@@ -10,6 +10,8 @@ declare namespace Api {
       userName: string;
       /** real name */
       realName: string | null;
+      /** enterprise email used for SSO account matching */
+      email: string | null;
       /** DingTalk OAuth subject bound to this user */
       dingTalkSubject: string | null;
       /** role codes */
@@ -34,6 +36,8 @@ declare namespace Api {
       password: string;
       /** real name */
       realName?: string;
+      /** enterprise email used for SSO account matching */
+      email?: string;
       /** DingTalk OAuth subject bound to this user */
       dingTalkSubject?: string;
       /** role codes */
@@ -52,6 +56,8 @@ declare namespace Api {
       password?: string;
       /** real name */
       realName?: string;
+      /** enterprise email used for SSO account matching */
+      email?: string;
       /** DingTalk OAuth subject bound to this user */
       dingTalkSubject?: string;
       /** role codes */

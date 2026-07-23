@@ -76,14 +76,26 @@ export class AuthService {
     }
   }
 
-  async findEnabledUserByDingTalkSubject(subject: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { dingTalkSubject: subject },
+  async findEnabledUserByDingTalkSubjects(subjects: Array<string | undefined>) {
+    const normalizedSubjects = [
+      ...new Set(
+        subjects
+          .map(subject => subject?.trim())
+          .filter((subject): subject is string => Boolean(subject)),
+      ),
+    ];
+    const users = await this.prisma.user.findMany({
+      where: { dingTalkSubject: { in: normalizedSubjects } },
       select: { id: true, status: true },
+      take: 2,
     });
-    if (!user) {
+    if (users.length === 0) {
       throw new UnauthorizedException('该钉钉账号尚未绑定 EIMS 用户');
     }
+    if (users.length > 1) {
+      throw new UnauthorizedException('该钉钉账号存在多个 EIMS 绑定，请联系管理员');
+    }
+    const [user] = users;
     if (user.status === '2') {
       throw new ForbiddenException('EIMS 用户已被禁用');
     }

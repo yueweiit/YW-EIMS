@@ -26,14 +26,38 @@ describe('DingTalkOAuthService', () => {
       verifyAsync: jest.fn().mockResolvedValue({ purpose: 'dingtalk-oauth', nonce: 'nonce' }),
     } as unknown as JwtService;
     const httpService = {
-      post: jest.fn().mockReturnValue(of({ data: { accessToken: 'user-access-token' } })),
-      get: jest.fn().mockReturnValue(of({ data: { unionId: 'ding-union-id' } })),
+      post: jest.fn((url: string) => {
+        if (url === 'https://api.dingtalk.com/v1.0/oauth2/userAccessToken') {
+          return of({ data: { accessToken: 'user-access-token' } });
+        }
+        if (url === 'https://api.dingtalk.com/v1.0/oauth2/accessToken') {
+          return of({ data: { accessToken: 'app-access-token', expireIn: 7200 } });
+        }
+        if (url.startsWith('https://oapi.dingtalk.com/topapi/user/getbyunionid')) {
+          return of({
+            data: {
+              errcode: 0,
+              errmsg: 'ok',
+              result: { userid: 'ding-user-id' },
+            },
+          });
+        }
+        throw new Error(`Unexpected DingTalk URL: ${url}`);
+      }),
+      get: jest.fn().mockReturnValue(
+        of({
+          data: {
+            unionId: 'ding-union-id',
+            openId: 'ding-open-id',
+          },
+        }),
+      ),
     } as unknown as HttpService;
     const prisma = {
       authLoginTicket: { create: jest.fn().mockResolvedValue({}) },
     } as unknown as PrismaService;
     const authService = {
-      findEnabledUserByDingTalkSubject: jest.fn().mockResolvedValue(7),
+      findEnabledUserByDingTalkSubjects: jest.fn().mockResolvedValue(7),
       hashLoginTicket: jest.fn().mockReturnValue('ticket-hash'),
     } as unknown as AuthService;
 
@@ -75,7 +99,20 @@ describe('DingTalkOAuthService', () => {
       'https://api.dingtalk.com/v1.0/contact/users/me',
       expect.objectContaining({ headers: { 'x-acs-dingtalk-access-token': 'user-access-token' } }),
     );
-    expect(authService.findEnabledUserByDingTalkSubject).toHaveBeenCalledWith('ding-union-id');
+    expect(httpService.post).toHaveBeenCalledWith(
+      'https://api.dingtalk.com/v1.0/oauth2/accessToken',
+      { appKey: 'client-id', appSecret: 'client-secret' },
+    );
+    expect(httpService.post).toHaveBeenCalledWith(
+      expect.stringContaining('https://oapi.dingtalk.com/topapi/user/getbyunionid'),
+      { unionid: 'ding-union-id' },
+    );
+    expect(authService.findEnabledUserByDingTalkSubjects).toHaveBeenCalledWith([
+      'ding-user-id',
+      'ding-union-id',
+      'ding-open-id',
+      'ding-union-id',
+    ]);
     expect(prisma.authLoginTicket.create).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ userId: 7 }) }),
     );
@@ -112,6 +149,7 @@ describe('AuthService OAuth login tickets', () => {
       },
       user: {
         findUnique: jest.fn(),
+        findMany: jest.fn(),
       },
     } as unknown as PrismaService;
 
@@ -121,6 +159,41 @@ describe('AuthService OAuth login tickets', () => {
       prisma,
     };
   }
+
+  it('matches a DingTalk account by any returned identity', async () => {
+    const { service, prisma } = createAuthService();
+    const findMany = prisma.user.findMany as jest.Mock;
+    findMany.mockResolvedValue([{ id: 7, status: '1' }]);
+
+    await expect(
+      service.findEnabledUserByDingTalkSubjects([
+        'ding-user-id',
+        'ding-union-id',
+        'ding-open-id',
+      ]),
+    ).resolves.toBe(7);
+    expect(findMany).toHaveBeenCalledWith({
+      where: {
+        dingTalkSubject: {
+          in: ['ding-user-id', 'ding-union-id', 'ding-open-id'],
+        },
+      },
+      select: { id: true, status: true },
+      take: 2,
+    });
+  });
+
+  it('rejects ambiguous DingTalk bindings', async () => {
+    const { service, prisma } = createAuthService();
+    (prisma.user.findMany as jest.Mock).mockResolvedValue([
+      { id: 7, status: '1' },
+      { id: 8, status: '1' },
+    ]);
+
+    await expect(
+      service.findEnabledUserByDingTalkSubjects(['ding-user-id', 'ding-union-id']),
+    ).rejects.toThrow('存在多个 EIMS 绑定');
+  });
 
   it('consumes a valid ticket only once', async () => {
     const { service, prisma } = createAuthService();

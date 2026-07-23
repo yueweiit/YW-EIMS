@@ -22,6 +22,20 @@ interface DingTalkUserAccessTokenResponse {
   access_token?: string;
 }
 
+interface DingTalkAppAccessTokenResponse {
+  accessToken?: string;
+  expireIn?: number;
+}
+
+interface DingTalkUserByUnionIdResponse {
+  errcode?: number;
+  errmsg?: string;
+  result?: {
+    userid?: string;
+    userId?: string;
+  };
+}
+
 interface DingTalkCurrentUserResponse {
   unionId?: string;
   openId?: string;
@@ -33,6 +47,7 @@ interface DingTalkCurrentUserResponse {
 export class DingTalkOAuthService {
   private readonly logger = new Logger(DingTalkOAuthService.name);
   private readonly stateSecret: string;
+  private appAccessTokenCache?: { token: string; expiresAt: number };
 
   constructor(
     private readonly httpService: HttpService,
@@ -83,8 +98,19 @@ export class DingTalkOAuthService {
       throw new UnauthorizedException('钉钉授权状态无效或已过期');
     }
 
-    const subject = await this.fetchDingTalkSubject(code);
-    const userId = await this.authService.findEnabledUserByDingTalkSubject(subject);
+    const identity = await this.fetchDingTalkIdentity(code);
+    if (this.isDebugEnabled()) {
+      this.logger.debug(
+        `DingTalk OAuth identity: subject=${identity.subject}, unionId=${identity.unionId || '-'}, openId=${identity.openId || '-'}, userId=${identity.userId || '-'}`,
+      );
+    }
+
+    const userId = await this.authService.findEnabledUserByDingTalkSubjects([
+      identity.userId,
+      identity.unionId,
+      identity.openId,
+      identity.subject,
+    ]);
     const rawTicket = randomBytes(32).toString('base64url');
     const ticketHash = this.hashTicket(rawTicket);
 
@@ -109,7 +135,12 @@ export class DingTalkOAuthService {
     return this.authService.hashLoginTicket(ticket);
   }
 
-  private async fetchDingTalkSubject(code: string): Promise<string> {
+  private async fetchDingTalkIdentity(code: string): Promise<{
+    subject: string;
+    unionId?: string;
+    openId?: string;
+    userId?: string;
+  }> {
     try {
       const { data: tokenData } = await firstValueFrom(
         this.httpService.post<DingTalkUserAccessTokenResponse>(
@@ -135,11 +166,20 @@ export class DingTalkOAuthService {
         ),
       );
 
-      const subject = userData.unionId || userData.openId || userData.userId || userData.userid;
+      const returnedUserId = userData.userId || userData.userid;
+      const userId =
+        returnedUserId ||
+        (userData.unionId ? await this.fetchDingTalkUserId(userData.unionId) : undefined);
+      const subject = userData.unionId || userData.openId || userId;
       if (!subject) {
         throw new UnprocessableEntityException('钉钉未返回用户标识');
       }
-      return subject;
+      return {
+        subject,
+        unionId: userData.unionId,
+        openId: userData.openId,
+        userId,
+      };
     } catch (error) {
       if (error instanceof UnauthorizedException || error instanceof UnprocessableEntityException) {
         throw error;
@@ -147,6 +187,58 @@ export class DingTalkOAuthService {
       this.logger.warn(`DingTalk OAuth user lookup failed: ${this.getErrorMessage(error)}`);
       throw new UnauthorizedException('钉钉授权失败');
     }
+  }
+
+  private async fetchDingTalkUserId(unionId: string): Promise<string> {
+    const appAccessToken = await this.getDingTalkAppAccessToken();
+    const url = new URL('https://oapi.dingtalk.com/topapi/user/getbyunionid');
+    url.searchParams.set('access_token', appAccessToken);
+
+    const { data } = await firstValueFrom(
+      this.httpService.post<DingTalkUserByUnionIdResponse>(url.toString(), {
+        unionid: unionId,
+      }),
+    );
+    const userId = data.result?.userid || data.result?.userId;
+    if (data.errcode !== undefined && data.errcode !== 0) {
+      this.logger.warn(
+        `DingTalk unionId lookup failed: errcode=${data.errcode}, errmsg=${data.errmsg || '-'}`,
+      );
+      throw new UnprocessableEntityException('钉钉无法根据 unionId 获取 userId');
+    }
+    if (!userId) {
+      throw new UnprocessableEntityException('钉钉未返回 userId');
+    }
+    return userId;
+  }
+
+  private async getDingTalkAppAccessToken(): Promise<string> {
+    if (
+      this.appAccessTokenCache &&
+      this.appAccessTokenCache.expiresAt > Date.now()
+    ) {
+      return this.appAccessTokenCache.token;
+    }
+
+    const { data } = await firstValueFrom(
+      this.httpService.post<DingTalkAppAccessTokenResponse>(
+        'https://api.dingtalk.com/v1.0/oauth2/accessToken',
+        {
+          appKey: this.getClientId(),
+          appSecret: this.getClientSecret(),
+        },
+      ),
+    );
+    if (!data.accessToken) {
+      throw new UnprocessableEntityException('钉钉未返回应用访问凭证');
+    }
+
+    const cacheSeconds = Math.max((data.expireIn ?? 7200) - 300, 0);
+    this.appAccessTokenCache = {
+      token: data.accessToken,
+      expiresAt: Date.now() + cacheSeconds * 1000,
+    };
+    return data.accessToken;
   }
 
   private assertConfigured() {
@@ -169,6 +261,10 @@ export class DingTalkOAuthService {
 
   private getScopes() {
     return this.configService.get<string>('DINGTALK_OAUTH_SCOPES', 'openid').trim() || 'openid';
+  }
+
+  private isDebugEnabled() {
+    return this.configService.get<string>('DINGTALK_OAUTH_DEBUG', 'false') === 'true';
   }
 
   private getFrontendUrl() {

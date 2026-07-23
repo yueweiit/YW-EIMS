@@ -34,6 +34,7 @@ const defaultForm: Api.User.CreateParams = {
   userName: '',
   password: '',
   realName: '',
+  email: '',
   dingTalkSubject: '',
   roles: ['R_USER'],
   buttons: [],
@@ -75,7 +76,19 @@ const rules = computed<FormRules>(() => ({
             trigger: 'blur'
           }
         ]
-      : []
+      : [],
+  email: [
+    {
+      validator: (_rule, value: string) => {
+        if (!value || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())) {
+          return true;
+        }
+
+        return new Error('请输入有效的邮箱地址');
+      },
+      trigger: ['input', 'blur']
+    }
+  ]
 }));
 
 const roleOptions = [
@@ -101,6 +114,7 @@ function setFormFromRow(row: Api.User.UserRecord) {
     userName: row.userName,
     password: '',
     realName: row.realName || '',
+    email: row.email || '',
     dingTalkSubject: row.dingTalkSubject || '',
     roles: row.roles,
     buttons: row.buttons,
@@ -167,6 +181,10 @@ async function handleSubmit() {
 
         <NFormItem label="真实姓名" path="realName">
           <NInput v-model:value="formModel.realName" placeholder="请输入真实姓名" />
+        </NFormItem>
+
+        <NFormItem label="邮箱" path="email">
+          <NInput v-model:value="formModel.email" placeholder="请输入 ERPNext 用户邮箱" />
         </NFormItem>
 
         <NFormItem label="钉钉用户标识" path="dingTalkSubject">

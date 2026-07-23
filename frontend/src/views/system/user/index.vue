@@ -56,6 +56,15 @@ const columns: DataTableColumns<Api.User.UserRecord> = [
     render: row => row.realName || '-'
   },
   {
+    key: 'email',
+    title: '邮箱',
+    minWidth: 180,
+    ellipsis: {
+      tooltip: true
+    },
+    render: row => row.email || '-'
+  },
+  {
     key: 'dingTalkSubject',
     title: '钉钉绑定',
     minWidth: 140,
