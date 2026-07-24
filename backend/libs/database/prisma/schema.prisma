@@ -166,12 +166,13 @@ model Mold {
 /// 产品编码表
 model ProductCode {
   id          Int    @id @default(autoincrement())
-  productCode String @unique @map("product_code") @db.VarChar(20)
+  productCode String @map("product_code") @db.VarChar(20)
   productType String @map("product_type") @db.VarChar(100)
   productName String @map("product_name") @db.VarChar(200)
   colorName   String @map("color_name") @db.VarChar(100)
   colorCode   String @map("color_code") @db.VarChar(10)
 
+  @@unique([productCode, colorCode])
   @@index([productType])
   @@map("product_codes")
   @@schema("mold")
