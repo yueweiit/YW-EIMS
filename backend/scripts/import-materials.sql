@@ -1,122 +1,128 @@
--- 自动生成的物料导入 SQL
--- 已存在编码自动跳过
-
+-- XLSX物料 UPSERT：存在则更新，不存在则插入
 BEGIN;
 
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '黄丽瑶', '仿真玉米', 'CW000175', '个', '仿真烤玉米乳胶材质', '2026-06-23', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000175');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '黄丽瑶', '迷你猫薄荷玩具', 'CW000176', '套', '小薄荷棒（两根一包）', '2026-06-23', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000176');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '黄丽瑶', '发声响纸玩具', 'CW000177', '套', '（报纸、J、Q、K）四件套', '2026-06-23', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000177');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '黄丽瑶', '外出饮水球', 'CW000178', '个', '粉色', '2026-06-23', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000178');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '黄丽瑶', '外出饮水球', 'CW000179', '个', '蓝色', '2026-06-23', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000179');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT 'ALEC', '狗项圈激光刻字', 'CW000180', '个', '棕色 xs', '2026-06-23', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000180');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT 'ALEC', '狗项圈激光刻字', 'CW000181', '个', '蓝色 xs', '2026-06-23', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000181');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT 'ALEC', '狗项圈激光刻字', 'CW000182', '个', '粉色 xs', '2026-06-23', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000182');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT 'ALEC', '宠物喷雾梳', 'CW000183', '个', '卡其色', '2026-06-23', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000183');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT 'ALEC', '宠物喷雾梳', 'CW000184', '个', '白色', '2026-06-23', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000184');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT 'ALEC', '自动逗猫球', 'CW000185', '个', '蓝色', '2026-06-23', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000185');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT 'ALEC', '自动逗猫球', 'CW000186', '个', '黄色', '2026-06-23', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000186');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT 'ALEC', '自动逗猫球', 'CW000187', '个', '粉色', '2026-06-23', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000187');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT 'ALEC', '猫薄荷麻布仿真鱼', 'CW000188', '个', '黄色', '2026-06-23', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000188');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT 'ALEC', '狗项圈激光刻字', 'CW000189', '个', '棕色 s', '2026-06-23', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000189');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT 'ALEC', '狗项圈激光刻字', 'CW000190', '个', '蓝色 s', '2026-06-23', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000190');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT 'ALEC', '狗项圈激光刻字', 'CW000191', '个', '粉色 s', '2026-06-23', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000191');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT 'ALEC', '钢色金毛狗牌', 'CW000192', '个', '钢色金毛', '2026-06-23', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000192');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT 'ALEC', '金色金毛狗牌', 'CW000193', '个', '金色金毛', '2026-06-23', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000193');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT 'ALEC', '圆形狗牌', 'CW000194', '个', '如图', '2026-06-23', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000194');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT 'ALEC', '圆形镂空狗牌', 'CW000195', '个', '如图', '2026-06-23', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000195');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT 'ALEC', '吊坠狗牌', 'CW000196', '个', '钢色5x2.8cm', '2026-06-23', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000196');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT 'ALEC', '吊坠狗牌', 'CW000197', '个', '玫瑰金5x2.8cm', '2026-06-23', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000197');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT 'ALEC', '吊坠狗牌', 'CW000198', '个', '金色5x2.8cm', '2026-06-23', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000198');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT 'ALEC', '骨头狗牌', 'CW000199', '个', '钢色5x2.8cm', '2026-06-23', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000199');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT 'ALEC', '骨头狗牌', 'CW000200', '个', '玫瑰金5x2.8cm', '2026-06-23', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000200');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT 'ALEC', '骨头狗牌', 'CW000201', '个', '金色5x2.8cm', '2026-06-23', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000201');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT 'ALEC', '皮革骨头狗牌', 'CW000202', '个', '皮革骨头银色', '2026-06-23', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000202');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT 'ALEC', '皮革骨头狗牌', 'CW000203', '个', '皮革骨头金色', '2026-06-23', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000203');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT 'ALEC', '皮革骨头狗牌', 'CW000204', '个', '皮革骨头黑色', '2026-06-23', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000204');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT 'Navi', '宠物眼部湿巾', 'CW000205', '盒', '100枚', '2026-06-29', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000205');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT 'Navi', '宠物洁耳手指湿巾', 'CW000206', '盒', '50枚', '2026-06-29', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000206');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李仲华', '太阳眼镜', 'FL004111', '个', '黑框红渐黄', '2026-06-30', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004111');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李仲华', '太阳眼镜', 'FL004112', '个', '透灰框黑灰片', '2026-06-30', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004112');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李仲华', '太阳眼镜', 'FL004113', '个', '黑框黑灰片', '2026-06-30', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004113');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李仲华', '电子秤', 'FL004114', '个', '英文电池款500g/0.01
-+防水贴', '2026-06-30', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004114');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李仲华', '胎压表', 'FL004115', '个', '0-200/美规', '2026-06-30', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004115');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李仲华', '笔式万用表', 'FL004116', '个', '智能万用表+测电笔组合二合一', '2026-06-30', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004116');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李仲华', '万用表', 'FL004117', '个', 'DT9205A【电池款】', '2026-06-30', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004117');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李仲华', '温湿度计', 'FL004118', '个', '配电池', '2026-06-30', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004118');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '黄丽瑶', '宠物托特包（绿色）', 'CW000207', '个', '绿色', '2026-07-01', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000207');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '黄丽瑶', '宠物托特包（黄色）', 'CW000208', '个', '黄色', '2026-07-01', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000208');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '翟泽洋', '耳机壳样板', 'FL004119', '个', '样板', '2026-07-03', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004119');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '翟泽洋', 'CNC治具', 'FL004120', '个', '薇武士CNC治具', '2026-07-03', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004120');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '翟泽洋', '显微镜', 'FL004121', '个', NULL, '2026-07-03', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004121');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '翟泽洋', '挂绳样板', 'FL004122', '个', NULL, '2026-07-03', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004122');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '翟泽洋', '手机支架样板', 'FL004123', '个', '薇武士支架样板', '2026-07-03', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004123');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT 'Navi', '仿真发声小鸟（绿色）', 'CW000209', '个', '绿色柳莺', '2026-07-09', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000209');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT 'Navi', '仿真发声小鸟（灰色）', 'CW000210', '个', '灰色百罗', '2026-07-09', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000210');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT 'Navi', '仿真发声小鸟（蓝色）', 'CW000211', '个', '蓝色知更', '2026-07-09', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000211');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT 'Navi', '吸盘逗猫棒（白色）', 'CW000212', '根', '强力吸盘+白色羽毛', '2026-07-09', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000212');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT 'Navi', '吸盘逗猫棒（黑色）', 'CW000213', '根', '强力吸盘+黑色羽毛', '2026-07-09', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000213');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT 'Navi', '吸盘逗猫棒（粉色）', 'CW000214', '根', '强力吸盘+粉色羽毛', '2026-07-09', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000214');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李仲华', '马桶刷', 'FL004124', '个', '1个手柄+10个头', '2026-07-10', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004124');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李仲华', '马桶刷', 'FL004125', '个', '2个手柄+10个浮石', '2026-07-10', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004125');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李仲华', '冲击钻', 'FL004126', '台', '有刷电机/美规', '2026-07-10', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004126');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李仲华', '角磨机', 'FL004127', '台', '无刷电机/美规', '2026-07-10', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004127');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李仲华', '三合一冲击电镐多功能电钻', 'FL004128', '包', '美规26型多功能电锤
-/800W', '2026-07-10', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004128');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李仲华', '24合一精密螺丝刀', 'FL004129', '套', '铝合金手柄', '2026-07-10', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004129');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李仲华', '快劳夹', 'FL004130', '个', 'A4快劳夹', '2026-07-10', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004130');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李仲华', '洗车机', 'FL004131', '套', '美规/126W', '2026-07-10', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004131');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李仲华', '多功能钻头套装', 'FL004132', '套', '规格:111pc', '2026-07-10', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004132');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李仲华', '盘式轨道砂光机', 'FL004133', '台', '110v美规（蓝色）/303W', '2026-07-10', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004133');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李仲华', '文件夹', 'FL004134', '个', '黑色/灰色/深蓝色/墨绿色/米白色/浅粉', '2026-07-10', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004134');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李仲华', '文件夹', 'FL004135', '套', '长款8计算器黑色', '2026-07-10', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004135');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李仲华', '规插座面板独立开关', 'FL004136', '套', '规格:LP10', '2026-07-10', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004136');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李仲华', '迷你家用电动螺丝刀', 'FL004137', '套', '彩盒13件套', '2026-07-10', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004137');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李仲华', '剪刀', 'FL004138', '套', '8寸', '2026-07-10', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004138');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李仲华', '气体测漏仪', 'FL004139', '套', 'JLY-50 英文版说明书 ( 笔式，蜂鸣报警，LCD显示屏，7号 ）', '2026-07-10', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004139');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李仲华', '机械式胎压枪', 'FL004140', '套', '胎压枪套装（14 pcs）', '2026-07-10', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004140');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李仲华', '摩托车加油管', 'FL004141', '套', '带黑帽款', '2026-07-10', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004141');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李仲华', '38mm柴油泵抽水泵两用款', 'FL004142', '套', '15节大艺锂电池+充电器', '2026-07-10', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004142');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李仲华', '喷漆喷油枪', 'FL004143', '套', 'ZT-3000A精品插电款（美规/450W-550W）', '2026-07-10', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004143');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李俊锋', '硅胶耳机壳AirPods pro4-2.1MM厚-Azul marino', 'FL004144', '个', NULL, '2026-07-14', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004144');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李俊锋', '硅胶耳机壳AirPods pro4-2.1MM厚-Rosa', 'FL004145', '个', NULL, '2026-07-14', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004145');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李俊锋', '硅胶耳机壳AirPods pro4-2.1MM厚-Rojo', 'FL004146', '个', NULL, '2026-07-14', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004146');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李俊锋', '硅胶耳机壳AirPods pro4-2.1MM厚-Negro', 'FL004147', '个', NULL, '2026-07-14', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004147');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李俊锋', '硅胶耳机壳AirPods pro3-2.1MM厚-Azul marino', 'FL004148', '个', NULL, '2026-07-14', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004148');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李俊锋', '硅胶耳机壳AirPods pro3-2.1MM厚-Rosa', 'FL004149', '个', NULL, '2026-07-14', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004149');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李俊锋', '硅胶耳机壳AirPods pro3-2.1MM厚-Rojo', 'FL004150', '个', NULL, '2026-07-14', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004150');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李俊锋', '硅胶耳机壳AirPods pro3-2.1MM厚-Negro', 'FL004151', '个', NULL, '2026-07-14', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004151');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李俊锋', '硅胶耳机壳AirPods pro2-2.1MM厚-Azul marino', 'FL004152', '个', NULL, '2026-07-14', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004152');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李俊锋', '硅胶耳机壳AirPods pro2-2.1MM厚-Rosa', 'FL004153', '个', NULL, '2026-07-14', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004153');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李俊锋', '硅胶耳机壳AirPods pro2-2.1MM厚-Rojo', 'FL004154', '个', NULL, '2026-07-14', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004154');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李俊锋', '硅胶耳机壳AirPods pro2-2.1MM厚-Negro', 'FL004155', '个', NULL, '2026-07-14', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004155');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT 'Navi', '不倒翁麻布款', 'CW000215', '个', NULL, '2026-07-14', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000215');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT 'Navi', '不倒翁羽毛款', 'CW000216', '个', NULL, '2026-07-14', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000216');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT 'Navi', '猫咪自嗨转盘', 'CW000217', '个', NULL, '2026-07-14', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000217');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT 'ALEC', '宠物六件套（中型）', 'CW000218', '个', NULL, '2026-07-14', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000218');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李俊锋', '硅胶耳机壳AirPods 4-2.1MM厚-Azul marino', 'FL004156', '个', NULL, '2026-07-15', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004156');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李俊锋', '硅胶耳机壳AirPods 4-2.1MM厚-Rosa', 'FL004157', '个', NULL, '2026-07-15', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004157');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李俊锋', '硅胶耳机壳AirPods 4-2.1MM厚-Rojo', 'FL004158', '个', NULL, '2026-07-15', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004158');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李俊锋', '硅胶耳机壳AirPods 4-2.1MM厚-Negro', 'FL004159', '个', NULL, '2026-07-15', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004159');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李俊锋', '硅胶耳机壳AirPods 3-2.1MM厚-Azul marino', 'FL004160', '个', NULL, '2026-07-15', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004160');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李俊锋', '硅胶耳机壳AirPods 3-2.1MM厚-Rosa', 'FL004161', '个', NULL, '2026-07-15', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004161');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李俊锋', '硅胶耳机壳AirPods 3-2.1MM厚-Rojo', 'FL004162', '个', NULL, '2026-07-15', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004162');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李俊锋', '硅胶耳机壳AirPods 3-2.1MM厚-Negro', 'FL004163', '个', NULL, '2026-07-15', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004163');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李俊锋', '硅胶耳机壳AirPods 2-2.1MM厚-Azul marino', 'FL004164', '个', NULL, '2026-07-15', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004164');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李俊锋', '硅胶耳机壳AirPods 2-2.1MM厚-Rosa', 'FL004165', '个', NULL, '2026-07-15', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004165');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李俊锋', '硅胶耳机壳AirPods 2-2.1MM厚-Rojo', 'FL004166', '个', NULL, '2026-07-15', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004166');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李俊锋', '硅胶耳机壳AirPods 2-2.1MM厚-Negro', 'FL004167', '个', NULL, '2026-07-15', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004167');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李俊锋', '硅胶耳机壳AirPods 1-2.1MM厚-Azul marino', 'FL004168', '个', NULL, '2026-07-15', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004168');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李俊锋', '硅胶耳机壳AirPods 1-2.1MM厚-Rosa', 'FL004169', '个', NULL, '2026-07-15', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004169');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李俊锋', '硅胶耳机壳AirPods 1-2.1MM厚-Rojo', 'FL004170', '个', NULL, '2026-07-15', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004170');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李俊锋', '硅胶耳机壳AirPods 1-2.1MM厚-Negro', 'FL004171', '个', NULL, '2026-07-15', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004171');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李俊锋', '硅胶耳机壳AirPods pro1-2.1MM厚-Azul marino', 'FL004172', '个', NULL, '2026-07-15', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004172');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李俊锋', '硅胶耳机壳AirPods pro1-2.1MM厚-Rosa', 'FL004173', '个', NULL, '2026-07-15', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004173');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李俊锋', '硅胶耳机壳AirPods pro1-2.1MM厚-Rojo', 'FL004174', '个', NULL, '2026-07-15', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004174');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李俊锋', '硅胶耳机壳AirPods pro1-2.1MM厚-Negro', 'FL004175', '个', NULL, '2026-07-15', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004175');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '黄丽瑶', '小猫磨牙5件套', 'CW000219', '套', NULL, '2026-07-21', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'CW000219');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李仲华', '钢化膜Película templada', 'FL004176', '个', 'SM A57', '2026-07-23', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004176');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李仲华', '钢化膜Película templada', 'FL004177', '个', 'SM A27', '2026-07-23', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004177');
-INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) SELECT '李仲华', '亮甲斜顶techo oblicuo con costura brillante', 'FL004178', '个', 'HR X6D 5G', '2026-07-23', NULL, NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM material.materials WHERE code = 'FL004178');
+INSERT INTO material.materials (applicant, material_name, code, unit, specifications, application_date, code_prefix, explain_content, unit_code) VALUES
+('黄丽瑶', '仿真玉米', 'CW000175', '个', '仿真烤玉米乳胶材质', '2026-06-23', NULL, NULL, NULL),
+('黄丽瑶', '迷你猫薄荷玩具', 'CW000176', '套', '小薄荷棒（两根一包）', '2026-06-23', NULL, NULL, NULL),
+('黄丽瑶', '发声响纸玩具', 'CW000177', '套', '（报纸、J、Q、K）四件套', '2026-06-23', NULL, NULL, NULL),
+('黄丽瑶', '外出饮水球', 'CW000178', '个', '粉色', '2026-06-23', NULL, NULL, NULL),
+('黄丽瑶', '外出饮水球', 'CW000179', '个', '蓝色', '2026-06-23', NULL, NULL, NULL),
+('ALEC', '狗项圈激光刻字', 'CW000180', '个', '棕色 xs', '2026-06-23', NULL, NULL, NULL),
+('ALEC', '狗项圈激光刻字', 'CW000181', '个', '蓝色 xs', '2026-06-23', NULL, NULL, NULL),
+('ALEC', '狗项圈激光刻字', 'CW000182', '个', '粉色 xs', '2026-06-23', NULL, NULL, NULL),
+('ALEC', '宠物喷雾梳', 'CW000183', '个', '卡其色', '2026-06-23', NULL, NULL, NULL),
+('ALEC', '宠物喷雾梳', 'CW000184', '个', '白色', '2026-06-23', NULL, NULL, NULL),
+('ALEC', '自动逗猫球', 'CW000185', '个', '蓝色', '2026-06-23', NULL, NULL, NULL),
+('ALEC', '自动逗猫球', 'CW000186', '个', '黄色', '2026-06-23', NULL, NULL, NULL),
+('ALEC', '自动逗猫球', 'CW000187', '个', '粉色', '2026-06-23', NULL, NULL, NULL),
+('ALEC', '猫薄荷麻布仿真鱼', 'CW000188', '个', '黄色', '2026-06-23', NULL, NULL, NULL),
+('ALEC', '狗项圈激光刻字', 'CW000189', '个', '棕色 s', '2026-06-23', NULL, NULL, NULL),
+('ALEC', '狗项圈激光刻字', 'CW000190', '个', '蓝色 s', '2026-06-23', NULL, NULL, NULL),
+('ALEC', '狗项圈激光刻字', 'CW000191', '个', '粉色 s', '2026-06-23', NULL, NULL, NULL),
+('ALEC', '钢色金毛狗牌', 'CW000192', '个', '钢色金毛', '2026-06-23', NULL, NULL, NULL),
+('ALEC', '金色金毛狗牌', 'CW000193', '个', '金色金毛', '2026-06-23', NULL, NULL, NULL),
+('ALEC', '圆形狗牌', 'CW000194', '个', '如图', '2026-06-23', NULL, NULL, NULL),
+('ALEC', '圆形镂空狗牌', 'CW000195', '个', '如图', '2026-06-23', NULL, NULL, NULL),
+('ALEC', '吊坠狗牌', 'CW000196', '个', '钢色5x2.8cm', '2026-06-23', NULL, NULL, NULL),
+('ALEC', '吊坠狗牌', 'CW000197', '个', '玫瑰金5x2.8cm', '2026-06-23', NULL, NULL, NULL),
+('ALEC', '吊坠狗牌', 'CW000198', '个', '金色5x2.8cm', '2026-06-23', NULL, NULL, NULL),
+('ALEC', '骨头狗牌', 'CW000199', '个', '钢色5x2.8cm', '2026-06-23', NULL, NULL, NULL),
+('ALEC', '骨头狗牌', 'CW000200', '个', '玫瑰金5x2.8cm', '2026-06-23', NULL, NULL, NULL),
+('ALEC', '骨头狗牌', 'CW000201', '个', '金色5x2.8cm', '2026-06-23', NULL, NULL, NULL),
+('ALEC', '皮革骨头狗牌', 'CW000202', '个', '皮革骨头银色', '2026-06-23', NULL, NULL, NULL),
+('ALEC', '皮革骨头狗牌', 'CW000203', '个', '皮革骨头金色', '2026-06-23', NULL, NULL, NULL),
+('ALEC', '皮革骨头狗牌', 'CW000204', '个', '皮革骨头黑色', '2026-06-23', NULL, NULL, NULL),
+('Navi', '宠物眼部湿巾', 'CW000205', '盒', '100枚', '2026-06-29', NULL, NULL, NULL),
+('Navi', '宠物洁耳手指湿巾', 'CW000206', '盒', '50枚', '2026-06-29', NULL, NULL, NULL),
+('李仲华', '太阳眼镜', 'FL004111', '个', '黑框红渐黄', '2026-06-30', NULL, NULL, NULL),
+('李仲华', '太阳眼镜', 'FL004112', '个', '透灰框黑灰片', '2026-06-30', NULL, NULL, NULL),
+('李仲华', '太阳眼镜', 'FL004113', '个', '黑框黑灰片', '2026-06-30', NULL, NULL, NULL),
+('李仲华', '电子秤', 'FL004114', '个', '英文电池款500g/0.01
++防水贴', '2026-06-30', NULL, NULL, NULL),
+('李仲华', '胎压表', 'FL004115', '个', '0-200/美规', '2026-06-30', NULL, NULL, NULL),
+('李仲华', '笔式万用表', 'FL004116', '个', '智能万用表+测电笔组合二合一', '2026-06-30', NULL, NULL, NULL),
+('李仲华', '万用表', 'FL004117', '个', 'DT9205A【电池款】', '2026-06-30', NULL, NULL, NULL),
+('李仲华', '温湿度计', 'FL004118', '个', '配电池', '2026-06-30', NULL, NULL, NULL),
+('黄丽瑶', '宠物托特包（绿色）', 'CW000207', '个', '绿色', '2026-07-01', NULL, NULL, NULL),
+('黄丽瑶', '宠物托特包（黄色）', 'CW000208', '个', '黄色', '2026-07-01', NULL, NULL, NULL),
+('翟泽洋', '耳机壳样板', 'FL004119', '个', '样板', '2026-07-03', NULL, NULL, NULL),
+('翟泽洋', 'CNC治具', 'FL004120', '个', '薇武士CNC治具', '2026-07-03', NULL, NULL, NULL),
+('翟泽洋', '显微镜', 'FL004121', '个', NULL, '2026-07-03', NULL, NULL, NULL),
+('翟泽洋', '挂绳样板', 'FL004122', '个', NULL, '2026-07-03', NULL, NULL, NULL),
+('翟泽洋', '手机支架样板', 'FL004123', '个', '薇武士支架样板', '2026-07-03', NULL, NULL, NULL),
+('Navi', '仿真发声小鸟（绿色）', 'CW000209', '个', '绿色柳莺', '2026-07-09', NULL, NULL, NULL),
+('Navi', '仿真发声小鸟（灰色）', 'CW000210', '个', '灰色百罗', '2026-07-09', NULL, NULL, NULL),
+('Navi', '仿真发声小鸟（蓝色）', 'CW000211', '个', '蓝色知更', '2026-07-09', NULL, NULL, NULL),
+('Navi', '吸盘逗猫棒（白色）', 'CW000212', '根', '强力吸盘+白色羽毛', '2026-07-09', NULL, NULL, NULL),
+('Navi', '吸盘逗猫棒（黑色）', 'CW000213', '根', '强力吸盘+黑色羽毛', '2026-07-09', NULL, NULL, NULL),
+('Navi', '吸盘逗猫棒（粉色）', 'CW000214', '根', '强力吸盘+粉色羽毛', '2026-07-09', NULL, NULL, NULL),
+('李仲华', '马桶刷', 'FL004124', '个', '1个手柄+10个头', '2026-07-10', NULL, NULL, NULL),
+('李仲华', '马桶刷', 'FL004125', '个', '2个手柄+10个浮石', '2026-07-10', NULL, NULL, NULL),
+('李仲华', '冲击钻', 'FL004126', '台', '有刷电机/美规', '2026-07-10', NULL, NULL, NULL),
+('李仲华', '角磨机', 'FL004127', '台', '无刷电机/美规', '2026-07-10', NULL, NULL, NULL),
+('李仲华', '三合一冲击电镐多功能电钻', 'FL004128', '包', '美规26型多功能电锤
+/800W', '2026-07-10', NULL, NULL, NULL),
+('李仲华', '24合一精密螺丝刀', 'FL004129', '套', '铝合金手柄', '2026-07-10', NULL, NULL, NULL),
+('李仲华', '快劳夹', 'FL004130', '个', 'A4快劳夹', '2026-07-10', NULL, NULL, NULL),
+('李仲华', '洗车机', 'FL004131', '套', '美规/126W', '2026-07-10', NULL, NULL, NULL),
+('李仲华', '多功能钻头套装', 'FL004132', '套', '规格:111pc', '2026-07-10', NULL, NULL, NULL),
+('李仲华', '盘式轨道砂光机', 'FL004133', '台', '110v美规（蓝色）/303W', '2026-07-10', NULL, NULL, NULL),
+('李仲华', '文件夹', 'FL004134', '个', '黑色/灰色/深蓝色/墨绿色/米白色/浅粉', '2026-07-10', NULL, NULL, NULL),
+('李仲华', '文件夹', 'FL004135', '套', '长款8计算器黑色', '2026-07-10', NULL, NULL, NULL),
+('李仲华', '规插座面板独立开关', 'FL004136', '套', '规格:LP10', '2026-07-10', NULL, NULL, NULL),
+('李仲华', '迷你家用电动螺丝刀', 'FL004137', '套', '彩盒13件套', '2026-07-10', NULL, NULL, NULL),
+('李仲华', '剪刀', 'FL004138', '套', '8寸', '2026-07-10', NULL, NULL, NULL),
+('李仲华', '气体测漏仪', 'FL004139', '套', 'JLY-50 英文版说明书 ( 笔式，蜂鸣报警，LCD显示屏，7号 ）', '2026-07-10', NULL, NULL, NULL),
+('李仲华', '机械式胎压枪', 'FL004140', '套', '胎压枪套装（14 pcs）', '2026-07-10', NULL, NULL, NULL),
+('李仲华', '摩托车加油管', 'FL004141', '套', '带黑帽款', '2026-07-10', NULL, NULL, NULL),
+('李仲华', '38mm柴油泵抽水泵两用款', 'FL004142', '套', '15节大艺锂电池+充电器', '2026-07-10', NULL, NULL, NULL),
+('李仲华', '喷漆喷油枪', 'FL004143', '套', 'ZT-3000A精品插电款（美规/450W-550W）', '2026-07-10', NULL, NULL, NULL),
+('李俊锋', '硅胶耳机壳AirPods pro4-2.1MM厚-Azul marino', 'FL004144', '个', NULL, '2026-07-14', NULL, NULL, NULL),
+('李俊锋', '硅胶耳机壳AirPods pro4-2.1MM厚-Rosa', 'FL004145', '个', NULL, '2026-07-14', NULL, NULL, NULL),
+('李俊锋', '硅胶耳机壳AirPods pro4-2.1MM厚-Rojo', 'FL004146', '个', NULL, '2026-07-14', NULL, NULL, NULL),
+('李俊锋', '硅胶耳机壳AirPods pro4-2.1MM厚-Negro', 'FL004147', '个', NULL, '2026-07-14', NULL, NULL, NULL),
+('李俊锋', '硅胶耳机壳AirPods pro3-2.1MM厚-Azul marino', 'FL004148', '个', NULL, '2026-07-14', NULL, NULL, NULL),
+('李俊锋', '硅胶耳机壳AirPods pro3-2.1MM厚-Rosa', 'FL004149', '个', NULL, '2026-07-14', NULL, NULL, NULL),
+('李俊锋', '硅胶耳机壳AirPods pro3-2.1MM厚-Rojo', 'FL004150', '个', NULL, '2026-07-14', NULL, NULL, NULL),
+('李俊锋', '硅胶耳机壳AirPods pro3-2.1MM厚-Negro', 'FL004151', '个', NULL, '2026-07-14', NULL, NULL, NULL),
+('李俊锋', '硅胶耳机壳AirPods pro2-2.1MM厚-Azul marino', 'FL004152', '个', NULL, '2026-07-14', NULL, NULL, NULL),
+('李俊锋', '硅胶耳机壳AirPods pro2-2.1MM厚-Rosa', 'FL004153', '个', NULL, '2026-07-14', NULL, NULL, NULL),
+('李俊锋', '硅胶耳机壳AirPods pro2-2.1MM厚-Rojo', 'FL004154', '个', NULL, '2026-07-14', NULL, NULL, NULL),
+('李俊锋', '硅胶耳机壳AirPods pro2-2.1MM厚-Negro', 'FL004155', '个', NULL, '2026-07-14', NULL, NULL, NULL),
+('Navi', '不倒翁麻布款', 'CW000215', '个', NULL, '2026-07-14', NULL, NULL, NULL),
+('Navi', '不倒翁羽毛款', 'CW000216', '个', NULL, '2026-07-14', NULL, NULL, NULL),
+('Navi', '猫咪自嗨转盘', 'CW000217', '个', NULL, '2026-07-14', NULL, NULL, NULL),
+('ALEC', '宠物六件套（中型）', 'CW000218', '个', NULL, '2026-07-14', NULL, NULL, NULL),
+('李俊锋', '硅胶耳机壳AirPods 4-2.1MM厚-Azul marino', 'FL004156', '个', NULL, '2026-07-15', NULL, NULL, NULL),
+('李俊锋', '硅胶耳机壳AirPods 4-2.1MM厚-Rosa', 'FL004157', '个', NULL, '2026-07-15', NULL, NULL, NULL),
+('李俊锋', '硅胶耳机壳AirPods 4-2.1MM厚-Rojo', 'FL004158', '个', NULL, '2026-07-15', NULL, NULL, NULL),
+('李俊锋', '硅胶耳机壳AirPods 4-2.1MM厚-Negro', 'FL004159', '个', NULL, '2026-07-15', NULL, NULL, NULL),
+('李俊锋', '硅胶耳机壳AirPods 3-2.1MM厚-Azul marino', 'FL004160', '个', NULL, '2026-07-15', NULL, NULL, NULL),
+('李俊锋', '硅胶耳机壳AirPods 3-2.1MM厚-Rosa', 'FL004161', '个', NULL, '2026-07-15', NULL, NULL, NULL),
+('李俊锋', '硅胶耳机壳AirPods 3-2.1MM厚-Rojo', 'FL004162', '个', NULL, '2026-07-15', NULL, NULL, NULL),
+('李俊锋', '硅胶耳机壳AirPods 3-2.1MM厚-Negro', 'FL004163', '个', NULL, '2026-07-15', NULL, NULL, NULL),
+('李俊锋', '硅胶耳机壳AirPods 2-2.1MM厚-Azul marino', 'FL004164', '个', NULL, '2026-07-15', NULL, NULL, NULL),
+('李俊锋', '硅胶耳机壳AirPods 2-2.1MM厚-Rosa', 'FL004165', '个', NULL, '2026-07-15', NULL, NULL, NULL),
+('李俊锋', '硅胶耳机壳AirPods 2-2.1MM厚-Rojo', 'FL004166', '个', NULL, '2026-07-15', NULL, NULL, NULL),
+('李俊锋', '硅胶耳机壳AirPods 2-2.1MM厚-Negro', 'FL004167', '个', NULL, '2026-07-15', NULL, NULL, NULL),
+('李俊锋', '硅胶耳机壳AirPods 1-2.1MM厚-Azul marino', 'FL004168', '个', NULL, '2026-07-15', NULL, NULL, NULL),
+('李俊锋', '硅胶耳机壳AirPods 1-2.1MM厚-Rosa', 'FL004169', '个', NULL, '2026-07-15', NULL, NULL, NULL),
+('李俊锋', '硅胶耳机壳AirPods 1-2.1MM厚-Rojo', 'FL004170', '个', NULL, '2026-07-15', NULL, NULL, NULL),
+('李俊锋', '硅胶耳机壳AirPods 1-2.1MM厚-Negro', 'FL004171', '个', NULL, '2026-07-15', NULL, NULL, NULL),
+('李俊锋', '硅胶耳机壳AirPods pro1-2.1MM厚-Azul marino', 'FL004172', '个', NULL, '2026-07-15', NULL, NULL, NULL),
+('李俊锋', '硅胶耳机壳AirPods pro1-2.1MM厚-Rosa', 'FL004173', '个', NULL, '2026-07-15', NULL, NULL, NULL),
+('李俊锋', '硅胶耳机壳AirPods pro1-2.1MM厚-Rojo', 'FL004174', '个', NULL, '2026-07-15', NULL, NULL, NULL),
+('李俊锋', '硅胶耳机壳AirPods pro1-2.1MM厚-Negro', 'FL004175', '个', NULL, '2026-07-15', NULL, NULL, NULL),
+('黄丽瑶', '小猫磨牙5件套', 'CW000219', '套', NULL, '2026-07-21', NULL, NULL, NULL),
+('李仲华', '钢化膜Película templada', 'FL004176', '个', 'SM A57', '2026-07-23', NULL, NULL, NULL),
+('李仲华', '钢化膜Película templada', 'FL004177', '个', 'SM A27', '2026-07-23', NULL, NULL, NULL),
+('李仲华', '亮甲斜顶techo oblicuo con costura brillante', 'FL004178', '个', 'HR X6D 5G', '2026-07-23', NULL, NULL, NULL)
+
+ON CONFLICT (code) DO UPDATE SET
+  applicant = EXCLUDED.applicant,
+  material_name = EXCLUDED.material_name,
+  unit = EXCLUDED.unit,
+  specifications = EXCLUDED.specifications,
+  application_date = EXCLUDED.application_date;
 
 COMMIT;
