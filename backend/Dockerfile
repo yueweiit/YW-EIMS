@@ -1,7 +1,7 @@
 FROM node:22-alpine AS builder
 WORKDIR /app
 COPY package.json ./
-RUN npm install
+RUN npm config set registry https://registry.npmmirror.com && npm install
 COPY tsconfig.json tsconfig.build.json nest-cli.json ./
 COPY apps/ apps/
 COPY libs/ libs/
