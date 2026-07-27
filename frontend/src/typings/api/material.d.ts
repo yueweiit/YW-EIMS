@@ -79,5 +79,29 @@ declare namespace Api {
       failed: number;
       errors: string[];
     }
+
+    /** ERP 物料查询结果 */
+    interface ErpItemData {
+      item_code: string;
+      item_name: string;
+      item_group: string;
+      stock_uom: string;
+      description: string | null;
+    }
+
+    /** lookup 返回 */
+    interface LookupResult {
+      source: 'local' | 'erp';
+      data: MaterialRecord | ErpItemData;
+    }
+
+    /** sync-from-erp 返回 */
+    interface SyncResult {
+      total: number;
+      created: number;
+      skipped: number;
+      failed: number;
+      errors: string[];
+    }
   }
 }

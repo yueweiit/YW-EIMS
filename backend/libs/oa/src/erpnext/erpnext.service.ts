@@ -5,7 +5,7 @@ import { lastValueFrom } from 'rxjs';
 import type { AxiosResponse } from 'axios';
 import type { Mold, Product, Material } from '@prisma/client';
 import { PrismaService } from '@eims/database';
-import type { ErpNextItemPayload, ErpNextSyncResult } from './erpnext.interface';
+import type { ErpNextItemPayload, ErpNextSyncResult, ErpNextItemQueryResult } from './erpnext.interface';
 import {
   DEFAULT_ITEM_API_URL,
   DEFAULT_STOCK_UOM,
@@ -175,7 +175,94 @@ export class ErpNextService implements OnModuleInit {
     };
   }
 
-  // ─── ERPNext API call ──────────────────────────────────
+  // ─── ERPNext Item Query (GET) ──────────────────────────
+
+  /**
+   * 从 DeepLinkERP 查询单个物料
+   */
+  async getItem(itemCode: string): Promise<ErpNextItemQueryResult | null> {
+    if (!this.authToken) {
+      this.logger.warn('ERPNext 未配置 ERPNEXT_AUTH_TOKEN，无法查询物料');
+      return null;
+    }
+
+    const fields = ['item_code', 'item_name', 'item_group', 'stock_uom', 'description'];
+    const filters = [['item_code', '=', itemCode]];
+    const params = new URLSearchParams({
+      fields: JSON.stringify(fields),
+      filters: JSON.stringify(filters),
+    });
+
+    try {
+      const response: AxiosResponse = await lastValueFrom(
+        this.httpService.get(`${this.apiUrl}?${params.toString()}`, {
+          headers: {
+            Authorization: this.getAuthorizationHeader(),
+          },
+          timeout: 15000,
+        }),
+      );
+
+      const data = response.data?.data;
+      if (data && Array.isArray(data) && data.length > 0) {
+        return data[0] as ErpNextItemQueryResult;
+      }
+      return null;
+    } catch (error: unknown) {
+      const axiosError = error as { message?: string; response?: { status?: number } };
+      this.logger.error(
+        `查询 ERPNext 物料失败: item_code=${itemCode}, status=${axiosError.response?.status || ''}, message=${axiosError.message}`,
+      );
+      return null;
+    }
+  }
+
+  /**
+   * 从 DeepLinkERP 分页拉取所有物料
+   */
+  async listItems(
+    limitStart: number = 0,
+    limitPageLength: number = 200,
+  ): Promise<{ items: ErpNextItemQueryResult[]; hasMore: boolean }> {
+    if (!this.authToken) {
+      this.logger.warn('ERPNext 未配置 ERPNEXT_AUTH_TOKEN，无法拉取物料列表');
+      return { items: [], hasMore: false };
+    }
+
+    const fields = ['item_code', 'item_name', 'item_group', 'stock_uom', 'description'];
+    const params = new URLSearchParams({
+      fields: JSON.stringify(fields),
+      filters: JSON.stringify([]),
+      limit_start: String(limitStart),
+      limit_page_length: String(limitPageLength),
+    });
+
+    try {
+      const response: AxiosResponse = await lastValueFrom(
+        this.httpService.get(`${this.apiUrl}?${params.toString()}`, {
+          headers: { Authorization: this.getAuthorizationHeader() },
+          timeout: 30000,
+        }),
+      );
+
+      const data = response.data?.data;
+      if (data && Array.isArray(data)) {
+        return {
+          items: data as ErpNextItemQueryResult[],
+          hasMore: data.length >= limitPageLength,
+        };
+      }
+      return { items: [], hasMore: false };
+    } catch (error: unknown) {
+      const axiosError = error as { message?: string; response?: { status?: number } };
+      this.logger.error(
+        `拉取 ERPNext 物料列表失败: limitStart=${limitStart}, status=${axiosError.response?.status || ''}, message=${axiosError.message}`,
+      );
+      throw error;
+    }
+  }
+
+  // ─── ERPNext API call (POST create) ────────────────────
 
   async createItem(payload: ErpNextItemPayload, options?: { skipLog?: boolean }): Promise<ErpNextSyncResult> {
     if (!this.authToken) {

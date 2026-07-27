@@ -13,6 +13,15 @@ export interface ErpNextItemPayload {
   is_purchase_item: number;
 }
 
+/** DeepLinkERP Item GET 查询返回的物料数据 */
+export interface ErpNextItemQueryResult {
+  item_code: string;
+  item_name: string;
+  item_group: string;
+  stock_uom: string;
+  description: string | null;
+}
+
 export interface ErpNextSyncResult {
   success: boolean;
   skipped?: boolean;

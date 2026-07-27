@@ -2,10 +2,20 @@ import { Injectable, Logger, NotFoundException, BadRequestException } from '@nes
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '@eims/database';
 import { ErpNextService } from '@eims/oa';
+import type { ErpNextItemQueryResult } from '@eims/oa';
 import { CreateMaterialDto } from './dto/create-material.dto';
 import { UpdateMaterialDto } from './dto/update-material.dto';
 import { QueryMaterialDto } from './dto/query-material.dto';
 import type { ImportMaterialRowDto } from './dto/import-material.dto';
+
+export interface ImportExistingMaterialRow {
+  applicant?: string;
+  materialName: string;
+  code: string;
+  unit?: string;
+  specifications?: string;
+  applicationDate?: string;
+}
 
 @Injectable()
 export class MaterialsService {
@@ -217,6 +227,178 @@ export class MaterialsService {
       failed: errors.length,
       errors,
     };
+  }
+
+  /**
+   * 按物料编码查詢：先查本地，本地没有则从 DeepLinkERP 查詢
+   */
+  async lookupByCode(code: string) {
+    // 1. 先查本地数据库
+    const local = await this.prisma.material.findFirst({
+      where: { code },
+    });
+
+    if (local) {
+      return {
+        source: 'local' as const,
+        data: local,
+      };
+    }
+
+    // 2. 本地没有，从 DeepLinkERP 查询
+    const erpItem = await this.erpNextService.getItem(code);
+
+    if (erpItem) {
+      return {
+        source: 'erp' as const,
+        data: erpItem,
+      };
+    }
+
+    // 3. 都没有
+    throw new NotFoundException(`物料编码 ${code} 在本地和 ERP 中均未找到`);
+  }
+
+  /**
+   * 从 DeepLinkERP 同步所有物料到本地
+   * 已存在的跳过，不存在的自动创建
+   */
+  async syncFromErp() {
+    const result = {
+      total: 0,
+      created: 0,
+      skipped: 0,
+      failed: 0,
+      errors: [] as string[],
+    };
+
+    // 1. 先取出本地已有的所有物料编码
+    const existingCodes = new Set(
+      (
+        await this.prisma.material.findMany({
+          select: { code: true },
+          where: { code: { not: null } },
+        })
+      )
+        .map((m) => m.code)
+        .filter((c): c is string => c !== null),
+    );
+
+    // 2. 分页拉取 ERP 全部物料
+    const pageSize = 200;
+    let limitStart = 0;
+    let hasMore = true;
+
+    while (hasMore) {
+      const page = await this.erpNextService.listItems(limitStart, pageSize);
+      result.total += page.items.length;
+      hasMore = page.hasMore;
+      limitStart += pageSize;
+
+      // 3. 过滤出本地不存在的
+      const newItems = page.items.filter(
+        (item) => !existingCodes.has(item.item_code),
+      );
+
+      // 4. 批量插入
+      for (const item of newItems) {
+        try {
+          await this.prisma.material.create({
+            data: {
+              applicant: 'ERP_SYNC',
+              materialName: item.item_name,
+              code: item.item_code,
+              unit: item.stock_uom || null,
+              specifications: item.description || null,
+              codePrefix: null,
+              explainContent: item.item_group || null,
+              unitCode: null,
+            },
+          });
+          existingCodes.add(item.item_code);
+          result.created++;
+        } catch (err: any) {
+          result.failed++;
+          const msg = `${item.item_code}: ${err?.message || err}`;
+          result.errors.push(msg);
+          this.logger.error(`同步物料失败: ${msg}`);
+        }
+      }
+
+      result.skipped += page.items.length - newItems.length;
+    }
+
+    this.logger.log(
+      `ERP 物料同步完成: 共 ${result.total} 条, 新增 ${result.created}, 跳过 ${result.skipped}, 失败 ${result.failed}`,
+    );
+
+    return result;
+  }
+
+  /**
+   * 导入已有编码的物料（不生成新编码，已存在的跳过）
+   */
+  async importExisting(rows: ImportExistingMaterialRow[]) {
+    if (!rows.length) throw new BadRequestException('导入数据不能为空');
+
+    // 1. 取出所有编码
+    const codes = rows.map((r) => r.code).filter(Boolean);
+
+    // 2. 查本地已存在的
+    const existing = new Set(
+      (
+        await this.prisma.material.findMany({
+          where: { code: { in: codes } },
+          select: { code: true },
+        })
+      )
+        .map((m) => m.code)
+        .filter((c): c is string => c !== null),
+    );
+
+    // 3. 过滤出需要新增的
+    const toCreate = rows.filter((r) => !existing.has(r.code));
+
+    if (toCreate.length === 0) {
+      return { created: 0, skipped: rows.length, failed: 0, errors: [] };
+    }
+
+    // 4. 批量插入
+    let created = 0;
+    let failed = 0;
+    const errors: string[] = [];
+
+    for (const row of toCreate) {
+      try {
+        await this.prisma.material.create({
+          data: {
+            applicant: row.applicant || 'IMPORT',
+            materialName: row.materialName,
+            code: row.code,
+            unit: row.unit || null,
+            specifications: row.specifications || null,
+            applicationDate: row.applicationDate
+              ? new Date(row.applicationDate)
+              : new Date(),
+            codePrefix: null,
+            explainContent: null,
+            unitCode: null,
+          },
+        });
+        created++;
+      } catch (err: any) {
+        failed++;
+        const msg = `${row.code}: ${err?.message || err}`;
+        errors.push(msg);
+        this.logger.error(`导入物料失败: ${msg}`);
+      }
+    }
+
+    this.logger.log(
+      `导入完成: 共 ${rows.length} 条, 新增 ${created}, 跳过 ${existing.size}, 失败 ${failed}`,
+    );
+
+    return { created, skipped: existing.size, failed, errors };
   }
 
   async remove(id: number) {

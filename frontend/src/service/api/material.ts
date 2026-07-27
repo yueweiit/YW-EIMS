@@ -51,3 +51,19 @@ export function fetchImportMaterials(data: Api.Material.CreateParams[]) {
     data
   });
 }
+
+/** lookup material by code (local first, then DeepLinkERP) */
+export function fetchLookupMaterial(code: string) {
+  return request<Api.Material.LookupResult>({
+    url: `/material/lookup/${encodeURIComponent(code)}`,
+    method: 'get'
+  });
+}
+
+/** sync all materials from ERP to local */
+export function fetchSyncFromErp() {
+  return request<Api.Material.SyncResult>({
+    url: '/material/sync-from-erp',
+    method: 'post'
+  });
+}

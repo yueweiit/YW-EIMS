@@ -3,7 +3,7 @@ import { h, reactive, ref } from 'vue';
 import type { DataTableColumns } from 'naive-ui';
 import { NButton, NCard, NDataTable, NPopconfirm, NSpace, NPagination, useDialog } from 'naive-ui';
 import { useLoading } from '@sa/hooks';
-import { fetchDeleteMaterial, fetchMaterialPage, fetchImportMaterials, fetchUnitPage, fetchCodeRulePage } from '@/service/api';
+import { fetchDeleteMaterial, fetchMaterialPage, fetchImportMaterials, fetchUnitPage, fetchCodeRulePage, fetchSyncFromErp } from '@/service/api';
 import MaterialOperateDrawer from './modules/material-operate-drawer.vue';
 import MaterialSearch from './modules/material-search.vue';
 import { parseExcelFile, downloadTemplate, exportMaterials } from './modules/material-excel-importer';
@@ -27,6 +27,7 @@ const drawerType = ref<NaiveUI.TableOperateType>('add');
 const editRow = ref<Api.Material.MaterialRecord | null>(null);
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const importing = ref(false);
+const syncing = ref(false);
 
 const columns: DataTableColumns<Api.Material.MaterialRecord> = [
   {
@@ -285,6 +286,27 @@ async function handleFileChange(event: Event) {
   }
 }
 
+async function handleSyncFromErp() {
+  syncing.value = true;
+  try {
+    const { data, error } = await fetchSyncFromErp();
+    if (!error && data) {
+      window.$message?.success(
+        `同步完成：共 ${data.total} 条物料，新增 ${data.created} 条，跳过 ${data.skipped} 条` +
+        (data.failed > 0 ? `，失败 ${data.failed} 条` : '')
+      );
+      if (data.errors.length > 0) {
+        window.$message?.warning(`失败明细：${data.errors.join('；')}`, { duration: 10000 });
+      }
+      getData();
+    }
+  } catch (err) {
+    window.$message?.error(err instanceof Error ? err.message : '同步失败，请检查 ERP 连接');
+  } finally {
+    syncing.value = false;
+  }
+}
+
 getData();
 </script>
 
@@ -309,6 +331,9 @@ getData();
           </NButton>
           <NButton type="success" ghost @click="handleExport">
             导出 Excel
+          </NButton>
+          <NButton type="warning" ghost :loading="syncing" @click="handleSyncFromErp">
+            同步 ERP
           </NButton>
           <NButton type="primary" @click="handleAdd">
             新增
