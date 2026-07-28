@@ -162,7 +162,7 @@ export class PhoneModelsService {
 
   /**
    * 通过 phoneShortName 查找手机型号，不存在则自动创建。
-   * phoneShortName 非唯一，用 findFirst 查找。
+   * phoneShortName 非唯一，先精确匹配 shortName，再尝试 phoneName。
    */
   async findByShortNameOrCreate(
     tx: Prisma.TransactionClient | null,
@@ -170,11 +170,17 @@ export class PhoneModelsService {
   ) {
     const client = tx ?? this.prisma;
 
-    // phoneShortName 非唯一，用 findFirst
+    // 先按 phoneShortName 精确匹配
     const existing = await client.phoneModel.findFirst({
       where: { phoneShortName },
     });
     if (existing) return existing;
+
+    // 如果没找到，再尝试按 phoneName 匹配（处理未填简称的情况）
+    const byName = await client.phoneModel.findUnique({
+      where: { phoneName: phoneShortName },
+    });
+    if (byName) return byName;
 
     // 使用 FOR UPDATE 锁定序列表，安全生成 phoneCode
     const sequenceRows = await client.$queryRaw<

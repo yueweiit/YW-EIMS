@@ -127,10 +127,9 @@ async function loadPhoneShortNameOptions(searchText = '', reset = true) {
     });
     if (!error && data) {
       const newOptions = data.records
-        .filter(item => item.phoneShortName)
         .map(item => ({
-          label: item.phoneShortName!,
-          value: item.phoneShortName!
+          label: item.phoneShortName || item.phoneName,
+          value: item.phoneShortName || item.phoneName
         }));
       if (reset) {
         phoneShortNameOptions.value = newOptions;
