@@ -190,9 +190,17 @@ async function handleSelectAll() {
 }
 
 async function fetchExportRows() {
-  const { data, error } = await fetchPhoneModelPage({ ...queryParams, current: 1, size: 10000 });
-  if (error || !data) return [];
-  return data.records;
+  const allRecords: Api.PhoneModel.PhoneModelRecord[] = [];
+  let page = 1;
+  const pageSize = 100; // 后端最大限制
+  while (true) {
+    const { data, error } = await fetchPhoneModelPage({ ...queryParams, current: page, size: pageSize });
+    if (error || !data) break;
+    allRecords.push(...data.records);
+    if (allRecords.length >= data.total) break;
+    page++;
+  }
+  return allRecords;
 }
 
 function handleDownloadTemplate() {
