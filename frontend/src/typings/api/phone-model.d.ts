@@ -38,5 +38,10 @@ declare namespace Api {
       /** phone short name */
       phoneShortName?: string;
     }
+
+    /** batch delete params */
+    interface BatchDeleteParams {
+      ids: number[];
+    }
   }
 }

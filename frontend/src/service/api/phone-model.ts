@@ -35,6 +35,15 @@ export function fetchDeletePhoneModel(id: number) {
   });
 }
 
+/** batch delete phone models */
+export function fetchBatchDeletePhoneModels(data: Api.PhoneModel.BatchDeleteParams) {
+  return request<{ deleted: number; failed: number; errors: string[] }>({
+    url: '/mold-product/phone-models/batch-delete',
+    method: 'post',
+    data
+  });
+}
+
 /** get phone model detail */
 export function fetchGetPhoneModel(id: number) {
   return request<Api.PhoneModel.PhoneModelRecord>({

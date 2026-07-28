@@ -13,6 +13,7 @@ import { PhoneModelsService } from './phone-models.service';
 import { CreatePhoneModelDto } from './dto/create-phone-model.dto';
 import { UpdatePhoneModelDto } from './dto/update-phone-model.dto';
 import { QueryPhoneModelDto } from './dto/query-phone-model.dto';
+import { BatchDeletePhoneModelDto } from './dto/batch-delete-phone-model.dto';
 
 @Controller('mold-product/phone-models')
 export class PhoneModelsController {
@@ -44,5 +45,10 @@ export class PhoneModelsController {
   @Delete(':id')
   async remove(@Param('id', ParseIntPipe) id: number) {
     return this.phoneModelsService.remove(id);
+  }
+
+  @Post('batch-delete')
+  async batchRemove(@Body() dto: BatchDeletePhoneModelDto) {
+    return this.phoneModelsService.batchRemove(dto);
   }
 }

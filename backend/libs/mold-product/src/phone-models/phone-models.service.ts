@@ -4,6 +4,7 @@ import { PrismaService } from '@eims/database';
 import { CreatePhoneModelDto } from './dto/create-phone-model.dto';
 import { UpdatePhoneModelDto } from './dto/update-phone-model.dto';
 import { QueryPhoneModelDto } from './dto/query-phone-model.dto';
+import { BatchDeletePhoneModelDto } from './dto/batch-delete-phone-model.dto';
 import { handlePrismaError } from '../helpers';
 
 @Injectable()
@@ -86,6 +87,41 @@ export class PhoneModelsService {
 
     await this.prisma.phoneModel.delete({ where: { id } });
     return null;
+  }
+
+  async batchRemove(dto: BatchDeletePhoneModelDto) {
+    const errors: string[] = [];
+    const deleted: { id: number; phoneName: string }[] = [];
+
+    for (const id of dto.ids) {
+      const existing = await this.prisma.phoneModel.findUnique({ where: { id } });
+      if (!existing) {
+        errors.push(`ID ${id}：手机型号不存在`);
+        continue;
+      }
+
+      const [moldCount, productCount] = await Promise.all([
+        this.prisma.mold.count({ where: { phoneCode: existing.phoneCode } }),
+        this.prisma.product.count({ where: { phoneCode: existing.phoneCode } }),
+      ]);
+      if (moldCount > 0) {
+        errors.push(`"${existing.phoneName}"：被 ${moldCount} 条模具记录引用，无法删除`);
+        continue;
+      }
+      if (productCount > 0) {
+        errors.push(`"${existing.phoneName}"：被 ${productCount} 条产品记录引用，无法删除`);
+        continue;
+      }
+
+      await this.prisma.phoneModel.delete({ where: { id } });
+      deleted.push({ id, phoneName: existing.phoneName });
+    }
+
+    return {
+      deleted: deleted.length,
+      failed: errors.length,
+      errors,
+    };
   }
 
   /**

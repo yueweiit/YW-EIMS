@@ -3,7 +3,7 @@ import { h, reactive, ref } from 'vue';
 import type { DataTableColumns } from 'naive-ui';
 import { NButton, NCard, NDataTable, NPopconfirm, NSpace, NPagination } from 'naive-ui';
 import { useLoading } from '@sa/hooks';
-import { fetchCreatePhoneModel, fetchDeletePhoneModel, fetchPhoneModelPage } from '@/service/api';
+import { fetchBatchDeletePhoneModels, fetchCreatePhoneModel, fetchDeletePhoneModel, fetchPhoneModelPage } from '@/service/api';
 import {
   downloadCrudTemplate,
   exportCrudRows,
@@ -22,6 +22,8 @@ const { loading, startLoading, endLoading } = useLoading(false);
 const tableData = ref<Api.PhoneModel.PhoneModelRecord[]>([]);
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const importing = ref(false);
+const checkedRowKeys = ref<number[]>([]);
+const batchDeleting = ref(false);
 const queryParams = reactive<Api.PhoneModel.QueryParams>({
   current: 1,
   size: 10
@@ -39,6 +41,9 @@ const excelColumns: ExcelColumn<Api.PhoneModel.PhoneModelRecord, any>[] = [
 ];
 
 const columns: DataTableColumns<Api.PhoneModel.PhoneModelRecord> = [
+  {
+    type: 'selection'
+  },
   {
     key: 'index',
     title: '序号',
@@ -154,6 +159,36 @@ async function handleDelete(row: Api.PhoneModel.PhoneModelRecord) {
   }
 }
 
+async function handleBatchDelete() {
+  if (!checkedRowKeys.value.length) {
+    window.$message?.warning('请先选择要删除的手机型号');
+    return;
+  }
+  batchDeleting.value = true;
+  try {
+    const { data, error } = await fetchBatchDeletePhoneModels({ ids: checkedRowKeys.value });
+    if (error || !data) return;
+
+    if (data.errors.length) {
+      window.$message?.warning(
+        `批量删除完成：成功 ${data.deleted} 条，失败 ${data.failed} 条`
+      );
+      window.$message?.error(data.errors.slice(0, 5).join('；'));
+    } else {
+      window.$message?.success(`成功删除 ${data.deleted} 条手机型号`);
+    }
+    checkedRowKeys.value = [];
+    getData();
+  } finally {
+    batchDeleting.value = false;
+  }
+}
+
+async function handleSelectAll() {
+  const rows = await fetchExportRows();
+  checkedRowKeys.value = rows.map(r => r.id);
+}
+
 async function fetchExportRows() {
   const { data, error } = await fetchPhoneModelPage({ ...queryParams, current: 1, size: 10000 });
   if (error || !data) return [];
@@ -232,6 +267,12 @@ getData();
           <NButton ghost @click="handleDownloadTemplate">下载模板</NButton>
           <NButton type="success" ghost @click="handleExport">导出 Excel</NButton>
           <NButton type="primary" @click="handleAdd">新增</NButton>
+          <NButton v-if="total > queryParams.size" type="warning" ghost size="small" @click="handleSelectAll">
+            全选所有 ({{ total }})
+          </NButton>
+          <NButton type="error" ghost :loading="batchDeleting" :disabled="!checkedRowKeys.length" @click="handleBatchDelete">
+            批量删除{{ checkedRowKeys.length ? ` (${checkedRowKeys.length})` : '' }}
+          </NButton>
         </NSpace>
       </NSpace>
     </NCard>
@@ -244,7 +285,9 @@ getData();
         :pagination="false"
         remote
         :row-key="row => row.id"
+        :checked-row-keys="checkedRowKeys"
         striped
+        @update:checked-row-keys="checkedRowKeys = $event"
       />
       <div class="flex justify-end mt-16px">
         <NPagination
