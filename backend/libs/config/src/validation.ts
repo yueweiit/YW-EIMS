@@ -16,4 +16,11 @@ export const validationSchema = Joi.object({
   DINGTALK_OAUTH_SCOPES: Joi.string().default('openid'),
   DINGTALK_OAUTH_DEBUG: Joi.string().valid('true', 'false').default('false'),
   EIMS_FRONTEND_URL: Joi.string().uri().default('http://localhost:9527'),
+  OAUTH2_PROVIDER_ENABLED: Joi.string().valid('true', 'false').default('true'),
+  OAUTH2_AUTH_CODE_EXPIRES_IN: Joi.number().default(600),
+  OAUTH2_ACCESS_TOKEN_EXPIRES_IN: Joi.number().default(3600),
+  OAUTH2_REFRESH_TOKEN_EXPIRES_IN: Joi.number().default(2592000),
+  OAUTH2_RSA_PRIVATE_KEY_PATH: Joi.string().default('./keys/oauth2.pem'),
+  OAUTH2_RSA_PUBLIC_KEY_PATH: Joi.string().default('./keys/oauth2.pub.pem'),
+  OAUTH2_ISSUER: Joi.string().default('http://localhost:3006'),
 });

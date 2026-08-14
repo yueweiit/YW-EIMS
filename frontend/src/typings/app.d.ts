@@ -526,6 +526,9 @@ declare namespace App {
           bindWeChat: {
             title: string;
           };
+          oauthConsent: {
+            title: string;
+          };
         };
         home: {
           branchDesc: string;

@@ -9,10 +9,11 @@ import { UserModule } from '@eims/user';
 import { MaterialModule } from '@eims/material';
 import { MoldProductModule } from '@eims/mold-product';
 import { OaModule } from '@eims/oa';
+import { Oauth2ProviderModule } from '@eims/oauth2-provider';
 import { TransformInterceptor, AllExceptionFilter } from '@eims/common';
 
 @Module({
-  imports: [ConfigModule, PrismaModule, ScheduleModule.forRoot(), AuthModule, UserModule, MaterialModule, MoldProductModule, OaModule],
+  imports: [ConfigModule, PrismaModule, ScheduleModule.forRoot(), AuthModule, UserModule, MaterialModule, MoldProductModule, OaModule, Oauth2ProviderModule],
   controllers: [AppController],
   providers: [
     {

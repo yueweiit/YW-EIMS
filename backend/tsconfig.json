@@ -36,7 +36,9 @@
       "@eims/mold-product": ["libs/mold-product/src"],
       "@eims/mold-product/*": ["libs/mold-product/src/*"],
       "@eims/oa": ["libs/oa/src"],
-      "@eims/oa/*": ["libs/oa/src/*"]
+      "@eims/oa/*": ["libs/oa/src/*"],
+      "@eims/oauth2-provider": ["libs/oauth2-provider/src"],
+      "@eims/oauth2-provider/*": ["libs/oauth2-provider/src/*"]
     }
   }
 }

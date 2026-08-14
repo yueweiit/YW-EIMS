@@ -22,7 +22,7 @@ declare module "@elegant-router/types" {
     "500": "/500";
     "home": "/home";
     "iframe-page": "/iframe-page/:url";
-    "login": "/login/:module(pwd-login|code-login|register|reset-pwd|bind-wechat)?";
+    "login": "/login/:module(pwd-login|code-login|register|reset-pwd|bind-wechat|oauth-consent)?";
     "material": "/material";
     "material_code-rule": "/material/code-rule";
     "material_material": "/material/material";
@@ -41,6 +41,7 @@ declare module "@elegant-router/types" {
     "oa_box-label": "/oa/box-label";
     "system": "/system";
     "system_erpnext-sync-log": "/system/erpnext-sync-log";
+    "system_oauth2-client": "/system/oauth2-client";
     "system_user": "/system/user";
   };
 
@@ -119,6 +120,7 @@ declare module "@elegant-router/types" {
     | "oa_approval"
     | "oa_box-label"
     | "system_erpnext-sync-log"
+    | "system_oauth2-client"
     | "system_user"
   >;
 

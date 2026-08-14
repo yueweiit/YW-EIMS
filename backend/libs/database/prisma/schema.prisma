@@ -23,7 +23,9 @@ model User {
   createTime DateTime @default(now()) @map("create_time")
   updateBy   String?  @map("update_by")
   updateTime DateTime @updatedAt @map("update_time")
-  authLoginTickets AuthLoginTicket[]
+  authLoginTickets         AuthLoginTicket[]
+  oauth2AuthorizationCodes Oauth2AuthorizationCode[]
+  oauth2RefreshTokens      Oauth2RefreshToken[]
 
   @@map("system_user")
   @@schema("public")
@@ -40,6 +42,73 @@ model AuthLoginTicket {
 
   @@index([expiresAt])
   @@map("auth_login_tickets")
+  @@schema("public")
+}
+
+/// OAuth2 第三方应用注册表
+model Oauth2Client {
+  id           Int      @id @default(autoincrement())
+  clientId     String   @unique @map("client_id") @db.VarChar(128)
+  clientSecret String   @map("client_secret") @db.VarChar(256)
+  name         String   @map("name") @db.VarChar(200)
+  description  String?  @map("description") @db.VarChar(500)
+  redirectUris String[] @map("redirect_uris")
+  scopes       String[] @default(["openid", "profile", "email"]) @map("scopes")
+  status       String   @default("1") @map("status")
+  createBy     String?  @map("create_by") @db.VarChar(50)
+  createTime   DateTime @default(now()) @map("create_time")
+  updateBy     String?  @map("update_by") @db.VarChar(50)
+  updateTime   DateTime @updatedAt @map("update_time")
+
+  authorizationCodes Oauth2AuthorizationCode[]
+  refreshTokens      Oauth2RefreshToken[]
+
+  @@map("oauth2_clients")
+  @@schema("public")
+}
+
+/// OAuth2 授权码表
+model Oauth2AuthorizationCode {
+  id                  Int       @id @default(autoincrement())
+  code                String    @unique @map("code") @db.VarChar(256)
+  clientId            String    @map("client_id") @db.VarChar(128)
+  userId              Int       @map("user_id")
+  redirectUri         String    @map("redirect_uri") @db.VarChar(2000)
+  scopes              String[]  @map("scopes")
+  codeChallenge       String?   @map("code_challenge") @db.VarChar(256)
+  codeChallengeMethod String?   @map("code_challenge_method") @db.VarChar(10)
+  expiresAt           DateTime  @map("expires_at")
+  consumedAt          DateTime? @map("consumed_at")
+  createdAt           DateTime  @default(now()) @map("created_at")
+
+  client Oauth2Client @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+  user   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("oauth2_authorization_codes")
+  @@schema("public")
+}
+
+/// OAuth2 刷新令牌表
+model Oauth2RefreshToken {
+  id        Int       @id @default(autoincrement())
+  tokenHash String    @unique @map("token_hash") @db.VarChar(256)
+  clientId  String    @map("client_id") @db.VarChar(128)
+  userId    Int       @map("user_id")
+  scopes    String[]  @map("scopes")
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  client Oauth2Client @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+  user   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("oauth2_refresh_tokens")
   @@schema("public")
 }
 

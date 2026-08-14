@@ -35,5 +35,6 @@ export const views: Record<LastLevelRouteKey, RouteComponent | (() => Promise<Ro
   oa_approval: () => import("@/views/oa/approval/index.vue"),
   "oa_box-label": () => import("@/views/oa/box-label/index.vue"),
   "system_erpnext-sync-log": () => import("@/views/system/erpnext-sync-log/index.vue"),
+  "system_oauth2-client": () => import("@/views/system/oauth2-client/index.vue"),
   system_user: () => import("@/views/system/user/index.vue"),
 };

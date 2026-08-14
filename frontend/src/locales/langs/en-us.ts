@@ -233,6 +233,7 @@ const local: App.I18n.Schema = {
     system: 'System',
     system_user: 'User Management',
     'system_erpnext-sync-log': 'ERPNext Sync Log',
+    'system_oauth2-client': 'OAuth2 Application Management',
     material: 'Material Management',
     material_material: 'Materials',
     material_unit: 'Units',
@@ -295,6 +296,9 @@ const local: App.I18n.Schema = {
       },
       bindWeChat: {
         title: 'Bind WeChat'
+      },
+      oauthConsent: {
+        title: 'OAuth Authorization'
       }
     },
     home: {

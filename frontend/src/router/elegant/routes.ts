@@ -65,7 +65,7 @@ export const generatedRoutes: GeneratedRoute[] = [
   },
   {
     name: 'login',
-    path: '/login/:module(pwd-login|code-login|register|reset-pwd|bind-wechat)?',
+    path: '/login/:module(pwd-login|code-login|register|reset-pwd|bind-wechat|oauth-consent)?',
     component: 'layout.blank$view.login',
     props: true,
     meta: {
@@ -256,6 +256,16 @@ export const generatedRoutes: GeneratedRoute[] = [
         meta: {
           title: 'system_user',
           i18nKey: 'route.system_user'
+        }
+      },
+      {
+        name: 'system_oauth2-client',
+        path: '/system/oauth2-client',
+        component: 'view.system_oauth2-client',
+        meta: {
+          title: 'system_oauth2-client',
+          i18nKey: 'route.system_oauth2-client',
+          icon: 'mdi:key-chain-variant'
         }
       }
     ]
