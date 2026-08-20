@@ -8,7 +8,11 @@ COPY packages/ packages/
 COPY src/ src/
 COPY public/ public/
 COPY index.html tsconfig.json vite.config.ts uno.config.ts eslint.config.js ./
-RUN pnpm install
+# Keep the pnpm store across Docker rebuilds and tolerate the slow mirror used
+# in the deployment environment. This prevents a transient package download
+# from forcing the whole frontend dependency install to start over.
+RUN --mount=type=cache,id=yw-eims-frontend-pnpm-store,target=/root/.local/share/pnpm/store/v11 \
+    pnpm install --frozen-lockfile --network-concurrency=8 --fetch-retries=5 --fetch-timeout=600000 --fetch-retry-maxtimeout=120000
 COPY . .
 RUN pnpm run build
 

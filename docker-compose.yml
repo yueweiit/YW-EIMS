@@ -23,6 +23,8 @@ services:
       dockerfile: Dockerfile
     container_name: eims-backend
     restart: always
+    env_file:
+      - .env
     environment:
       NODE_ENV: production
       PORT: 3000
@@ -31,6 +33,8 @@ services:
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-2h}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
       JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-7d}
+    volumes:
+      - oauth2-keys:/app/keys
     depends_on:
       postgres:
         condition: service_healthy
@@ -48,3 +52,4 @@ services:
 
 volumes:
   pgdata:
+  oauth2-keys:
