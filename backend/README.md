@@ -15,7 +15,7 @@ NestJS + Prisma + PostgreSQL 构建的企业信息管理系统后端。采用 mo
 | ORM | Prisma 6 |
 | 数据库 | PostgreSQL |
 | 认证 | JWT + bcrypt |
-| 包管理 | pnpm workspace |
+| 部署方式 | Docker Compose |
 
 ---
 
@@ -51,73 +51,35 @@ backend/
 
 ---
 
-## 快速开始
+## Docker 部署
 
-### 环境要求
-
-- Node.js >= 20.19.0
-- pnpm >= 10.5.0
-- PostgreSQL（本地或远程）
-
-### 1. 创建数据库
-
-```sql
-CREATE DATABASE eims;
-```
-
-### 2. 配置环境变量
-
-复制 `backend/.env.example` 为 `backend/.env`（或按项目已有 `.env` 填写）：
-
-```env
-NODE_ENV=development
-PORT=3000
-DATABASE_URL=postgresql://postgres:postgres123@localhost:5432/eims?schema=public
-JWT_SECRET=your-super-secret-jwt-key-change-in-production
-JWT_EXPIRES_IN=2h
-JWT_REFRESH_SECRET=your-super-secret-refresh-key-change-in-production
-JWT_REFRESH_EXPIRES_IN=7d
-```
-
-### 3. 安装依赖并初始化数据库
+后端由根目录 `docker-compose.yml` 构建和启动，通常不需要在宿主机安装 Node.js 或 PostgreSQL。
 
 ```bash
-cd backend
-pnpm install
-pnpm prisma:generate
-pnpm prisma:migrate
-pnpm prisma:seed
+cd ..
+docker compose up -d --build
+docker compose run --rm backend npx prisma migrate deploy --schema libs/database/prisma/schema.prisma
+docker compose run --rm backend npx ts-node libs/database/prisma/seed.ts
 ```
 
-### 4. 启动服务
+查看后端日志：
 
 ```bash
-# 开发模式（热重载）
-pnpm start:dev
-
-# 生产模式
-pnpm build
-pnpm start:prod
+docker compose logs -f backend
 ```
 
-后端运行在 http://localhost:3000。
+后端容器内部监听 `3000`，生产环境通过前端 Nginx 或外部反向代理提供访问。
 
 ---
 
-## 常用命令
+## 常用 Docker 命令
 
 ```bash
-pnpm build              # 构建生产包
-pnpm start:dev          # 开发模式启动
-pnpm lint               # ESLint 检查并自动修复
-pnpm test               # 运行所有单元测试
-pnpm test:watch         # 监听模式运行测试
-pnpm test:cov           # 生成测试覆盖率报告
-pnpm prisma:generate    # 生成 Prisma Client
-pnpm prisma:validate    # 校验 Prisma schema
-pnpm prisma:migrate     # 执行数据库迁移
-pnpm prisma:seed        # 初始化种子数据（可重复执行）
-pnpm prisma:studio      # 打开 Prisma Studio
+docker compose build backend
+docker compose up -d backend
+docker compose restart backend
+docker compose exec backend npx prisma migrate status --schema libs/database/prisma/schema.prisma
+docker compose logs -f backend
 ```
 
 ---
@@ -152,7 +114,7 @@ Schema 定义见 `libs/database/prisma/schema.prisma`。
 - 32 个常用单位（`01` ~ `32`）
 - 19 条编码前缀规则
 
-运行 `pnpm prisma:seed` 多次不会重复插入数据。
+运行容器内的 seed 命令多次不会重复插入数据。
 
 ---
 
@@ -235,35 +197,35 @@ Authorization: Bearer <token>
 
 ## 本地冒烟测试
 
-启动服务后，可按以下步骤验证核心链路（PowerShell 示例）：
+启动 Docker Compose 后，可按以下步骤验证核心链路（PowerShell 示例）。接口通过前端 Nginx 的 `/api` 代理访问：
 
 ```powershell
 # 1. 登录获取 token
-$login = curl -s -X POST http://localhost:3000/auth/login `
+$login = curl -s -X POST http://localhost:8003/api/auth/login `
   -H "Content-Type: application/json" `
   -d '{"userName":"superadmin","password":"123456"}'
 $token = ($login | ConvertFrom-Json).data.token
 
 # 2. 查询用户信息（S3 回归）
-curl -s http://localhost:3000/auth/getUserInfo -H "Authorization: Bearer $token"
+curl -s http://localhost:8003/api/auth/getUserInfo -H "Authorization: Bearer $token"
 
 # 3. 查询单位列表（S1 happy path）
-curl -s http://localhost:3000/unit/page -H "Authorization: Bearer $token"
+curl -s http://localhost:8003/api/unit/page -H "Authorization: Bearer $token"
 
 # 4. 查询编码规则列表
-curl -s http://localhost:3000/material-code-rule/page -H "Authorization: Bearer $token"
+curl -s http://localhost:8003/api/material-code-rule/page -H "Authorization: Bearer $token"
 
 # 5. 创建物料
-curl -s -X POST http://localhost:3000/material -H "Authorization: Bearer $token" `
+curl -s -X POST http://localhost:8003/api/material -H "Authorization: Bearer $token" `
   -H "Content-Type: application/json" `
   -d '{"applicant":"smoke","materialName":"测试物料","code":"YL000001","unit":"kg"}'
 
 # 6. 查询物料分页
-curl -s http://localhost:3000/material/page -H "Authorization: Bearer $token"
+curl -s http://localhost:8003/api/material/page -H "Authorization: Bearer $token"
 
 # 7. 重复执行种子脚本验证幂等性（S2）
-pnpm prisma:seed
-pnpm prisma:seed
+docker compose run --rm backend npx ts-node libs/database/prisma/seed.ts
+docker compose run --rm backend npx ts-node libs/database/prisma/seed.ts
 ```
 
 验证要点：
@@ -272,6 +234,6 @@ pnpm prisma:seed
 - `/unit/page` 返回 `total = 32`。
 - `/material-code-rule/page` 返回 `total = 19`。
 - 创建物料时，`codePrefix` 自动解析为 `YL`，`explainContent` 自动解析为 `Materia prima原料`，`unitCode` 自动解析为 `01`。
-- 重复执行 `pnpm prisma:seed` 后单位与规则数量不变。
+- 重复执行 seed 命令后单位与规则数量不变。
 - 未携带 Token 或 Token 无效时返回 `401`。
 
