@@ -1,14 +1,18 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
-import { useLoading } from '@sa/hooks';
+import { ref, computed, watch } from "vue";
+import { useLoading } from "@sa/hooks";
 import {
   fetchCreateOAuth2Client,
-  fetchUpdateOAuth2Client
-} from '@/service/api';
-import type { OAuth2ClientRecord, CreateOAuth2ClientParams, UpdateOAuth2ClientParams } from '@/service/api/oauth2-client';
+  fetchUpdateOAuth2Client,
+} from "@/service/api";
+import type {
+  OAuth2ClientRecord,
+  CreateOAuth2ClientParams,
+  UpdateOAuth2ClientParams,
+} from "@/service/api/oauth2-client";
 
 defineOptions({
-  name: 'OAuth2ClientOperateDrawer'
+  name: "OAuth2ClientOperateDrawer",
 });
 
 interface Props {
@@ -20,51 +24,57 @@ interface Props {
 const props = defineProps<Props>();
 
 const emit = defineEmits<{
-  (e: 'update:visible', value: boolean): void;
-  (e: 'submitted'): void;
+  (e: "update:visible", value: boolean): void;
+  (e: "submitted"): void;
+  (
+    e: "secret-created",
+    value: { clientId: string; clientSecret: string },
+  ): void;
 }>();
 
 const { loading, startLoading, endLoading } = useLoading(false);
 
 const defaultForm: CreateOAuth2ClientParams = {
-  name: '',
-  description: '',
-  redirectUris: [''],
-  scopes: ['openid', 'profile', 'email'],
-  status: '1'
+  name: "",
+  description: "",
+  redirectUris: [""],
+  scopes: ["openid", "profile", "email"],
+  status: "1",
 };
 
 const form = ref<CreateOAuth2ClientParams>({ ...defaultForm });
-const newRedirectUri = ref('');
+const newRedirectUri = ref("");
 
-const drawerTitle = computed(() => (props.type === 'add' ? '新增 OAuth2 应用' : '编辑 OAuth2 应用'));
+const drawerTitle = computed(() =>
+  props.type === "add" ? "新增 OAuth2 应用" : "编辑 OAuth2 应用",
+);
 
 watch(
   () => props.visible,
-  val => {
+  (val) => {
     if (val) {
-      if (props.type === 'edit' && props.rowData) {
+      if (props.type === "edit" && props.rowData) {
         form.value = {
           name: props.rowData.name,
-          description: props.rowData.description || '',
+          description: props.rowData.description || "",
           redirectUris: [...props.rowData.redirectUris],
           scopes: [...props.rowData.scopes],
-          status: props.rowData.status
+          status: props.rowData.status,
         };
       } else {
-        form.value = { ...defaultForm, redirectUris: [''] };
+        form.value = { ...defaultForm, redirectUris: [""] };
       }
-      newRedirectUri.value = '';
+      newRedirectUri.value = "";
     }
-  }
+  },
 );
 
 function handleClose() {
-  emit('update:visible', false);
+  emit("update:visible", false);
 }
 
 function addRedirectUri() {
-  form.value.redirectUris.push('');
+  form.value.redirectUris.push("");
 }
 
 function removeRedirectUri(index: number) {
@@ -76,13 +86,13 @@ function removeRedirectUri(index: number) {
 async function handleSubmit() {
   // Validate
   if (!form.value.name?.trim()) {
-    window.$message?.error('请输入应用名称');
+    window.$message?.error("请输入应用名称");
     return;
   }
 
-  const validUris = form.value.redirectUris.filter(uri => uri.trim());
+  const validUris = form.value.redirectUris.filter((uri) => uri.trim());
   if (validUris.length === 0) {
-    window.$message?.error('请至少填写一个回调地址');
+    window.$message?.error("请至少填写一个回调地址");
     return;
   }
 
@@ -90,15 +100,21 @@ async function handleSubmit() {
   try {
     const submitData = {
       ...form.value,
-      redirectUris: validUris
+      redirectUris: validUris,
     };
 
-    if (props.type === 'add') {
-      const { error } = await fetchCreateOAuth2Client(submitData);
+    if (props.type === "add") {
+      const { data, error } = await fetchCreateOAuth2Client(submitData);
       if (!error) {
-        window.$message?.success('创建成功');
+        if (data?.clientId && data.clientSecret) {
+          emit("secret-created", {
+            clientId: data.clientId,
+            clientSecret: data.clientSecret,
+          });
+        }
+        window.$message?.success("创建成功");
         handleClose();
-        emit('submitted');
+        emit("submitted");
       }
     } else if (props.rowData) {
       const updateData: UpdateOAuth2ClientParams = {
@@ -106,13 +122,16 @@ async function handleSubmit() {
         description: submitData.description,
         redirectUris: submitData.redirectUris,
         scopes: submitData.scopes,
-        status: submitData.status
+        status: submitData.status,
       };
-      const { error } = await fetchUpdateOAuth2Client(props.rowData.id, updateData);
+      const { error } = await fetchUpdateOAuth2Client(
+        props.rowData.id,
+        updateData,
+      );
       if (!error) {
-        window.$message?.success('更新成功');
+        window.$message?.success("更新成功");
         handleClose();
-        emit('submitted');
+        emit("submitted");
       }
     }
   } finally {
@@ -121,9 +140,9 @@ async function handleSubmit() {
 }
 
 const scopeOptions = [
-  { label: 'openid - 身份标识', value: 'openid' },
-  { label: 'profile - 基本资料', value: 'profile' },
-  { label: 'email - 邮箱地址', value: 'email' }
+  { label: "openid - 身份标识", value: "openid" },
+  { label: "profile - 基本资料", value: "profile" },
+  { label: "email - 邮箱地址", value: "email" },
 ];
 </script>
 
@@ -136,12 +155,21 @@ const scopeOptions = [
         </NFormItem>
 
         <NFormItem label="描述">
-          <NInput v-model:value="form.description" type="textarea" :rows="2" placeholder="应用用途说明" />
+          <NInput
+            v-model:value="form.description"
+            type="textarea"
+            :rows="2"
+            placeholder="应用用途说明"
+          />
         </NFormItem>
 
         <NFormItem label="回调地址" required>
           <NSpace vertical :size="8" class="w-full">
-            <div v-for="(uri, index) in form.redirectUris" :key="index" class="flex gap-8px">
+            <div
+              v-for="(uri, index) in form.redirectUris"
+              :key="index"
+              class="flex gap-8px"
+            >
               <NInput
                 v-model:value="form.redirectUris[index]"
                 placeholder="https://example.com/callback"
@@ -157,7 +185,13 @@ const scopeOptions = [
                 删除
               </NButton>
             </div>
-            <NButton type="default" size="small" block dashed @click="addRedirectUri">
+            <NButton
+              type="default"
+              size="small"
+              block
+              dashed
+              @click="addRedirectUri"
+            >
               + 添加回调地址
             </NButton>
           </NSpace>
@@ -184,7 +218,7 @@ const scopeOptions = [
         <NSpace>
           <NButton @click="handleClose">取消</NButton>
           <NButton type="primary" :loading="loading" @click="handleSubmit">
-            {{ type === 'add' ? '创建' : '保存' }}
+            {{ type === "add" ? "创建" : "保存" }}
           </NButton>
         </NSpace>
       </template>

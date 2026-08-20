@@ -234,6 +234,7 @@ const local: App.I18n.Schema = {
     system_user: 'User Management',
     'system_erpnext-sync-log': 'ERPNext Sync Log',
     'system_oauth2-client': 'OAuth2 Application Management',
+    'system_oauth2-binding': 'OAuth2 Account Binding',
     material: 'Material Management',
     material_material: 'Materials',
     material_unit: 'Units',

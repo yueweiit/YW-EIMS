@@ -41,6 +41,7 @@ declare module "@elegant-router/types" {
     "oa_box-label": "/oa/box-label";
     "system": "/system";
     "system_erpnext-sync-log": "/system/erpnext-sync-log";
+    "system_oauth2-binding": "/system/oauth2-binding";
     "system_oauth2-client": "/system/oauth2-client";
     "system_user": "/system/user";
   };
@@ -120,6 +121,7 @@ declare module "@elegant-router/types" {
     | "oa_approval"
     | "oa_box-label"
     | "system_erpnext-sync-log"
+    | "system_oauth2-binding"
     | "system_oauth2-client"
     | "system_user"
   >;

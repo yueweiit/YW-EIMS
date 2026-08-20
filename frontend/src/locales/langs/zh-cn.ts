@@ -230,6 +230,7 @@ const local: App.I18n.Schema = {
     system_user: '用户管理',
     'system_erpnext-sync-log': 'ERPNext同步日志',
     'system_oauth2-client': 'OAuth2 应用管理',
+    'system_oauth2-binding': 'OAuth2 账号绑定',
     material: '物料管理',
     material_material: '物料主数据',
     material_unit: '单位管理',

@@ -250,12 +250,13 @@ export const generatedRoutes: GeneratedRoute[] = [
         }
       },
       {
-        name: 'system_user',
-        path: '/system/user',
-        component: 'view.system_user',
+        name: 'system_oauth2-binding',
+        path: '/system/oauth2-binding',
+        component: 'view.system_oauth2-binding',
         meta: {
-          title: 'system_user',
-          i18nKey: 'route.system_user'
+          title: 'system_oauth2-binding',
+          i18nKey: 'route.system_oauth2-binding',
+          icon: 'mdi:link-variant'
         }
       },
       {
@@ -266,6 +267,15 @@ export const generatedRoutes: GeneratedRoute[] = [
           title: 'system_oauth2-client',
           i18nKey: 'route.system_oauth2-client',
           icon: 'mdi:key-chain-variant'
+        }
+      },
+      {
+        name: 'system_user',
+        path: '/system/user',
+        component: 'view.system_user',
+        meta: {
+          title: 'system_user',
+          i18nKey: 'route.system_user'
         }
       }
     ]

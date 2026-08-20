@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { computed, reactive } from 'vue';
-import { getDingTalkAuthorizationUrl } from '@/service/api';
-import { useAuthStore } from '@/store/modules/auth';
-import { useFormRules, useNaiveForm } from '@/hooks/common/form';
-import { $t } from '@/locales';
+import { computed, reactive } from "vue";
+import { getDingTalkAuthorizationUrl } from "@/service/api";
+import { useAuthStore } from "@/store/modules/auth";
+import { useFormRules, useNaiveForm } from "@/hooks/common/form";
+import { $t } from "@/locales";
 
 defineOptions({
-  name: 'PwdLogin'
+  name: "PwdLogin",
 });
 
 const authStore = useAuthStore();
@@ -18,8 +18,8 @@ interface FormModel {
 }
 
 const model: FormModel = reactive({
-  userName: 'superadmin',
-  password: '123456'
+  userName: "",
+  password: "",
 });
 
 const rules = computed<Record<keyof FormModel, App.Global.FormRule[]>>(() => {
@@ -28,7 +28,7 @@ const rules = computed<Record<keyof FormModel, App.Global.FormRule[]>>(() => {
 
   return {
     userName: formRules.userName,
-    password: formRules.pwd
+    password: formRules.pwd,
   };
 });
 
@@ -43,9 +43,19 @@ function handleDingTalkLogin() {
 </script>
 
 <template>
-  <NForm ref="formRef" :model="model" :rules="rules" size="large" :show-label="false" @keyup.enter="handleSubmit">
+  <NForm
+    ref="formRef"
+    :model="model"
+    :rules="rules"
+    size="large"
+    :show-label="false"
+    @keyup.enter="handleSubmit"
+  >
     <NFormItem path="userName">
-      <NInput v-model:value="model.userName" :placeholder="$t('page.login.common.userNamePlaceholder')" />
+      <NInput
+        v-model:value="model.userName"
+        :placeholder="$t('page.login.common.userNamePlaceholder')"
+      />
     </NFormItem>
     <NFormItem path="password">
       <NInput
@@ -56,10 +66,23 @@ function handleDingTalkLogin() {
       />
     </NFormItem>
     <NSpace vertical :size="24">
-      <NButton type="primary" size="large" round block :loading="authStore.loginLoading" @click="handleSubmit">
-        {{ $t('common.confirm') }}
+      <NButton
+        type="primary"
+        size="large"
+        round
+        block
+        :loading="authStore.loginLoading"
+        @click="handleSubmit"
+      >
+        {{ $t("common.confirm") }}
       </NButton>
-      <NButton size="large" round block :loading="authStore.loginLoading" @click="handleDingTalkLogin">
+      <NButton
+        size="large"
+        round
+        block
+        :loading="authStore.loginLoading"
+        @click="handleDingTalkLogin"
+      >
         钉钉登录
       </NButton>
     </NSpace>

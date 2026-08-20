@@ -1,20 +1,29 @@
 <script setup lang="ts">
-import { h, reactive, ref } from 'vue';
-import type { DataTableColumns } from 'naive-ui';
-import { NButton, NCard, NDataTable, NPopconfirm, NSpace, NTag, NPagination, NTooltip } from 'naive-ui';
-import { useLoading } from '@sa/hooks';
+import { h, reactive, ref } from "vue";
+import type { DataTableColumns } from "naive-ui";
+import {
+  NButton,
+  NCard,
+  NDataTable,
+  NPopconfirm,
+  NSpace,
+  NTag,
+  NPagination,
+  NTooltip,
+} from "naive-ui";
+import { useLoading } from "@sa/hooks";
 import {
   fetchOAuth2ClientPage,
   fetchDeleteOAuth2Client,
-  fetchResetOAuth2ClientSecret
-} from '@/service/api';
-import type { OAuth2ClientRecord } from '@/service/api/oauth2-client';
-import { $t } from '@/locales';
-import OAuth2ClientOperateDrawer from './modules/oauth2-client-operate-drawer.vue';
-import OAuth2ClientSearch from './modules/oauth2-client-search.vue';
+  fetchResetOAuth2ClientSecret,
+} from "@/service/api";
+import type { OAuth2ClientRecord } from "@/service/api/oauth2-client";
+import { $t } from "@/locales";
+import OAuth2ClientOperateDrawer from "./modules/oauth2-client-operate-drawer.vue";
+import OAuth2ClientSearch from "./modules/oauth2-client-search.vue";
 
 defineOptions({
-  name: 'OAuth2ClientManage'
+  name: "OAuth2ClientManage",
 });
 
 const { loading, startLoading, endLoading } = useLoading(false);
@@ -23,138 +32,162 @@ const tableData = ref<OAuth2ClientRecord[]>([]);
 const queryParams = reactive({
   current: 1,
   size: 10,
-  name: undefined as string | undefined
+  name: undefined as string | undefined,
 });
 const total = ref(0);
 
 const drawerVisible = ref(false);
-const drawerType = ref<NaiveUI.TableOperateType>('add');
+const drawerType = ref<NaiveUI.TableOperateType>("add");
 const editRow = ref<OAuth2ClientRecord | null>(null);
 
 const secretDialogVisible = ref(false);
-const secretDialogData = ref<{ clientId: string; clientSecret: string } | null>(null);
+const secretDialogData = ref<{ clientId: string; clientSecret: string } | null>(
+  null,
+);
 
 const statusTextMap: Record<string, string> = {
-  '1': '启用',
-  '2': '禁用'
+  "1": "启用",
+  "2": "禁用",
 };
 
 const columns: DataTableColumns<OAuth2ClientRecord> = [
   {
-    key: 'index',
-    title: $t('common.index'),
+    key: "index",
+    title: $t("common.index"),
     width: 60,
-    align: 'center',
-    render: (_row, index) => (queryParams.current - 1) * queryParams.size + index + 1
+    align: "center",
+    render: (_row, index) =>
+      (queryParams.current - 1) * queryParams.size + index + 1,
   },
   {
-    key: 'name',
-    title: '应用名称',
+    key: "name",
+    title: "应用名称",
     minWidth: 150,
-    ellipsis: { tooltip: true }
+    ellipsis: { tooltip: true },
   },
   {
-    key: 'clientId',
-    title: 'Client ID',
+    key: "clientId",
+    title: "Client ID",
     minWidth: 200,
-    ellipsis: { tooltip: true }
+    ellipsis: { tooltip: true },
   },
   {
-    key: 'redirectUris',
-    title: '回调地址',
+    key: "redirectUris",
+    title: "回调地址",
     minWidth: 250,
-    render: row =>
+    render: (row) =>
       h(
         NSpace,
         { vertical: true, size: [0, 4] },
         {
           default: () =>
-            row.redirectUris.map(uri =>
+            row.redirectUris.map((uri) =>
               h(
                 NTooltip,
-                { trigger: 'hover' },
+                { trigger: "hover" },
                 {
                   trigger: () =>
-                    h('span', { class: 'text-12px text-gray-500 truncate block max-w-220px' }, uri),
-                  default: () => uri
-                }
-              )
-            )
-        }
-      )
+                    h(
+                      "span",
+                      {
+                        class:
+                          "text-12px text-gray-500 truncate block max-w-220px",
+                      },
+                      uri,
+                    ),
+                  default: () => uri,
+                },
+              ),
+            ),
+        },
+      ),
   },
   {
-    key: 'scopes',
-    title: 'Scopes',
+    key: "scopes",
+    title: "Scopes",
     minWidth: 200,
-    render: row =>
+    render: (row) =>
       h(
         NSpace,
         { wrap: true, size: [4, 4] },
         {
           default: () =>
-            row.scopes.map(scope =>
+            row.scopes.map((scope) =>
               h(
                 NTag,
-                { type: 'info', size: 'small', bordered: false },
-                { default: () => scope }
-              )
-            )
-        }
-      )
+                { type: "info", size: "small", bordered: false },
+                { default: () => scope },
+              ),
+            ),
+        },
+      ),
   },
   {
-    key: 'status',
-    title: '状态',
+    key: "status",
+    title: "状态",
     width: 80,
-    align: 'center',
-    render: row =>
+    align: "center",
+    render: (row) =>
       h(
         NTag,
-        { type: row.status === '1' ? 'success' : 'error', size: 'small' },
-        { default: () => statusTextMap[row.status ?? '2'] }
-      )
+        { type: row.status === "1" ? "success" : "error", size: "small" },
+        { default: () => statusTextMap[row.status ?? "2"] },
+      ),
   },
   {
-    key: 'createTime',
-    title: '创建时间',
-    minWidth: 170
+    key: "createTime",
+    title: "创建时间",
+    minWidth: 170,
   },
   {
-    key: 'operate',
-    title: $t('common.operate'),
+    key: "operate",
+    title: $t("common.operate"),
     width: 240,
-    fixed: 'right',
-    align: 'center',
-    render: row =>
-      h(NSpace, { justify: 'center', size: [8, 0] }, {
-        default: () => [
-          h(
-            NButton,
-            { size: 'small', type: 'primary', ghost: true, onClick: () => handleEdit(row) },
-            { default: () => $t('common.edit') }
-          ),
-          h(
-            NButton,
-            { size: 'small', type: 'warning', ghost: true, onClick: () => handleResetSecret(row) },
-            { default: () => '重置密钥' }
-          ),
-          h(
-            NPopconfirm,
-            { onPositiveClick: () => handleDelete(row) },
-            {
-              trigger: () =>
-                h(
-                  NButton,
-                  { size: 'small', type: 'error', ghost: true },
-                  { default: () => $t('common.delete') }
-                ),
-              default: () => $t('common.confirmDelete')
-            }
-          )
-        ]
-      })
-  }
+    fixed: "right",
+    align: "center",
+    render: (row) =>
+      h(
+        NSpace,
+        { justify: "center", size: [8, 0] },
+        {
+          default: () => [
+            h(
+              NButton,
+              {
+                size: "small",
+                type: "primary",
+                ghost: true,
+                onClick: () => handleEdit(row),
+              },
+              { default: () => $t("common.edit") },
+            ),
+            h(
+              NButton,
+              {
+                size: "small",
+                type: "warning",
+                ghost: true,
+                onClick: () => handleResetSecret(row),
+              },
+              { default: () => "重置密钥" },
+            ),
+            h(
+              NPopconfirm,
+              { onPositiveClick: () => handleDelete(row) },
+              {
+                trigger: () =>
+                  h(
+                    NButton,
+                    { size: "small", type: "error", ghost: true },
+                    { default: () => $t("common.delete") },
+                  ),
+                default: () => $t("common.confirmDelete"),
+              },
+            ),
+          ],
+        },
+      ),
+  },
 ];
 
 async function getData() {
@@ -184,21 +217,29 @@ function handleReset() {
 }
 
 function handleAdd() {
-  drawerType.value = 'add';
+  drawerType.value = "add";
   editRow.value = null;
   drawerVisible.value = true;
 }
 
 function handleEdit(row: OAuth2ClientRecord) {
-  drawerType.value = 'edit';
+  drawerType.value = "edit";
   editRow.value = row;
   drawerVisible.value = true;
+}
+
+function handleSecretCreated(secret: {
+  clientId: string;
+  clientSecret: string;
+}) {
+  secretDialogData.value = secret;
+  secretDialogVisible.value = true;
 }
 
 async function handleDelete(row: OAuth2ClientRecord) {
   const { error } = await fetchDeleteOAuth2Client(row.id);
   if (!error) {
-    window.$message?.success($t('common.deleteSuccess'));
+    window.$message?.success($t("common.deleteSuccess"));
     getData();
   }
 }
@@ -208,14 +249,14 @@ async function handleResetSecret(row: OAuth2ClientRecord) {
   if (!error && data) {
     secretDialogData.value = data;
     secretDialogVisible.value = true;
-    window.$message?.success('密钥已重置');
+    window.$message?.success("密钥已重置");
   }
 }
 
 function copySecret() {
   if (secretDialogData.value?.clientSecret) {
     navigator.clipboard.writeText(secretDialogData.value.clientSecret);
-    window.$message?.success('已复制到剪贴板');
+    window.$message?.success("已复制到剪贴板");
   }
 }
 
@@ -237,9 +278,13 @@ getData();
   <NSpace vertical :size="16">
     <NCard :bordered="false">
       <NSpace justify="space-between" align="center" wrap>
-        <OAuth2ClientSearch v-model="queryParams" @search="handleSearch" @reset="handleReset" />
+        <OAuth2ClientSearch
+          v-model="queryParams"
+          @search="handleSearch"
+          @reset="handleReset"
+        />
         <NButton type="primary" @click="handleAdd">
-          {{ $t('common.add') }}
+          {{ $t("common.add") }}
         </NButton>
       </NSpace>
     </NCard>
@@ -251,7 +296,7 @@ getData();
         :loading="loading"
         :pagination="false"
         remote
-        :row-key="row => row.id"
+        :row-key="(row) => row.id"
         striped
       />
       <div class="flex justify-end mt-16px">
@@ -272,10 +317,16 @@ getData();
       :type="drawerType"
       :row-data="editRow"
       @submitted="getData"
+      @secret-created="handleSecretCreated"
     />
 
     <!-- Secret display dialog -->
-    <NModal v-model:show="secretDialogVisible" preset="card" title="Client Secret" style="width: 500px">
+    <NModal
+      v-model:show="secretDialogVisible"
+      preset="card"
+      title="Client Secret"
+      style="width: 500px"
+    >
       <NAlert type="warning" class="mb-16px">
         请立即保存此 Secret，它只会显示一次。
       </NAlert>
@@ -285,17 +336,17 @@ getData();
       </div>
       <div>
         <p class="text-12px text-gray-500 mb-4px">Client Secret</p>
-        <NInput :value="secretDialogData?.clientSecret" readonly type="textarea" :rows="3" />
+        <NInput
+          :value="secretDialogData?.clientSecret"
+          readonly
+          type="textarea"
+          :rows="3"
+        />
       </div>
       <template #footer>
         <NSpace justify="end">
           <NButton @click="secretDialogVisible = false">关闭</NButton>
-          <NButton
-            type="primary"
-            @click="copySecret"
-          >
-            复制 Secret
-          </NButton>
+          <NButton type="primary" @click="copySecret"> 复制 Secret </NButton>
         </NSpace>
       </template>
     </NModal>
