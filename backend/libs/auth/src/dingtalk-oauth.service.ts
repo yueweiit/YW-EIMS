@@ -57,16 +57,21 @@ export class DingTalkOAuthService {
     private readonly authService: AuthService,
   ) {
     this.stateSecret =
-      this.configService.get<string>('JWT_SECRET') || 'development-state-secret';
+      this.configService.get<string>('JWT_SECRET') ||
+      'development-state-secret';
   }
 
   async getAuthorizationUrl(): Promise<string> {
     this.assertConfigured();
 
+    const nonce = randomBytes(16).toString('hex');
+    await this.prisma.dingTalkOAuthState.create({
+      data: { nonce, expiresAt: new Date(Date.now() + 10 * 60 * 1000) },
+    });
     const state = await this.jwtService.signAsync<DingTalkStatePayload>(
       {
         purpose: 'dingtalk-oauth',
-        nonce: randomBytes(16).toString('hex'),
+        nonce,
       },
       {
         secret: this.stateSecret,
@@ -87,15 +92,31 @@ export class DingTalkOAuthService {
   async handleCallback(code: string, state: string): Promise<string> {
     this.assertConfigured();
 
+    let nonce: string;
     try {
-      const payload = await this.jwtService.verifyAsync<DingTalkStatePayload>(state, {
-        secret: this.stateSecret,
-      });
+      const payload = await this.jwtService.verifyAsync<DingTalkStatePayload>(
+        state,
+        {
+          secret: this.stateSecret,
+        },
+      );
       if (payload.purpose !== 'dingtalk-oauth' || !payload.nonce) {
         throw new UnauthorizedException('钉钉授权状态无效');
       }
+      nonce = payload.nonce;
     } catch {
       throw new UnauthorizedException('钉钉授权状态无效或已过期');
+    }
+
+    const now = new Date();
+    const consumedState = await this.prisma.dingTalkOAuthState.updateMany({
+      where: { nonce, consumedAt: null, expiresAt: { gt: now } },
+      data: { consumedAt: now },
+    });
+    if (consumedState.count !== 1) {
+      throw new UnauthorizedException(
+        'DingTalk OAuth state was already used or expired',
+      );
     }
 
     const identity = await this.fetchDingTalkIdentity(code);
@@ -127,7 +148,14 @@ export class DingTalkOAuthService {
 
   getFrontendRedirect(params: Record<string, string>): string {
     const url = new URL('/login', this.getFrontendUrl());
-    Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, value));
+    Object.entries(params).forEach(([key, value]) => {
+      if (key !== 'dingtalk_ticket') url.searchParams.set(key, value);
+    });
+    if (params.dingtalk_ticket) {
+      url.hash = new URLSearchParams({
+        dingtalk_ticket: params.dingtalk_ticket,
+      }).toString();
+    }
     return url.toString();
   }
 
@@ -169,7 +197,9 @@ export class DingTalkOAuthService {
       const returnedUserId = userData.userId || userData.userid;
       const userId =
         returnedUserId ||
-        (userData.unionId ? await this.fetchDingTalkUserId(userData.unionId) : undefined);
+        (userData.unionId
+          ? await this.fetchDingTalkUserId(userData.unionId)
+          : undefined);
       const subject = userData.unionId || userData.openId || userId;
       if (!subject) {
         throw new UnprocessableEntityException('钉钉未返回用户标识');
@@ -181,10 +211,15 @@ export class DingTalkOAuthService {
         userId,
       };
     } catch (error) {
-      if (error instanceof UnauthorizedException || error instanceof UnprocessableEntityException) {
+      if (
+        error instanceof UnauthorizedException ||
+        error instanceof UnprocessableEntityException
+      ) {
         throw error;
       }
-      this.logger.warn(`DingTalk OAuth user lookup failed: ${this.getErrorMessage(error)}`);
+      this.logger.warn(
+        `DingTalk OAuth user lookup failed: ${this.getErrorMessage(error)}`,
+      );
       throw new UnauthorizedException('钉钉授权失败');
     }
   }
@@ -204,7 +239,9 @@ export class DingTalkOAuthService {
       this.logger.warn(
         `DingTalk unionId lookup failed: errcode=${data.errcode}, errmsg=${data.errmsg || '-'}`,
       );
-      throw new UnprocessableEntityException('钉钉无法根据 unionId 获取 userId');
+      throw new UnprocessableEntityException(
+        '钉钉无法根据 unionId 获取 userId',
+      );
     }
     if (!userId) {
       throw new UnprocessableEntityException('钉钉未返回 userId');
@@ -242,33 +279,52 @@ export class DingTalkOAuthService {
   }
 
   private assertConfigured() {
-    if (!this.getClientId() || !this.getClientSecret() || !this.getRedirectUri()) {
+    if (
+      !this.getClientId() ||
+      !this.getClientSecret() ||
+      !this.getRedirectUri()
+    ) {
       throw new UnprocessableEntityException('钉钉 OAuth 登录尚未配置');
     }
   }
 
   private getClientId() {
-    return this.configService.get<string>('DINGTALK_OAUTH_CLIENT_ID', '').trim();
+    return this.configService
+      .get<string>('DINGTALK_OAUTH_CLIENT_ID', '')
+      .trim();
   }
 
   private getClientSecret() {
-    return this.configService.get<string>('DINGTALK_OAUTH_CLIENT_SECRET', '').trim();
+    return this.configService
+      .get<string>('DINGTALK_OAUTH_CLIENT_SECRET', '')
+      .trim();
   }
 
   private getRedirectUri() {
-    return this.configService.get<string>('DINGTALK_OAUTH_REDIRECT_URI', '').trim();
+    return this.configService
+      .get<string>('DINGTALK_OAUTH_REDIRECT_URI', '')
+      .trim();
   }
 
   private getScopes() {
-    return this.configService.get<string>('DINGTALK_OAUTH_SCOPES', 'openid').trim() || 'openid';
+    return (
+      this.configService
+        .get<string>('DINGTALK_OAUTH_SCOPES', 'openid')
+        .trim() || 'openid'
+    );
   }
 
   private isDebugEnabled() {
-    return this.configService.get<string>('DINGTALK_OAUTH_DEBUG', 'false') === 'true';
+    return (
+      this.configService.get<string>('DINGTALK_OAUTH_DEBUG', 'false') === 'true'
+    );
   }
 
   private getFrontendUrl() {
-    return this.configService.get<string>('EIMS_FRONTEND_URL', 'http://localhost:9527');
+    return this.configService.get<string>(
+      'EIMS_FRONTEND_URL',
+      'http://localhost:9527',
+    );
   }
 
   private getErrorMessage(error: unknown) {
