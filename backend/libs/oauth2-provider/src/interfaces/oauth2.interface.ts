@@ -22,6 +22,8 @@ export interface OAuth2UserInfo {
   family_name?: string;
   preferred_username?: string;
   picture?: string;
+  app_user_id?: number;
+  app_username?: string;
 }
 
 export interface OpenIdConfiguration {

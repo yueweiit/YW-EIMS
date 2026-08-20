@@ -7,9 +7,13 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHash, randomBytes } from 'node:crypto';
+import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '@eims/database';
 import { OpenIdService } from './openid.service';
-import type { OAuth2TokenResponse, OAuth2UserInfo } from './interfaces/oauth2.interface';
+import type {
+  OAuth2TokenResponse,
+  OAuth2UserInfo,
+} from './interfaces/oauth2.interface';
 
 @Injectable()
 export class OAuth2Service {
@@ -24,29 +28,64 @@ export class OAuth2Service {
   /**
    * Validate the authorize request parameters and return client info.
    */
-  async validateAuthorizeRequest(clientId: string, redirectUri: string, responseType: string, scope?: string) {
+  async validateAuthorizeRequest(
+    clientId: string,
+    redirectUri: string,
+    responseType: string,
+    scope?: string,
+    codeChallenge?: string,
+    codeChallengeMethod?: string,
+  ) {
+    this.assertProviderEnabled();
     if (responseType !== 'code') {
-      throw new BadRequestException('unsupported_response_type: only "code" is supported');
+      throw new BadRequestException(
+        'unsupported_response_type: only "code" is supported',
+      );
     }
 
     const client = await this.prisma.oauth2Client.findUnique({
       where: { clientId },
-      select: { clientId: true, name: true, redirectUris: true, scopes: true, status: true },
+      select: {
+        clientId: true,
+        name: true,
+        redirectUris: true,
+        scopes: true,
+        status: true,
+      },
     });
 
     if (!client || client.status === '2') {
-      throw new BadRequestException('invalid_client: client not found or disabled');
+      throw new BadRequestException(
+        'invalid_client: client not found or disabled',
+      );
     }
 
     if (!client.redirectUris.includes(redirectUri)) {
-      throw new BadRequestException('invalid_redirect_uri: redirect_uri does not match registered URIs');
+      throw new BadRequestException(
+        'invalid_redirect_uri: redirect_uri does not match registered URIs',
+      );
     }
 
     const requestedScopes = scope ? scope.split(' ') : ['openid'];
-    const allowedScopes = client.scopes.length > 0 ? client.scopes : ['openid', 'profile', 'email'];
-    const invalidScopes = requestedScopes.filter(s => !allowedScopes.includes(s));
+    const allowedScopes =
+      client.scopes.length > 0 ? client.scopes : ['openid', 'profile', 'email'];
+    const invalidScopes = requestedScopes.filter(
+      (s) => !allowedScopes.includes(s),
+    );
     if (invalidScopes.length > 0) {
-      throw new BadRequestException(`invalid_scope: scopes not allowed: ${invalidScopes.join(', ')}`);
+      throw new BadRequestException(
+        `invalid_scope: scopes not allowed: ${invalidScopes.join(', ')}`,
+      );
+    }
+    if (codeChallenge && codeChallengeMethod !== 'S256') {
+      throw new BadRequestException(
+        'invalid_request: only S256 code_challenge_method is supported',
+      );
+    }
+    if (codeChallengeMethod && !codeChallenge) {
+      throw new BadRequestException(
+        'invalid_request: code_challenge is required',
+      );
     }
 
     return {
@@ -64,10 +103,14 @@ export class OAuth2Service {
     userId: number,
     redirectUri: string,
     scopes: string[],
+    codeChallenge?: string,
+    codeChallengeMethod?: string,
   ): Promise<string> {
+    this.assertProviderEnabled();
     const rawCode = randomBytes(32).toString('base64url');
     const codeHash = createHash('sha256').update(rawCode).digest('hex');
-    const codeExpiresIn = this.configService.get<number>('OAUTH2_AUTH_CODE_EXPIRES_IN') || 600;
+    const codeExpiresIn =
+      this.configService.get<number>('OAUTH2_AUTH_CODE_EXPIRES_IN') || 600;
 
     await this.prisma.oauth2AuthorizationCode.create({
       data: {
@@ -76,6 +119,8 @@ export class OAuth2Service {
         userId,
         redirectUri,
         scopes,
+        codeChallenge,
+        codeChallengeMethod,
         expiresAt: new Date(Date.now() + codeExpiresIn * 1000),
       },
     });
@@ -91,7 +136,9 @@ export class OAuth2Service {
     clientId: string,
     clientSecret: string,
     redirectUri: string,
+    codeVerifier?: string,
   ): Promise<OAuth2TokenResponse> {
+    this.assertProviderEnabled();
     // Verify client credentials
     const client = await this.prisma.oauth2Client.findUnique({
       where: { clientId },
@@ -102,7 +149,7 @@ export class OAuth2Service {
       throw new UnauthorizedException('invalid_client');
     }
 
-    if (client.clientSecret !== clientSecret) {
+    if (!(await this.verifyClientSecret(client.clientSecret, clientSecret))) {
       throw new UnauthorizedException('invalid_client');
     }
 
@@ -118,21 +165,43 @@ export class OAuth2Service {
         userId: true,
         redirectUri: true,
         scopes: true,
+        codeChallenge: true,
+        codeChallengeMethod: true,
         expiresAt: true,
         consumedAt: true,
       },
     });
 
     if (!authCode || authCode.consumedAt || authCode.expiresAt <= now) {
-      throw new UnauthorizedException('invalid_grant: authorization code is invalid or expired');
+      throw new UnauthorizedException(
+        'invalid_grant: authorization code is invalid or expired',
+      );
     }
 
     if (authCode.clientId !== clientId) {
-      throw new UnauthorizedException('invalid_grant: authorization code was not issued to this client');
+      throw new UnauthorizedException(
+        'invalid_grant: authorization code was not issued to this client',
+      );
     }
 
     if (authCode.redirectUri !== redirectUri) {
       throw new UnauthorizedException('invalid_grant: redirect_uri mismatch');
+    }
+
+    if (authCode.codeChallenge) {
+      if (!codeVerifier || authCode.codeChallengeMethod !== 'S256') {
+        throw new UnauthorizedException(
+          'invalid_grant: code_verifier is required',
+        );
+      }
+      const verifierHash = createHash('sha256')
+        .update(codeVerifier)
+        .digest('base64url');
+      if (verifierHash !== authCode.codeChallenge) {
+        throw new UnauthorizedException(
+          'invalid_grant: code_verifier is invalid',
+        );
+      }
     }
 
     // Atomically consume the code
@@ -146,33 +215,43 @@ export class OAuth2Service {
     });
 
     if (consumed.count !== 1) {
-      throw new UnauthorizedException('invalid_grant: authorization code already used');
+      throw new UnauthorizedException(
+        'invalid_grant: authorization code already used',
+      );
     }
 
     // Generate tokens
     const user = await this.prisma.user.findUnique({
       where: { id: authCode.userId },
-      select: { id: true, userName: true, realName: true, email: true, status: true },
+      select: {
+        id: true,
+        userName: true,
+        realName: true,
+        email: true,
+        status: true,
+      },
     });
 
     if (!user || user.status === '2') {
-      throw new UnauthorizedException('invalid_grant: user not found or disabled');
+      throw new UnauthorizedException(
+        'invalid_grant: user not found or disabled',
+      );
     }
 
-    const accessTokenExpiresIn = this.configService.get<number>('OAUTH2_ACCESS_TOKEN_EXPIRES_IN') || 3600;
-    const refreshTokenExpiresIn = this.configService.get<number>('OAUTH2_REFRESH_TOKEN_EXPIRES_IN') || 2592000;
-    const issuer = this.configService.get<string>('OAUTH2_ISSUER') || 'http://localhost:3006';
+    const accessTokenExpiresIn =
+      this.configService.get<number>('OAUTH2_ACCESS_TOKEN_EXPIRES_IN') || 3600;
+    const refreshTokenExpiresIn =
+      this.configService.get<number>('OAUTH2_REFRESH_TOKEN_EXPIRES_IN') ||
+      2592000;
+    const issuer =
+      this.configService.get<string>('OAUTH2_ISSUER') ||
+      'http://localhost:3006';
 
-    const accessToken = randomBytes(32).toString('base64url');
-    const accessTokenHash = createHash('sha256').update(accessToken).digest('hex');
-
-    // Store access token hash (we reuse refresh token table pattern for simplicity,
-    // but access tokens are short-lived and validated via userinfo lookup)
-    // For now, we sign access tokens as JWTs with user info embedded
     const accessTokenJwt = this.openidService.signIdToken(
       {
         sub: String(user.id),
         client_id: clientId,
+        aud: clientId,
         scope: authCode.scopes.join(' '),
         token_type: 'access_token',
       },
@@ -181,7 +260,9 @@ export class OAuth2Service {
 
     // Generate refresh token
     const rawRefreshToken = randomBytes(32).toString('base64url');
-    const refreshTokenHash = createHash('sha256').update(rawRefreshToken).digest('hex');
+    const refreshTokenHash = createHash('sha256')
+      .update(rawRefreshToken)
+      .digest('hex');
 
     await this.prisma.oauth2RefreshToken.create({
       data: {
@@ -215,7 +296,9 @@ export class OAuth2Service {
         idTokenClaims.email = user.email;
       }
 
-      const idTokenExpiresIn = this.configService.get<number>('OAUTH2_ACCESS_TOKEN_EXPIRES_IN') || 3600;
+      const idTokenExpiresIn =
+        this.configService.get<number>('OAUTH2_ACCESS_TOKEN_EXPIRES_IN') ||
+        3600;
       idToken = this.openidService.signIdToken(idTokenClaims, idTokenExpiresIn);
     }
 
@@ -236,13 +319,18 @@ export class OAuth2Service {
     clientId: string,
     clientSecret: string,
   ): Promise<OAuth2TokenResponse> {
+    this.assertProviderEnabled();
     // Verify client credentials
     const client = await this.prisma.oauth2Client.findUnique({
       where: { clientId },
       select: { clientId: true, clientSecret: true, status: true },
     });
 
-    if (!client || client.status === '2' || client.clientSecret !== clientSecret) {
+    if (
+      !client ||
+      client.status === '2' ||
+      !(await this.verifyClientSecret(client.clientSecret, clientSecret))
+    ) {
       throw new UnauthorizedException('invalid_client');
     }
 
@@ -252,30 +340,60 @@ export class OAuth2Service {
 
     const tokenRecord = await this.prisma.oauth2RefreshToken.findUnique({
       where: { tokenHash },
-      select: { id: true, clientId: true, userId: true, scopes: true, expiresAt: true, revokedAt: true },
+      select: {
+        id: true,
+        clientId: true,
+        userId: true,
+        scopes: true,
+        expiresAt: true,
+        revokedAt: true,
+      },
     });
 
     if (!tokenRecord || tokenRecord.revokedAt || tokenRecord.expiresAt <= now) {
-      throw new UnauthorizedException('invalid_grant: refresh token is invalid or expired');
+      throw new UnauthorizedException(
+        'invalid_grant: refresh token is invalid or expired',
+      );
     }
 
     if (tokenRecord.clientId !== clientId) {
-      throw new UnauthorizedException('invalid_grant: refresh token was not issued to this client');
+      throw new UnauthorizedException(
+        'invalid_grant: refresh token was not issued to this client',
+      );
     }
 
     // Rotate refresh token: revoke old, create new
-    await this.prisma.oauth2RefreshToken.update({
-      where: { id: tokenRecord.id },
+    const revoked = await this.prisma.oauth2RefreshToken.updateMany({
+      where: { id: tokenRecord.id, revokedAt: null, expiresAt: { gt: now } },
       data: { revokedAt: now },
     });
+    if (revoked.count !== 1) {
+      throw new UnauthorizedException(
+        'invalid_grant: refresh token already used',
+      );
+    }
 
-    const accessTokenExpiresIn = this.configService.get<number>('OAUTH2_ACCESS_TOKEN_EXPIRES_IN') || 3600;
-    const refreshTokenExpiresIn = this.configService.get<number>('OAUTH2_REFRESH_TOKEN_EXPIRES_IN') || 2592000;
+    const user = await this.prisma.user.findUnique({
+      where: { id: tokenRecord.userId },
+      select: { id: true, status: true },
+    });
+    if (!user || user.status === '2') {
+      throw new UnauthorizedException(
+        'invalid_grant: user not found or disabled',
+      );
+    }
+
+    const accessTokenExpiresIn =
+      this.configService.get<number>('OAUTH2_ACCESS_TOKEN_EXPIRES_IN') || 3600;
+    const refreshTokenExpiresIn =
+      this.configService.get<number>('OAUTH2_REFRESH_TOKEN_EXPIRES_IN') ||
+      2592000;
 
     const accessTokenJwt = this.openidService.signIdToken(
       {
         sub: String(tokenRecord.userId),
         client_id: clientId,
+        aud: clientId,
         scope: tokenRecord.scopes.join(' '),
         token_type: 'access_token',
       },
@@ -283,7 +401,9 @@ export class OAuth2Service {
     );
 
     const rawRefreshToken = randomBytes(32).toString('base64url');
-    const newRefreshTokenHash = createHash('sha256').update(rawRefreshToken).digest('hex');
+    const newRefreshTokenHash = createHash('sha256')
+      .update(rawRefreshToken)
+      .digest('hex');
 
     await this.prisma.oauth2RefreshToken.create({
       data: {
@@ -307,18 +427,28 @@ export class OAuth2Service {
    * Get user info for a valid access token.
    */
   async getUserInfo(accessToken: string): Promise<OAuth2UserInfo> {
-    // The access token is a JWT, verify it
+    this.assertProviderEnabled();
     try {
-      // We need to verify the JWT - use the public key
-      const { verify } = await import('node:crypto');
-      // For simplicity, decode the JWT payload without full verification
-      // since we already verified it through the Bearer token guard
-      const parts = accessToken.split('.');
-      if (parts.length !== 3) {
+      const payload = this.openidService.verifyToken<{
+        sub: string;
+        client_id?: string;
+        aud?: string;
+        scope?: string;
+        token_type?: string;
+      }>(accessToken);
+      if (
+        payload.token_type !== 'access_token' ||
+        !payload.client_id ||
+        payload.aud !== payload.client_id
+      ) {
         throw new UnauthorizedException('invalid_token');
       }
-
-      const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
+      const client = await this.prisma.oauth2Client.findUnique({
+        where: { clientId: payload.client_id },
+        select: { status: true },
+      });
+      if (!client || client.status === '2')
+        throw new UnauthorizedException('invalid_token');
       const userId = parseInt(payload.sub, 10);
       if (isNaN(userId)) {
         throw new UnauthorizedException('invalid_token: invalid sub claim');
@@ -326,11 +456,19 @@ export class OAuth2Service {
 
       const user = await this.prisma.user.findUnique({
         where: { id: userId },
-        select: { id: true, userName: true, realName: true, email: true, status: true },
+        select: {
+          id: true,
+          userName: true,
+          realName: true,
+          email: true,
+          status: true,
+        },
       });
 
       if (!user || user.status === '2') {
-        throw new UnauthorizedException('invalid_token: user not found or disabled');
+        throw new UnauthorizedException(
+          'invalid_token: user not found or disabled',
+        );
       }
 
       const scope = payload.scope || '';
@@ -352,6 +490,24 @@ export class OAuth2Service {
         userInfo.email = user.email;
       }
 
+      // 查询账号绑定，返回业务系统用户信息
+      const clientId = payload.client_id;
+      if (clientId) {
+        const binding = await this.prisma.oauth2UserBinding.findUnique({
+          where: {
+            ssoUserId_clientId: {
+              ssoUserId: userId,
+              clientId,
+            },
+          },
+          select: { appUserId: true, appUsername: true },
+        });
+        if (binding) {
+          userInfo.app_user_id = binding.appUserId;
+          userInfo.app_username = binding.appUsername || undefined;
+        }
+      }
+
       return userInfo;
     } catch (error) {
       if (error instanceof UnauthorizedException) throw error;
@@ -362,13 +518,21 @@ export class OAuth2Service {
   /**
    * Revoke a refresh token.
    */
-  async revokeToken(token: string, clientId?: string, clientSecret?: string): Promise<void> {
+  async revokeToken(
+    token: string,
+    clientId?: string,
+    clientSecret?: string,
+  ): Promise<void> {
+    this.assertProviderEnabled();
     if (clientId && clientSecret) {
       const client = await this.prisma.oauth2Client.findUnique({
         where: { clientId },
         select: { clientId: true, clientSecret: true },
       });
-      if (!client || client.clientSecret !== clientSecret) {
+      if (
+        !client ||
+        !(await this.verifyClientSecret(client.clientSecret, clientSecret))
+      ) {
         throw new UnauthorizedException('invalid_client');
       }
     }
@@ -386,5 +550,28 @@ export class OAuth2Service {
       });
     }
     // Per RFC 7009, always return 200 even if token not found
+  }
+
+  private async verifyClientSecret(
+    storedSecret: string,
+    providedSecret: string,
+  ): Promise<boolean> {
+    if (
+      storedSecret.startsWith('$2a$') ||
+      storedSecret.startsWith('$2b$') ||
+      storedSecret.startsWith('$2y$')
+    ) {
+      return bcrypt.compare(providedSecret, storedSecret);
+    }
+    return storedSecret === providedSecret;
+  }
+
+  private assertProviderEnabled() {
+    if (
+      this.configService.get<string>('OAUTH2_PROVIDER_ENABLED', 'true') !==
+      'true'
+    ) {
+      throw new ForbiddenException('OAuth2 provider is disabled');
+    }
   }
 }

@@ -1,4 +1,11 @@
-import { IsString, IsNotEmpty, IsOptional, IsUrl } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsUrl,
+  MaxLength,
+  IsIn,
+} from 'class-validator';
 
 export class AuthorizeDto {
   @IsString()
@@ -16,7 +23,18 @@ export class AuthorizeDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(128)
   scope?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(512)
+  code_challenge?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsIn(['S256'])
+  code_challenge_method?: string;
 
   @IsOptional()
   @IsString()
@@ -35,6 +53,16 @@ export class AuthorizeConfirmDto {
   @IsOptional()
   @IsString()
   scope?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(512)
+  code_challenge?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsIn(['S256'])
+  code_challenge_method?: string;
 
   @IsOptional()
   @IsString()

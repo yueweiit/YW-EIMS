@@ -1,6 +1,12 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { createHash, generateKeyPairSync, sign, createPublicKey } from 'node:crypto';
+import {
+  createHash,
+  generateKeyPairSync,
+  sign,
+  verify,
+  createPublicKey,
+} from 'node:crypto';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import type {
@@ -20,13 +26,19 @@ export class OpenIdService implements OnModuleInit {
   constructor(private readonly configService: ConfigService) {}
 
   onModuleInit() {
-    this.issuer = this.configService.get<string>('OAUTH2_ISSUER') || 'http://localhost:3006';
+    this.issuer =
+      this.configService.get<string>('OAUTH2_ISSUER') ||
+      'http://localhost:3006';
     this.loadOrGenerateKeys();
   }
 
   private loadOrGenerateKeys() {
-    const privateKeyPath = this.configService.get<string>('OAUTH2_RSA_PRIVATE_KEY_PATH') || './keys/oauth2.pem';
-    const publicKeyPath = this.configService.get<string>('OAUTH2_RSA_PUBLIC_KEY_PATH') || './keys/oauth2.pub.pem';
+    const privateKeyPath =
+      this.configService.get<string>('OAUTH2_RSA_PRIVATE_KEY_PATH') ||
+      './keys/oauth2.pem';
+    const publicKeyPath =
+      this.configService.get<string>('OAUTH2_RSA_PUBLIC_KEY_PATH') ||
+      './keys/oauth2.pub.pem';
 
     const absPrivatePath = join(process.cwd(), privateKeyPath);
     const absPublicPath = join(process.cwd(), publicKeyPath);
@@ -53,7 +65,10 @@ export class OpenIdService implements OnModuleInit {
     // Generate a stable kid from the public key
     const keyObject = createPublicKey(this.publicKey);
     const exported = keyObject.export({ type: 'spki', format: 'der' });
-    this.kid = createHash('sha256').update(exported).digest('hex').substring(0, 16);
+    this.kid = createHash('sha256')
+      .update(exported)
+      .digest('hex')
+      .substring(0, 16);
   }
 
   /**
@@ -72,10 +87,58 @@ export class OpenIdService implements OnModuleInit {
     const headerB64 = Buffer.from(JSON.stringify(header)).toString('base64url');
     const claimsB64 = Buffer.from(JSON.stringify(claims)).toString('base64url');
     const signingInput = `${headerB64}.${claimsB64}`;
-    const signature = sign('RSA-SHA256', Buffer.from(signingInput), this.privateKey)
-      .toString('base64url');
+    const signature = sign(
+      'RSA-SHA256',
+      Buffer.from(signingInput),
+      this.privateKey,
+    ).toString('base64url');
 
     return `${signingInput}.${signature}`;
+  }
+
+  verifyToken<T extends Record<string, unknown>>(
+    token: string,
+    audience?: string,
+  ): T {
+    const parts = token.split('.');
+    if (parts.length !== 3) throw new Error('invalid JWT');
+
+    const [encodedHeader, encodedPayload, encodedSignature] = parts;
+    const header = JSON.parse(
+      Buffer.from(encodedHeader, 'base64url').toString(),
+    ) as {
+      alg?: string;
+      kid?: string;
+    };
+    if (header.alg !== 'RS256' || header.kid !== this.kid)
+      throw new Error('invalid JWT header');
+
+    const valid = verify(
+      'RSA-SHA256',
+      Buffer.from(`${encodedHeader}.${encodedPayload}`),
+      this.publicKey,
+      Buffer.from(encodedSignature, 'base64url'),
+    );
+    if (!valid) throw new Error('invalid JWT signature');
+
+    const payload = JSON.parse(
+      Buffer.from(encodedPayload, 'base64url').toString(),
+    ) as T & {
+      iss?: string;
+      exp?: number;
+      aud?: string;
+    };
+    const now = Math.floor(Date.now() / 1000);
+    if (
+      payload.iss !== this.issuer ||
+      typeof payload.exp !== 'number' ||
+      payload.exp <= now
+    ) {
+      throw new Error('expired or invalid JWT claims');
+    }
+    if (audience && payload.aud !== audience)
+      throw new Error('invalid JWT audience');
+    return payload;
   }
 
   /**
@@ -93,8 +156,19 @@ export class OpenIdService implements OnModuleInit {
       subject_types_supported: ['public'],
       id_token_signing_alg_values_supported: ['RS256'],
       scopes_supported: ['openid', 'profile', 'email'],
-      token_endpoint_auth_methods_supported: ['client_secret_basic', 'client_secret_post'],
-      claims_supported: ['sub', 'name', 'email', 'given_name', 'family_name', 'preferred_username', 'picture'],
+      token_endpoint_auth_methods_supported: [
+        'client_secret_basic',
+        'client_secret_post',
+      ],
+      claims_supported: [
+        'sub',
+        'name',
+        'email',
+        'given_name',
+        'family_name',
+        'preferred_username',
+        'picture',
+      ],
     };
   }
 
@@ -193,7 +267,10 @@ export class OpenIdService implements OnModuleInit {
     return intBytes.subarray(start).toString('base64url');
   }
 
-  private readDerLength(buf: Buffer, offset: number): { length: number; bytesRead: number } {
+  private readDerLength(
+    buf: Buffer,
+    offset: number,
+  ): { length: number; bytesRead: number } {
     const first = buf[offset];
     if (first < 0x80) {
       return { length: first, bytesRead: 1 };

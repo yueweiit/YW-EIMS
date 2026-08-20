@@ -26,6 +26,7 @@ model User {
   authLoginTickets         AuthLoginTicket[]
   oauth2AuthorizationCodes Oauth2AuthorizationCode[]
   oauth2RefreshTokens      Oauth2RefreshToken[]
+  oauth2UserBindings       Oauth2UserBinding[]
 
   @@map("system_user")
   @@schema("public")
@@ -42,6 +43,18 @@ model AuthLoginTicket {
 
   @@index([expiresAt])
   @@map("auth_login_tickets")
+  @@schema("public")
+}
+
+model DingTalkOAuthState {
+  id         Int       @id @default(autoincrement())
+  nonce      String    @unique @db.VarChar(128)
+  expiresAt  DateTime  @map("expires_at")
+  consumedAt DateTime? @map("consumed_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  @@index([expiresAt])
+  @@map("dingtalk_oauth_states")
   @@schema("public")
 }
 
@@ -62,6 +75,7 @@ model Oauth2Client {
 
   authorizationCodes Oauth2AuthorizationCode[]
   refreshTokens      Oauth2RefreshToken[]
+  userBindings       Oauth2UserBinding[]
 
   @@map("oauth2_clients")
   @@schema("public")
@@ -109,6 +123,27 @@ model Oauth2RefreshToken {
   @@index([userId])
   @@index([expiresAt])
   @@map("oauth2_refresh_tokens")
+  @@schema("public")
+}
+
+/// OAuth2 用户绑定表（SSO 用户与业务系统用户的映射关系）
+model Oauth2UserBinding {
+  id          Int      @id @default(autoincrement())
+  ssoUserId   Int      @map("sso_user_id")
+  clientId    String   @map("client_id") @db.VarChar(128)
+  appUserId   Int      @map("app_user_id")
+  appUsername String?  @map("app_username") @db.VarChar(100)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  ssoUser User         @relation(fields: [ssoUserId], references: [id], onDelete: Cascade)
+  client  Oauth2Client @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+
+  @@unique([ssoUserId, clientId])
+  @@unique([clientId, appUserId])
+  @@index([ssoUserId])
+  @@index([clientId])
+  @@map("oauth2_user_bindings")
   @@schema("public")
 }
 

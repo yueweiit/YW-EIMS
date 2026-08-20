@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '@eims/database';
 import type { Request } from 'express';
+import * as bcrypt from 'bcryptjs';
 
 interface RequestWithOAuth2Client extends Request {
   oauth2Client?: { clientId: string; name: string };
@@ -20,7 +21,9 @@ export class ClientAuthGuard implements CanActivate {
   constructor(private readonly prisma: PrismaService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest<RequestWithOAuth2Client>();
+    const request = context
+      .switchToHttp()
+      .getRequest<RequestWithOAuth2Client>();
 
     let clientId: string | undefined;
     let clientSecret: string | undefined;
@@ -28,7 +31,9 @@ export class ClientAuthGuard implements CanActivate {
     // Try HTTP Basic Auth first
     const authHeader = request.headers.authorization;
     if (authHeader?.startsWith('Basic ')) {
-      const decoded = Buffer.from(authHeader.substring(6), 'base64').toString('utf-8');
+      const decoded = Buffer.from(authHeader.substring(6), 'base64').toString(
+        'utf-8',
+      );
       const colonIndex = decoded.indexOf(':');
       if (colonIndex > 0) {
         clientId = decoded.substring(0, colonIndex);
@@ -43,7 +48,9 @@ export class ClientAuthGuard implements CanActivate {
     }
 
     if (!clientId || !clientSecret) {
-      throw new UnauthorizedException('client_id and client_secret are required');
+      throw new UnauthorizedException(
+        'client_id and client_secret are required',
+      );
     }
 
     const client = await this.prisma.oauth2Client.findUnique({
@@ -55,7 +62,13 @@ export class ClientAuthGuard implements CanActivate {
       throw new UnauthorizedException('Invalid client');
     }
 
-    if (client.clientSecret !== clientSecret) {
+    const validSecret =
+      client.clientSecret.startsWith('$2a$') ||
+      client.clientSecret.startsWith('$2b$') ||
+      client.clientSecret.startsWith('$2y$')
+        ? await bcrypt.compare(clientSecret, client.clientSecret)
+        : client.clientSecret === clientSecret;
+    if (!validSecret) {
       throw new UnauthorizedException('Invalid client credentials');
     }
 

@@ -15,6 +15,11 @@ export class TokenDto {
 
   @IsOptional()
   @IsString()
+  @IsNotEmpty()
+  code_verifier?: string;
+
+  @IsOptional()
+  @IsString()
   client_id?: string;
 
   @IsOptional()

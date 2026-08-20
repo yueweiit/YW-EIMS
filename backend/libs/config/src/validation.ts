@@ -16,6 +16,7 @@ export const validationSchema = Joi.object({
   DINGTALK_OAUTH_SCOPES: Joi.string().default('openid'),
   DINGTALK_OAUTH_DEBUG: Joi.string().valid('true', 'false').default('false'),
   EIMS_FRONTEND_URL: Joi.string().uri().default('http://localhost:9527'),
+  CORS_ORIGINS: Joi.string().default('http://localhost:9527'),
   OAUTH2_PROVIDER_ENABLED: Joi.string().valid('true', 'false').default('true'),
   OAUTH2_AUTH_CODE_EXPIRES_IN: Joi.number().default(600),
   OAUTH2_ACCESS_TOKEN_EXPIRES_IN: Joi.number().default(3600),

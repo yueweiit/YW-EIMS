@@ -3,7 +3,8 @@ import {
   NotFoundException,
   ConflictException,
 } from '@nestjs/common';
-import { randomBytes, createHash } from 'node:crypto';
+import { randomBytes } from 'node:crypto';
+import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '@eims/database';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
@@ -21,7 +22,9 @@ export class OAuth2ClientService {
   }
 
   async findPage(current: number = 1, size: number = 10, name?: string) {
-    const where = name ? { name: { contains: name, mode: 'insensitive' as const } } : {};
+    const where = name
+      ? { name: { contains: name, mode: 'insensitive' as const } }
+      : {};
     const [records, total] = await Promise.all([
       this.prisma.oauth2Client.findMany({
         where,
@@ -73,11 +76,12 @@ export class OAuth2ClientService {
   async create(dto: CreateClientDto, currentUserName: string) {
     const clientId = this.generateClientId();
     const clientSecret = this.generateClientSecret();
+    const clientSecretHash = await bcrypt.hash(clientSecret, 12);
 
     const client = await this.prisma.oauth2Client.create({
       data: {
         clientId,
-        clientSecret,
+        clientSecret: clientSecretHash,
         name: dto.name,
         description: dto.description,
         redirectUris: dto.redirectUris,
@@ -88,7 +92,6 @@ export class OAuth2ClientService {
       select: {
         id: true,
         clientId: true,
-        clientSecret: true,
         name: true,
         description: true,
         redirectUris: true,
@@ -99,11 +102,15 @@ export class OAuth2ClientService {
       },
     });
 
-    return client;
+    // The raw secret is returned only once to the administrator. The database
+    // stores only the bcrypt hash and it must never be exposed through the API.
+    return { ...client, clientSecret };
   }
 
   async update(id: number, dto: UpdateClientDto, currentUserName: string) {
-    const existing = await this.prisma.oauth2Client.findUnique({ where: { id } });
+    const existing = await this.prisma.oauth2Client.findUnique({
+      where: { id },
+    });
     if (!existing) {
       throw new NotFoundException('OAuth2 应用不存在');
     }
@@ -113,7 +120,9 @@ export class OAuth2ClientService {
       data: {
         ...(dto.name !== undefined && { name: dto.name }),
         ...(dto.description !== undefined && { description: dto.description }),
-        ...(dto.redirectUris !== undefined && { redirectUris: dto.redirectUris }),
+        ...(dto.redirectUris !== undefined && {
+          redirectUris: dto.redirectUris,
+        }),
         ...(dto.scopes !== undefined && { scopes: dto.scopes }),
         ...(dto.status !== undefined && { status: dto.status }),
         updateBy: currentUserName,
@@ -137,7 +146,9 @@ export class OAuth2ClientService {
   }
 
   async remove(id: number) {
-    const existing = await this.prisma.oauth2Client.findUnique({ where: { id } });
+    const existing = await this.prisma.oauth2Client.findUnique({
+      where: { id },
+    });
     if (!existing) {
       throw new NotFoundException('OAuth2 应用不存在');
     }
@@ -146,15 +157,18 @@ export class OAuth2ClientService {
   }
 
   async resetSecret(id: number) {
-    const existing = await this.prisma.oauth2Client.findUnique({ where: { id } });
+    const existing = await this.prisma.oauth2Client.findUnique({
+      where: { id },
+    });
     if (!existing) {
       throw new NotFoundException('OAuth2 应用不存在');
     }
 
     const newSecret = this.generateClientSecret();
+    const newSecretHash = await bcrypt.hash(newSecret, 12);
     await this.prisma.oauth2Client.update({
       where: { id },
-      data: { clientSecret: newSecret },
+      data: { clientSecret: newSecretHash },
     });
 
     return { clientId: existing.clientId, clientSecret: newSecret };
