@@ -1,0 +1,25 @@
+{
+  "externalSystems": {
+    "budget": {
+      "url": "http://8.135.70.130:8002"
+    },
+    "erp": {
+      "url": "http://192.168.5.202:8006",
+      "oauth": {
+        "authorizeUrl": "http://192.168.5.202:8006/oauth/authorize",
+        "clientId": "eims_gYxNe_9t-dRWxKi59HGrbA",
+        "redirectUri": "http://192.168.5.202:8001/api/method/custom_filters.overrides.oauth.login_via_eims",
+        "scope": "openid profile email"
+      }
+    },
+    "mes": {
+      "url": "https://lemos-case.com/mes/"
+    },
+    "crm": {
+      "url": "https://lemos-case.com/crm/"
+    },
+    "lemos": {
+      "url": "https://lemos-case.com/"
+    }
+  }
+}

@@ -6,9 +6,12 @@ import { setupStore } from './store';
 import { setupRouter } from './router';
 import { getLocale, setupI18n } from './locales';
 import App from './App.vue';
+import { loadExternalSystemConfig } from './config/external-system-config';
 
 async function setupApp() {
   setupLoading();
+
+  await loadExternalSystemConfig();
 
   setupNProgress();
 
