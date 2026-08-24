@@ -47,6 +47,8 @@ services:
     restart: always
     ports:
       - "${APP_PORT:-8006}:80"
+    volumes:
+      - ./frontend/public/config:/usr/share/nginx/html/config:ro
     depends_on:
       - backend
 
