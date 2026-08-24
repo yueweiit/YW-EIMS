@@ -80,7 +80,41 @@ DATABASE_URL=postgresql://eims:strong-password@postgres:5432/eims?schema=public
 docker compose up -d --build
 ```
 
-前端默认通过 `APP_PORT` 暴露，访问 `http://localhost:8003`（可在 `.env` 中修改）。后端 API 通过前端 Nginx 的 `/api` 反向代理访问，不需要单独暴露宿主机端口。Docker 环境下 OAuth2/OIDC 的 `OAUTH2_ISSUER` 应配置为包含 `/api` 的地址，例如 `http://localhost:8003/api`。
+前端默认通过 `APP_PORT` 暴露，访问 `http://localhost:8003`（可在 `.env` 中修改）。后端 API 通过前端 Nginx 的 `/api` 反向代理访问，不需要单独暴露宿主机端口。Docker 环境下 OAuth2/OIDC 的 `OAUTH2_ISSUER` 应配置为浏览器可访问的前端根地址，例如 `http://localhost:8003`，不要追加 `/api`。
+
+### 外部系统入口和 SSO 配置
+
+首页“系统”卡片的地址，以及 ERP OAuth 登录参数，统一配置在：
+
+```text
+frontend/public/config/external-systems.json
+```
+
+Docker Compose 会把这个目录挂载到前端 Nginx。修改配置后不需要重新构建镜像，执行下面的命令让前端容器重新加载配置即可：
+
+```bash
+docker compose restart frontend
+```
+
+ERP 配置示例：
+
+```json
+{
+  "externalSystems": {
+    "erp": {
+      "url": "https://your-erp.example.com",
+      "oauth": {
+        "authorizeUrl": "http://your-eims.example.com:8006/oauth/authorize",
+        "clientId": "your-client-id",
+        "redirectUri": "https://your-erp.example.com/api/method/custom_filters.overrides.oauth.login_via_eims",
+        "scope": "openid profile email"
+      }
+    }
+  }
+}
+```
+
+`clientId` 可以放在前端配置中，`clientSecret` 不要放入前端；OAuth 客户端密钥只应保存在 ERP 或后端服务中。修改已有系统的 URL 或 OAuth 参数只需编辑这个 JSON。若要增加全新的系统卡片，还需要在前端补充卡片名称、图标和国际化文案。
 
 ### 3. 执行数据库迁移和种子数据
 
