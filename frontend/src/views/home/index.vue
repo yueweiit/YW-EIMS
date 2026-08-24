@@ -5,15 +5,25 @@ import ExternalNav from './modules/external-nav.vue';
 </script>
 
 <template>
-  <NSpace vertical :size="16">
+  <div class="home-page">
     <HeaderBanner />
-    <NCard :bordered="false" class="card-wrapper">
+    <NCard :bordered="false" class="home-section card-wrapper">
       <QuickNav />
     </NCard>
-    <NCard :bordered="false" class="card-wrapper">
+    <NCard :bordered="false" class="home-section card-wrapper">
       <ExternalNav />
     </NCard>
-  </NSpace>
+  </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+.home-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.home-section {
+  overflow: hidden;
+}
+</style>

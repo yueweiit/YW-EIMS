@@ -327,8 +327,10 @@ const local: App.I18n.Schema = {
       },
       creativity: '创意',
       internalModules: '内部功能',
+      internalModulesDesc: '常用业务模块',
       subModules: '个子模块',
       externalSystemsTitle: '系统',
+      externalSystemsDesc: '统一访问外部业务平台',
       openInNewWindow: '新窗口打开',
       externalSystems: {
         budget: '预算系统',

@@ -331,8 +331,10 @@ const local: App.I18n.Schema = {
       },
       creativity: 'Creativity',
       internalModules: 'Internal Modules',
+      internalModulesDesc: 'Frequently used business modules',
       subModules: 'sub-modules',
       externalSystemsTitle: 'External Systems',
+      externalSystemsDesc: 'Access connected business platforms',
       openInNewWindow: 'Open in new window',
       externalSystems: {
         budget: 'Budget System',
