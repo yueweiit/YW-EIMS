@@ -17,3 +17,6 @@ export * from "./erpnext-sync-log";
 export * from "./oauth2-client";
 export * from "./oauth2-binding";
 export * from "./oauth2-authorize";
+export * from "./portal";
+export * from "./role";
+export * from "./audit";

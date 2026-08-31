@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { h, reactive, ref } from 'vue';
 import type { DataTableColumns } from 'naive-ui';
-import { NButton, NCard, NDataTable, NPopconfirm, NSpace, NTag, NPagination } from 'naive-ui';
+import { NButton, NCard, NDataTable, NPopconfirm, NSpace, NPagination } from 'naive-ui';
 import { useLoading } from '@sa/hooks';
 import {
-  fetchOAuth2BindingPage,
-  fetchDeleteOAuth2Binding
+  fetchDeleteOAuth2Binding,
+  fetchOAuth2BindingPage
 } from '@/service/api';
 import type { OAuth2BindingRecord } from '@/service/api/oauth2-binding';
 import { $t } from '@/locales';
@@ -28,6 +28,7 @@ const queryParams = reactive({
 const total = ref(0);
 
 const drawerVisible = ref(false);
+const editRow = ref<OAuth2BindingRecord | null>(null);
 
 const columns: DataTableColumns<OAuth2BindingRecord> = [
   {
@@ -77,19 +78,36 @@ const columns: DataTableColumns<OAuth2BindingRecord> = [
   {
     key: 'operate',
     title: $t('common.operate'),
-    width: 100,
+    width: 160,
     fixed: 'right',
     align: 'center',
     render: row =>
-      h(NPopconfirm, { onPositiveClick: () => handleDelete(row) }, {
-        trigger: () =>
-          h(
-            NButton,
-            { size: 'small', type: 'error', ghost: true },
-            { default: () => '解绑' }
-          ),
-        default: () => '确认解除此绑定关系？'
-      })
+      h(
+        NSpace,
+        { justify: 'center', size: [8, 0] },
+        {
+          default: () => [
+            h(
+              NButton,
+              { size: 'small', type: 'primary', ghost: true, onClick: () => handleEdit(row) },
+              { default: () => $t('common.edit') }
+            ),
+            h(
+              NPopconfirm,
+              { onPositiveClick: () => handleDelete(row) },
+              {
+                trigger: () =>
+                  h(
+                    NButton,
+                    { size: 'small', type: 'error', ghost: true },
+                    { default: () => '解绑' }
+                  ),
+                default: () => '确认解除此绑定关系？'
+              }
+            )
+          ]
+        }
+      )
   }
 ];
 
@@ -110,17 +128,23 @@ async function getData() {
 
 function handleSearch() {
   queryParams.current = 1;
-  getData();
+  void getData();
 }
 
 function handleReset() {
   queryParams.ssoUserId = undefined;
   queryParams.clientId = undefined;
   queryParams.current = 1;
-  getData();
+  void getData();
 }
 
 function handleAdd() {
+  editRow.value = null;
+  drawerVisible.value = true;
+}
+
+function handleEdit(row: OAuth2BindingRecord) {
+  editRow.value = row;
   drawerVisible.value = true;
 }
 
@@ -128,22 +152,22 @@ async function handleDelete(row: OAuth2BindingRecord) {
   const { error } = await fetchDeleteOAuth2Binding(row.id);
   if (!error) {
     window.$message?.success('解绑成功');
-    getData();
+    void getData();
   }
 }
 
 function handlePageChange(page: number) {
   queryParams.current = page;
-  getData();
+  void getData();
 }
 
 function handlePageSizeChange(size: number) {
   queryParams.current = 1;
   queryParams.size = size;
-  getData();
+  void getData();
 }
 
-getData();
+void getData();
 </script>
 
 <template>
@@ -151,9 +175,7 @@ getData();
     <NCard :bordered="false">
       <NSpace justify="space-between" align="center" wrap>
         <OAuth2BindingSearch v-model="queryParams" @search="handleSearch" @reset="handleReset" />
-        <NButton type="primary" @click="handleAdd">
-          新增绑定
-        </NButton>
+        <NButton type="primary" @click="handleAdd">新增绑定</NButton>
       </NSpace>
     </NCard>
 
@@ -182,6 +204,7 @@ getData();
 
     <OAuth2BindingOperateDrawer
       v-model:visible="drawerVisible"
+      :row-data="editRow"
       @submitted="getData"
     />
   </NSpace>

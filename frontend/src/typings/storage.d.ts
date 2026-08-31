@@ -12,11 +12,11 @@ declare namespace StorageType {
   interface Local {
     /** The i18n language */
     lang: App.I18n.LangType;
-    /** The token */
+    /** Legacy token key retained only so old browser data can be removed. */
     token: string;
     /** Fixed sider with mix-menu */
     mixSiderFixed: CommonType.YesOrNo;
-    /** The refresh token */
+    /** Legacy refresh-token key retained only so old browser data can be removed. */
     refreshToken: string;
     /** The theme color */
     themeColor: string;

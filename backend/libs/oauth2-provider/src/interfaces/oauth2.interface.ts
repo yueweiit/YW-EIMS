@@ -31,6 +31,7 @@ export interface OpenIdConfiguration {
   authorization_endpoint: string;
   token_endpoint: string;
   userinfo_endpoint: string;
+  end_session_endpoint: string;
   jwks_uri: string;
   response_types_supported: string[];
   grant_types_supported: string[];

@@ -1,5 +1,7 @@
 # EIMS OAuth2 SSO 接入文档
 
+> 接入双方的改造项、交付资料、字段字典和验收清单请先阅读 [EIMS SSO 外部系统接入实施与交付规范](eims-sso-integration-guide.md)。本文主要作为 OAuth2/OIDC 接口参考。
+
 ## 一、概述
 
 EIMS 提供标准 OAuth 2.0 + OIDC 单点登录服务。第三方系统（ERP、HR、CRM 等）接入后，用户只需登录 EIMS 即可免登访问所有已接入的系统。
@@ -16,8 +18,10 @@ EIMS 提供标准 OAuth 2.0 + OIDC 单点登录服务。第三方系统（ERP、
 | 端点 | 地址 | 说明 |
 |------|------|------|
 | 授权端点 | `GET /oauth/authorize` | 用户登录 + 授权 |
+| 授权事务信息 | `GET /oauth/authorize/transaction` | EIMS 授权页读取已校验的授权信息（需 EIMS 登录） |
 | Token 端点 | `POST /oauth/token` | 用 code 换 token |
 | 用户信息端点 | `GET /oauth/userinfo` | 获取当前用户信息 |
+| 单点退出端点 | `GET /oauth/logout` | 清理 EIMS 会话并撤销相关刷新令牌 |
 | OIDC 发现 | `GET /oauth/.well-known/openid-configuration` | 自动发现配置 |
 | JWKS | `GET /oauth/jwks` | 公钥，用于验证 JWT |
 
@@ -43,6 +47,8 @@ EIMS 提供标准 OAuth 2.0 + OIDC 单点登录服务。第三方系统（ERP、
  │                      │     &response_type=code    │
  │                      │     &scope=openid profile  │
  │                      │     &state=random123       │
+ │                      │     &code_challenge=...    │
+ │                      │     &code_challenge_method=S256 │
  │                      │                            │
  │  3. 用户登录 + 授权   │                            │
  ├──────────────────────────────────────────────────>│
@@ -85,7 +91,10 @@ GET https://eims.example.com/oauth/authorize
   &redirect_uri={你的回调地址}
   &response_type=code
   &scope=openid profile
-  &state={随机字符串，防CSRF}
+  &state={随机字符串，必填，用于防CSRF}
+  &code_challenge={PKCE challenge，必填}
+  &code_challenge_method=S256
+  &nonce={OIDC 随机字符串，可选，建议传入}
 ```
 
 **参数说明：**
@@ -96,7 +105,12 @@ GET https://eims.example.com/oauth/authorize
 | `redirect_uri` | 是 | 必须与 EIMS 后台注册的回调地址完全一致 |
 | `response_type` | 是 | 固定填 `code` |
 | `scope` | 是 | `openid` 必填，`profile` 返回用户名姓名，`email` 返回邮箱，空格分隔 |
-| `state` | 推荐 | 随机字符串，回调时原样返回，用于防 CSRF |
+| `state` | 是 | 随机字符串，回调时原样返回，用于防 CSRF |
+| `code_challenge` | 是 | PKCE challenge，必须是 S256 |
+| `code_challenge_method` | 是 | 固定填 `S256` |
+| `nonce` | 否 | OIDC 随机字符串；传入后会原样写入 ID Token，客户端应校验 |
+
+EIMS 会先校验上述参数，并将完整请求保存在短期服务端事务中。浏览器授权页只接收随机 `transaction_id`，不能通过修改地址栏替换 `redirect_uri`、scope、state 或 PKCE 参数。
 
 #### 步骤 2：处理回调
 
@@ -193,6 +207,8 @@ Authorization: Bearer {access_token}
 - 如果 `app_user_id` 存在 → 用它在你系统里找到对应用户，完成登录
 - 如果 `app_user_id` 不存在 → 用户未绑定，提示联系管理员在 EIMS 后台绑定账号
 
+EIMS 不下发业务系统角色。ERP、CRM、MES 等系统的角色、菜单和 API 权限由各自系统管理。
+
 ---
 
 ## 四、Token 刷新
@@ -232,9 +248,22 @@ token={要撤销的refresh_token}
 
 1. **`client_secret` 只在服务端使用**，绝对不能暴露到前端
 2. **`state` 参数必须验证**，防止 CSRF 攻击
-3. **`code` 只能使用一次**，用完即失效（默认 10 分钟过期）
-4. **`redirect_uri` 必须精确匹配**，EIMS 会严格校验
-5. **建议使用 HTTPS**，生产环境不要用 HTTP
+3. **必须使用 PKCE S256**，并在 token 请求中提交原始 `code_verifier`
+4. **`code` 只能使用一次**，用完即失效（默认 10 分钟过期）
+5. **`redirect_uri` 必须精确匹配**，EIMS 会严格校验
+6. **生产环境 EIMS、客户端和回调地址必须使用 HTTPS**
+7. **退出登录时可跳转 OIDC `end_session_endpoint`（即 `/oauth/logout`）；`post_logout_redirect_uri` 必须是客户端已注册的回调地址**
+
+单点退出示例：
+
+```
+GET https://eims.example.com/oauth/logout
+  ?id_token_hint={客户端保存的ID Token}
+  &post_logout_redirect_uri={已注册的回调地址}
+  &state={客户端随机字符串}
+```
+
+该端点会清理当前 EIMS 浏览器 Cookie，并撤销 EIMS 会话和 OAuth 刷新令牌。业务系统自己的登录 Cookie、菜单和 API 权限仍由业务系统负责清理和校验。
 
 ---
 

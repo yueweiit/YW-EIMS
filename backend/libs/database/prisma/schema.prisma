@@ -24,6 +24,7 @@ model User {
   updateBy   String?  @map("update_by")
   updateTime DateTime @updatedAt @map("update_time")
   authLoginTickets         AuthLoginTicket[]
+  authRefreshSessions      AuthRefreshSession[]
   oauth2AuthorizationCodes Oauth2AuthorizationCode[]
   oauth2RefreshTokens      Oauth2RefreshToken[]
   oauth2UserBindings       Oauth2UserBinding[]
@@ -58,6 +59,23 @@ model DingTalkOAuthState {
   @@schema("public")
 }
 
+/// EIMS 自身登录刷新会话。只保存刷新令牌哈希，支持撤销和轮换。
+model AuthRefreshSession {
+  id        Int       @id @default(autoincrement())
+  tokenHash String    @unique @map("token_hash") @db.VarChar(64)
+  userId    Int       @map("user_id")
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("auth_refresh_sessions")
+  @@schema("public")
+}
+
 /// OAuth2 第三方应用注册表
 model Oauth2Client {
   id           Int      @id @default(autoincrement())
@@ -73,11 +91,36 @@ model Oauth2Client {
   updateBy     String?  @map("update_by") @db.VarChar(50)
   updateTime   DateTime @updatedAt @map("update_time")
 
+  authorizationRequests Oauth2AuthorizationRequest[]
   authorizationCodes Oauth2AuthorizationCode[]
   refreshTokens      Oauth2RefreshToken[]
   userBindings       Oauth2UserBinding[]
+  externalSystem     ExternalSystem?
 
   @@map("oauth2_clients")
+  @@schema("public")
+}
+
+/// OAuth2 授权请求事务。授权页只携带随机事务 ID，真实参数保存在服务端。
+model Oauth2AuthorizationRequest {
+  id                  Int       @id @default(autoincrement())
+  transactionId       String    @unique @map("transaction_id") @db.VarChar(128)
+  clientId            String    @map("client_id") @db.VarChar(128)
+  redirectUri         String    @map("redirect_uri") @db.VarChar(2000)
+  scopes              String[]  @map("scopes")
+  state               String    @db.VarChar(512)
+  nonce               String?   @db.VarChar(255)
+  codeChallenge       String    @map("code_challenge") @db.VarChar(128)
+  codeChallengeMethod String    @map("code_challenge_method") @db.VarChar(10)
+  expiresAt            DateTime  @map("expires_at")
+  consumedAt          DateTime? @map("consumed_at")
+  createdAt            DateTime  @default(now()) @map("created_at")
+
+  client Oauth2Client @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([expiresAt])
+  @@map("oauth2_authorization_requests")
   @@schema("public")
 }
 
@@ -89,6 +132,7 @@ model Oauth2AuthorizationCode {
   userId              Int       @map("user_id")
   redirectUri         String    @map("redirect_uri") @db.VarChar(2000)
   scopes              String[]  @map("scopes")
+  nonce               String?   @db.VarChar(255)
   codeChallenge       String?   @map("code_challenge") @db.VarChar(256)
   codeChallengeMethod String?   @map("code_challenge_method") @db.VarChar(10)
   expiresAt           DateTime  @map("expires_at")
@@ -126,7 +170,7 @@ model Oauth2RefreshToken {
   @@schema("public")
 }
 
-/// OAuth2 用户绑定表（SSO 用户与业务系统用户的映射关系）
+/// OAuth2 用户绑定表（SSO 用户与业务系统用户的映射关系，不维护业务系统角色）
 model Oauth2UserBinding {
   id          Int      @id @default(autoincrement())
   ssoUserId   Int      @map("sso_user_id")
@@ -144,6 +188,126 @@ model Oauth2UserBinding {
   @@index([ssoUserId])
   @@index([clientId])
   @@map("oauth2_user_bindings")
+  @@schema("public")
+}
+
+/// 外部系统门户目录。入口地址和展示信息由 EIMS 管理，访问权限由 accessMode/allowedRoles 决定。
+/// accessMode=all 表示所有已登录用户可见；accessMode=roles 时必须命中 allowedRoles；R_SUPER 可以访问所有启用系统。
+model ExternalSystem {
+  id            Int      @id @default(autoincrement())
+  code          String   @unique @db.VarChar(50)
+  name          String   @db.VarChar(100)
+  description   String?  @db.VarChar(500)
+  icon          String   @default("mdi:application-outline") @db.VarChar(100)
+  color         String   @default("#2080f0") @db.VarChar(20)
+  entryUrl      String   @map("entry_url") @db.VarChar(2000)
+  authMode      String   @default("link") @map("auth_mode") @db.VarChar(20)
+  accessMode    String   @default("roles") @map("access_mode") @db.VarChar(20)
+  allowedRoles  String[] @default([]) @map("allowed_roles")
+  category      String   @default("业务系统") @db.VarChar(50)
+  helpUrl       String?  @map("help_url") @db.VarChar(2000)
+  feedbackUrl   String?  @map("feedback_url") @db.VarChar(2000)
+  contact       String?  @db.VarChar(200)
+  oauthClientId String?  @unique @map("oauth_client_id") @db.VarChar(128)
+  sort          Int      @default(0)
+  status        String   @default("1") @db.VarChar(1)
+  createBy      String?  @map("create_by") @db.VarChar(50)
+  createTime    DateTime @default(now()) @map("create_time")
+  updateBy      String?  @map("update_by") @db.VarChar(50)
+  updateTime    DateTime @updatedAt @map("update_time")
+
+  oauthClient Oauth2Client? @relation(fields: [oauthClientId], references: [clientId], onDelete: SetNull, onUpdate: Cascade)
+
+  permissions SystemPermission[]
+
+  @@index([status])
+  @@index([sort])
+  @@map("external_systems")
+  @@schema("public")
+}
+
+/// EIMS 角色主数据。User.roles 仍保存角色编码，便于兼容现有用户数据。
+model SystemRole {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique @db.VarChar(50)
+  name        String   @db.VarChar(100)
+  description String?  @db.VarChar(500)
+  builtIn     Boolean  @default(false) @map("built_in")
+  sort        Int      @default(0)
+  status      String   @default("1") @db.VarChar(1)
+  createBy    String?  @map("create_by") @db.VarChar(50)
+  createTime  DateTime @default(now()) @map("create_time")
+  updateBy    String?  @map("update_by") @db.VarChar(50)
+  updateTime  DateTime @updatedAt @map("update_time")
+
+  permissions SystemRolePermission[]
+
+  @@index([status])
+  @@index([sort])
+  @@map("system_roles")
+  @@schema("public")
+}
+
+/// EIMS 菜单、按钮和 API 功能权限目录。
+model SystemPermission {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique @db.VarChar(100)
+  name        String   @db.VarChar(100)
+  type        String   @default("menu") @db.VarChar(20)
+  systemCode  String?  @map("system_code") @db.VarChar(50)
+  parentCode  String?  @map("parent_code") @db.VarChar(100)
+  routePath   String?  @map("route_path") @db.VarChar(500)
+  description String?  @db.VarChar(500)
+  sort        Int      @default(0)
+  status      String   @default("1") @db.VarChar(1)
+  createBy    String?  @map("create_by") @db.VarChar(50)
+  createTime  DateTime @default(now()) @map("create_time")
+  updateBy    String?  @map("update_by") @db.VarChar(50)
+  updateTime  DateTime @updatedAt @map("update_time")
+
+  externalSystem ExternalSystem?       @relation(fields: [systemCode], references: [code], onDelete: SetNull, onUpdate: Cascade)
+  roles          SystemRolePermission[]
+
+  @@index([systemCode])
+  @@index([type])
+  @@index([status])
+  @@index([sort])
+  @@map("system_permissions")
+  @@schema("public")
+}
+
+/// 角色与功能权限的多对多关系。
+model SystemRolePermission {
+  roleId       Int @map("role_id")
+  permissionId Int @map("permission_id")
+
+  role       SystemRole       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission SystemPermission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@index([permissionId])
+  @@map("system_role_permissions")
+  @@schema("public")
+}
+
+/// 登录、OAuth、门户和权限变更审计日志。detail 禁止保存密码、Token、Secret、授权码和 state。
+model SecurityAuditLog {
+  id         Int      @id @default(autoincrement())
+  event      String   @db.VarChar(80)
+  result     String   @default("success") @db.VarChar(20)
+  userId     Int?     @map("user_id")
+  userName   String?  @map("user_name") @db.VarChar(100)
+  clientId   String?  @map("client_id") @db.VarChar(128)
+  systemCode String?  @map("system_code") @db.VarChar(50)
+  ipAddress  String?  @map("ip_address") @db.VarChar(64)
+  userAgent  String?  @map("user_agent") @db.VarChar(500)
+  detail     Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([event, createdAt])
+  @@index([userId, createdAt])
+  @@index([clientId, createdAt])
+  @@map("security_audit_logs")
   @@schema("public")
 }
 

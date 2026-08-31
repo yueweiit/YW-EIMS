@@ -7,13 +7,17 @@ import {
   Body,
   Param,
   Query,
+  UseGuards,
 } from '@nestjs/common';
+import { PermissionGuard, RequirePermission } from '@eims/roles';
 import { MaterialCodeRulesService } from './code-rules.service';
 import { CreateCodeRuleDto } from './dto/create-code-rule.dto';
 import { UpdateCodeRuleDto } from './dto/update-code-rule.dto';
 import { QueryCodeRuleDto } from './dto/query-code-rule.dto';
 
 @Controller('material-code-rule')
+@UseGuards(PermissionGuard)
+@RequirePermission('eims:material:code-rule')
 export class CodeRulesController {
   constructor(private readonly codeRulesService: MaterialCodeRulesService) {}
 
@@ -28,11 +32,13 @@ export class CodeRulesController {
   }
 
   @Post()
+  @RequirePermission('eims:material:code-rule:create')
   async create(@Body() dto: CreateCodeRuleDto) {
     return this.codeRulesService.create(dto);
   }
 
   @Put(':codePrefix')
+  @RequirePermission('eims:material:code-rule:update')
   async update(
     @Param('codePrefix') codePrefix: string,
     @Body() dto: UpdateCodeRuleDto,
@@ -41,6 +47,7 @@ export class CodeRulesController {
   }
 
   @Delete(':codePrefix')
+  @RequirePermission('eims:material:code-rule:delete')
   async remove(@Param('codePrefix') codePrefix: string) {
     return this.codeRulesService.remove(codePrefix);
   }

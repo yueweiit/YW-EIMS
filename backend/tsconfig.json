@@ -38,7 +38,13 @@
       "@eims/oa": ["libs/oa/src"],
       "@eims/oa/*": ["libs/oa/src/*"],
       "@eims/oauth2-provider": ["libs/oauth2-provider/src"],
-      "@eims/oauth2-provider/*": ["libs/oauth2-provider/src/*"]
+      "@eims/oauth2-provider/*": ["libs/oauth2-provider/src/*"],
+      "@eims/portal": ["libs/portal/src"],
+      "@eims/portal/*": ["libs/portal/src/*"],
+      "@eims/roles": ["libs/roles/src"],
+      "@eims/roles/*": ["libs/roles/src/*"],
+      "@eims/audit": ["libs/audit/src"],
+      "@eims/audit/*": ["libs/audit/src/*"]
     }
   }
 }

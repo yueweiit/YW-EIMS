@@ -1,7 +1,10 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { PermissionGuard, RequirePermission } from '@eims/roles';
 import { OaSearchService } from './oa-search.service';
 
 @Controller('oa/search')
+@UseGuards(PermissionGuard)
+@RequirePermission('eims:oa:approval')
 export class OaSearchController {
   constructor(private readonly oaSearchService: OaSearchService) {}
 

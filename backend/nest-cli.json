@@ -14,6 +14,9 @@
     "user": { "type": "library", "root": "libs/user", "entryFile": "index", "sourceRoot": "libs/user/src", "compilerOptions": { "tsConfigPath": "libs/user/tsconfig.lib.json" } },
     "material": { "type": "library", "root": "libs/material", "entryFile": "index", "sourceRoot": "libs/material/src", "compilerOptions": { "tsConfigPath": "libs/material/tsconfig.lib.json" } },
     "mold-product": { "type": "library", "root": "libs/mold-product", "entryFile": "index", "sourceRoot": "libs/mold-product/src", "compilerOptions": { "tsConfigPath": "libs/mold-product/tsconfig.lib.json" } },
-    "oa": { "type": "library", "root": "libs/oa", "entryFile": "index", "sourceRoot": "libs/oa/src", "compilerOptions": { "tsConfigPath": "libs/oa/tsconfig.lib.json" } }
+    "oa": { "type": "library", "root": "libs/oa", "entryFile": "index", "sourceRoot": "libs/oa/src", "compilerOptions": { "tsConfigPath": "libs/oa/tsconfig.lib.json" } },
+    "portal": { "type": "library", "root": "libs/portal", "entryFile": "index", "sourceRoot": "libs/portal/src", "compilerOptions": { "tsConfigPath": "libs/portal/tsconfig.lib.json" } },
+    "roles": { "type": "library", "root": "libs/roles", "entryFile": "index", "sourceRoot": "libs/roles/src", "compilerOptions": { "tsConfigPath": "libs/roles/tsconfig.lib.json" } },
+    "audit": { "type": "library", "root": "libs/audit", "entryFile": "index", "sourceRoot": "libs/audit/src", "compilerOptions": { "tsConfigPath": "libs/audit/tsconfig.lib.json" } }
   }
 }

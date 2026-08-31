@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '@eims/database';
 import { CreateBindingDto } from './dto/create-binding.dto';
+import { UpdateBindingDto } from './dto/update-binding.dto';
 
 @Injectable()
 export class OAuth2BindingService {
@@ -68,18 +69,18 @@ export class OAuth2BindingService {
     // 验证 SSO 用户存在
     const user = await this.prisma.user.findUnique({
       where: { id: dto.ssoUserId },
-      select: { id: true, userName: true, realName: true },
+      select: { id: true, userName: true, realName: true, status: true },
     });
-    if (!user) {
+    if (!user || user.status !== '1') {
       throw new NotFoundException('SSO 用户不存在');
     }
 
     // 验证 OAuth2 Client 存在
     const client = await this.prisma.oauth2Client.findUnique({
       where: { clientId: dto.clientId },
-      select: { clientId: true, name: true },
+      select: { clientId: true, name: true, status: true },
     });
-    if (!client) {
+    if (!client || client.status !== '1') {
       throw new NotFoundException('OAuth2 应用不存在');
     }
 
@@ -146,6 +147,46 @@ export class OAuth2BindingService {
 
     await this.prisma.oauth2UserBinding.delete({ where: { id } });
     return true;
+  }
+
+  /** 更新业务系统账号，不改变 EIMS 用户和 OAuth2 应用。 */
+  async update(id: number, dto: UpdateBindingDto) {
+    const existing = await this.prisma.oauth2UserBinding.findUnique({
+      where: { id },
+      select: { id: true, clientId: true, appUserId: true },
+    });
+    if (!existing) throw new NotFoundException('绑定关系不存在');
+
+    if (existing.appUserId !== dto.appUserId) {
+      const conflictBinding = await this.prisma.oauth2UserBinding.findUnique({
+        where: {
+          clientId_appUserId: {
+            clientId: existing.clientId,
+            appUserId: dto.appUserId,
+          },
+        },
+        select: { id: true },
+      });
+      if (conflictBinding && conflictBinding.id !== id) {
+        throw new ConflictException('该业务系统用户已被其他 SSO 用户绑定');
+      }
+    }
+
+    return this.prisma.oauth2UserBinding.update({
+      where: { id },
+      data: {
+        appUserId: dto.appUserId,
+        appUsername: dto.appUsername?.trim() || null,
+      },
+      select: {
+        id: true,
+        ssoUserId: true,
+        clientId: true,
+        appUserId: true,
+        appUsername: true,
+        updatedAt: true,
+      },
+    });
   }
 
   /**

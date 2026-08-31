@@ -1,24 +1,31 @@
 import { useAuthStore } from '@/store/modules/auth';
-import { localStg } from '@/utils/storage';
 import { fetchRefreshToken } from '../api';
 import type { RequestInstanceState } from './type';
 
 export function getAuthorization() {
-  const token = localStg.get('token');
-  const Authorization = token ? `Bearer ${token}` : null;
+  return null;
+}
 
-  return Authorization;
+/** Read only the non-sensitive CSRF token cookie; auth cookies remain HttpOnly. */
+export function getCsrfToken() {
+  if (typeof document === 'undefined') return null;
+  const item = document.cookie
+    .split('; ')
+    .find(value => value.startsWith('eims_csrf='));
+  if (!item) return null;
+  try {
+    return decodeURIComponent(item.substring('eims_csrf='.length));
+  } catch {
+    return null;
+  }
 }
 
 /** refresh token */
 async function handleRefreshToken() {
   const { resetStore } = useAuthStore();
 
-  const rToken = localStg.get('refreshToken') || '';
-  const { error, data } = await fetchRefreshToken(rToken);
+  const { error } = await fetchRefreshToken();
   if (!error) {
-    localStg.set('token', data.token);
-    localStg.set('refreshToken', data.refreshToken);
     return true;
   }
 

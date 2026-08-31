@@ -40,9 +40,13 @@ declare module "@elegant-router/types" {
     "oa_approval": "/oa/approval";
     "oa_box-label": "/oa/box-label";
     "system": "/system";
+    "system_audit": "/system/audit";
     "system_erpnext-sync-log": "/system/erpnext-sync-log";
+    "system_external-system": "/system/external-system";
     "system_oauth2-binding": "/system/oauth2-binding";
     "system_oauth2-client": "/system/oauth2-client";
+    "system_permission": "/system/permission";
+    "system_role": "/system/role";
     "system_user": "/system/user";
   };
 
@@ -120,9 +124,13 @@ declare module "@elegant-router/types" {
     | "mold-product_product"
     | "oa_approval"
     | "oa_box-label"
+    | "system_audit"
     | "system_erpnext-sync-log"
+    | "system_external-system"
     | "system_oauth2-binding"
     | "system_oauth2-client"
+    | "system_permission"
+    | "system_role"
     | "system_user"
   >;
 

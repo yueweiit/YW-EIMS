@@ -1,24 +1,68 @@
-import { Controller, Post, Get, Body, Query, Res, HttpStatus } from '@nestjs/common';
-import type { Response } from 'express';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  Query,
+  Req,
+  Res,
+  HttpStatus,
+  Header,
+  UnauthorizedException,
+} from '@nestjs/common';
+import type { Request, Response } from 'express';
 import { Public } from '@eims/common';
+import { AuditService } from '@eims/audit/audit.service';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { DingTalkExchangeDto } from './dto/dingtalk-exchange.dto';
 import { DingTalkOAuthService } from './dingtalk-oauth.service';
+import {
+  EIMS_REFRESH_COOKIE,
+  EIMS_ACCESS_COOKIE,
+  clearAuthCookies,
+  getCookie,
+  setAuthCookies,
+} from './auth-cookies';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly dingTalkOAuthService: DingTalkOAuthService,
+    private readonly auditService: AuditService,
   ) {}
 
   @Public()
   @Post('login')
-  async login(@Body() dto: LoginDto) {
-    return this.authService.login(dto);
+  @Header('Cache-Control', 'no-store')
+  @Header('Pragma', 'no-cache')
+  async login(
+    @Body() dto: LoginDto,
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    try {
+      const tokens = await this.authService.login(dto);
+      setAuthCookies(response, tokens);
+      await this.auditService.record({
+        event: 'auth.login',
+        userName: dto.userName,
+        request,
+      });
+      return { authenticated: true };
+    } catch (error) {
+      await this.auditService.record({
+        event: 'auth.login',
+        result: 'failure',
+        userName: dto.userName,
+        request,
+        detail: { reason: error instanceof Error ? error.name : 'error' },
+      });
+      throw error;
+    }
   }
 
   @Get('getUserInfo')
@@ -28,8 +72,47 @@ export class AuthController {
 
   @Public()
   @Post('refreshToken')
-  async refreshToken(@Body() dto: RefreshTokenDto) {
-    return this.authService.refreshToken(dto);
+  @Header('Cache-Control', 'no-store')
+  @Header('Pragma', 'no-cache')
+  async refreshToken(
+    @Body() dto: RefreshTokenDto,
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const refreshToken = dto?.refreshToken || getCookie(request, EIMS_REFRESH_COOKIE);
+    if (!refreshToken) throw new UnauthorizedException('refresh token missing');
+    try {
+      const tokens = await this.authService.refreshToken({ refreshToken });
+      setAuthCookies(response, tokens);
+      await this.auditService.record({ event: 'auth.refresh', request });
+      return { authenticated: true };
+    } catch (error) {
+      await this.auditService.record({
+        event: 'auth.refresh',
+        result: 'failure',
+        request,
+        detail: { reason: error instanceof Error ? error.name : 'error' },
+      });
+      throw error;
+    }
+  }
+
+  @Public()
+  @Post('logout')
+  @Header('Cache-Control', 'no-store')
+  async logout(
+    @Body() dto: RefreshTokenDto,
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const refreshToken = dto.refreshToken || getCookie(request, EIMS_REFRESH_COOKIE);
+    const userId = await this.authService.resolveAccessTokenUserId(
+      getCookie(request, EIMS_ACCESS_COOKIE),
+    );
+    if (refreshToken) await this.authService.logout({ refreshToken });
+    clearAuthCookies(response);
+    await this.auditService.record({ event: 'auth.logout', userId, request });
+    return { authenticated: false };
   }
 
   @Public()
@@ -68,7 +151,26 @@ export class AuthController {
 
   @Public()
   @Post('dingtalk/exchange')
-  async dingTalkExchange(@Body() dto: DingTalkExchangeDto) {
-    return this.authService.exchangeLoginTicket(dto.ticket);
+  @Header('Cache-Control', 'no-store')
+  @Header('Pragma', 'no-cache')
+  async dingTalkExchange(
+    @Body() dto: DingTalkExchangeDto,
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    try {
+      const tokens = await this.authService.exchangeLoginTicket(dto.ticket);
+      setAuthCookies(response, tokens);
+      await this.auditService.record({ event: 'auth.dingtalk_exchange', request });
+      return { authenticated: true };
+    } catch (error) {
+      await this.auditService.record({
+        event: 'auth.dingtalk_exchange',
+        result: 'failure',
+        request,
+        detail: { reason: error instanceof Error ? error.name : 'error' },
+      });
+      throw error;
+    }
   }
 }

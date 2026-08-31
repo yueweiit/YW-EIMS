@@ -58,7 +58,7 @@ export class ClientAuthGuard implements CanActivate {
       select: { clientId: true, clientSecret: true, name: true, status: true },
     });
 
-    if (!client || client.status === '2') {
+    if (!client || client.status !== '1') {
       throw new UnauthorizedException('Invalid client');
     }
 
@@ -67,7 +67,7 @@ export class ClientAuthGuard implements CanActivate {
       client.clientSecret.startsWith('$2b$') ||
       client.clientSecret.startsWith('$2y$')
         ? await bcrypt.compare(clientSecret, client.clientSecret)
-        : client.clientSecret === clientSecret;
+        : false;
     if (!validSecret) {
       throw new UnauthorizedException('Invalid client credentials');
     }

@@ -10,7 +10,7 @@ const isHttpProxy = import.meta.env.DEV && import.meta.env.VITE_HTTP_PROXY === '
  * @param password Password
  */
 export function fetchLogin(userName: string, password: string) {
-  return request<Api.Auth.LoginToken>({
+  return request<Api.Auth.SessionResult>({
     url: '/auth/login',
     method: 'post',
     data: {
@@ -22,7 +22,10 @@ export function fetchLogin(userName: string, password: string) {
 
 /** Get user info */
 export function fetchGetUserInfo() {
-  return request<Api.Auth.UserInfo>({ url: '/auth/getUserInfo' });
+  return request<Api.Auth.UserInfo>({
+    url: '/auth/getUserInfo',
+    headers: { 'X-Skip-Auth-Refresh': '1' }
+  });
 }
 
 /**
@@ -30,13 +33,19 @@ export function fetchGetUserInfo() {
  *
  * @param refreshToken Refresh token
  */
-export function fetchRefreshToken(refreshToken: string) {
-  return request<Api.Auth.LoginToken>({
+export function fetchRefreshToken() {
+  return request<Api.Auth.SessionResult>({
     url: '/auth/refreshToken',
     method: 'post',
-    data: {
-      refreshToken
-    }
+    headers: { 'X-Skip-Auth-Refresh': '1' }
+  });
+}
+
+/** Revoke the current EIMS refresh session. */
+export function fetchLogout() {
+  return request({
+    url: '/auth/logout',
+    method: 'post'
   });
 }
 
@@ -48,7 +57,7 @@ export function getDingTalkAuthorizationUrl() {
 
 /** Exchange a one-time DingTalk login ticket for the application JWT pair. */
 export function fetchDingTalkLoginToken(ticket: string) {
-  return request<Api.Auth.LoginToken>({
+  return request<Api.Auth.SessionResult>({
     url: '/auth/dingtalk/exchange',
     method: 'post',
     data: { ticket }

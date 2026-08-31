@@ -184,6 +184,9 @@ describe('AuthService OAuth login tickets', () => {
         findUnique: jest.fn(),
         findMany: jest.fn(),
       },
+      authRefreshSession: {
+        create: jest.fn().mockResolvedValue({}),
+      },
     } as unknown as PrismaService;
 
     return {
@@ -249,7 +252,13 @@ describe('AuthService OAuth login tickets', () => {
 
     const tokens = await service.exchangeLoginTicket(ticket);
 
-    expect(tokens).toEqual({ token: 'jwt-token', refreshToken: 'jwt-token' });
+    expect(tokens.token).toBe('jwt-token');
+    expect(tokens.refreshToken).toEqual(expect.any(String));
+    expect(prisma.authRefreshSession.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ userId: 7 }),
+      }),
+    );
     expect(updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({ id: 1, consumedAt: null }),

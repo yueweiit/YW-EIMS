@@ -8,13 +8,17 @@ import {
   Param,
   Query,
   ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
+import { PermissionGuard, RequirePermission } from '@eims/roles';
 import { ColorsService } from './colors.service';
 import { CreateColorDto } from './dto/create-color.dto';
 import { UpdateColorDto } from './dto/update-color.dto';
 import { QueryColorDto } from './dto/query-color.dto';
 
 @Controller('mold-product/colors')
+@UseGuards(PermissionGuard)
+@RequirePermission('eims:mold:color')
 export class ColorsController {
   constructor(private readonly colorsService: ColorsService) {}
 
@@ -29,11 +33,13 @@ export class ColorsController {
   }
 
   @Post()
+  @RequirePermission('eims:mold:color:create')
   async create(@Body() dto: CreateColorDto) {
     return this.colorsService.create(dto);
   }
 
   @Put(':id')
+  @RequirePermission('eims:mold:color:update')
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateColorDto,
@@ -42,6 +48,7 @@ export class ColorsController {
   }
 
   @Delete(':id')
+  @RequirePermission('eims:mold:color:delete')
   async remove(@Param('id', ParseIntPipe) id: number) {
     return this.colorsService.remove(id);
   }

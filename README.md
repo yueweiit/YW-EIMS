@@ -82,39 +82,15 @@ docker compose up -d --build
 
 前端默认通过 `APP_PORT` 暴露，访问 `http://localhost:8003`（可在 `.env` 中修改）。后端 API 通过前端 Nginx 的 `/api` 反向代理访问，不需要单独暴露宿主机端口。Docker 环境下 OAuth2/OIDC 的 `OAUTH2_ISSUER` 应配置为浏览器可访问的前端根地址，例如 `http://localhost:8003`，不要追加 `/api`。
 
-### 外部系统入口和 SSO 配置
+### 外部系统门户和 SSO 配置
 
-首页“系统”卡片的地址，以及 ERP OAuth 登录参数，统一配置在：
+首页“系统”卡片现在由 EIMS 后端门户接口驱动，系统目录、入口地址、允许角色、说明地址、反馈地址和 OAuth2 应用关联在“系统管理 → 外部系统目录”中维护。前端只展示 `/api/portal/systems` 返回的当前用户可访问系统，点击入口时还会调用 `/api/portal/systems/:code/launch` 由后端再次校验角色、系统状态和账号绑定。
 
-```text
-frontend/public/config/external-systems.json
-```
+后续 ERP、CRM、MES 等系统接入 EIMS 的双方改造项、交付字段、OAuth 参数字典和验收清单，见 [EIMS SSO 外部系统接入实施与交付规范](docs/eims-sso-integration-guide.md)。
 
-Docker Compose 会把这个目录挂载到前端 Nginx。修改配置后不需要重新构建镜像，执行下面的命令让前端容器重新加载配置即可：
+`frontend/public/config/external-systems.json` 仅保留作旧版本运行时配置参考，不再承担权限控制，也不应放入 `client_secret`。新系统应先在 EIMS 的 OAuth2 应用管理中注册客户端，再在外部系统目录中选择 OAuth2 应用，并在 OAuth2 账号绑定中维护用户对应的业务账号。ERP 的 `clientId`、`clientSecret`、EIMS 地址和回调地址仍只配置在 ERP 后端。
 
-```bash
-docker compose restart frontend
-```
-
-ERP 配置示例：
-
-```json
-{
-  "externalSystems": {
-    "erp": {
-      "url": "https://your-erp.example.com",
-      "oauth": {
-        "authorizeUrl": "http://your-eims.example.com:8006/oauth/authorize",
-        "clientId": "your-client-id",
-        "redirectUri": "https://your-erp.example.com/api/method/custom_filters.overrides.oauth.login_via_eims",
-        "scope": "openid profile email"
-      }
-    }
-  }
-}
-```
-
-`clientId` 可以放在前端配置中，`clientSecret` 不要放入前端；OAuth 客户端密钥只应保存在 ERP 或后端服务中。修改已有系统的 URL 或 OAuth 参数只需编辑这个 JSON。若要增加全新的系统卡片，还需要在前端补充卡片名称、图标和国际化文案。
+访问策略选择“按角色授权”时，允许角色留空表示拒绝访问；只有明确选择“所有已登录用户”才会对所有已登录用户开放。选择“OAuth2 绑定”后，只有完成对应业务账号绑定的用户可以从门户进入。业务系统内部的菜单和接口权限仍必须由业务系统后端自行校验。
 
 ### 3. 执行数据库迁移和种子数据
 
@@ -163,7 +139,7 @@ docker compose up -d postgres
 { "code": "0000", "msg": "success", "data": {} }
 ```
 
-- 请求鉴权：`Authorization: Bearer <token>`
+- EIMS 浏览器会话：HttpOnly Cookie（写操作同时校验 CSRF Token）；服务端 OAuth 接口仍使用 `Authorization: Bearer <token>`
 - Token 过期：业务码 `9999`
 - 强制退出：业务码 `8888`
 - 业务冲突（HTTP 409）会返回具体原因，前端统一以警告提示展示
@@ -180,6 +156,8 @@ docker compose up -d postgres
 | OA | `/oa/*` |
 | ERPNext 映射 | `/erpnext-mapping` |
 | ERPNext 同步日志 | `/erpnext-sync-log` |
+| 门户系统 | `/portal/systems` |
+| 我的门户权限 | `/portal/me/permissions` |
 
 ## 数据库约定
 

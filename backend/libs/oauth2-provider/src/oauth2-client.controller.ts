@@ -7,13 +7,17 @@ import {
   Body,
   Param,
   Query,
+  UseGuards,
 } from '@nestjs/common';
-import { CurrentUser } from '@eims/auth';
+import { AdminGuard, CurrentUser } from '@eims/auth';
+import { PermissionGuard, RequirePermission } from '@eims/roles';
 import { OAuth2ClientService } from './oauth2-client.service';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
 
 @Controller('oauth2/clients')
+@UseGuards(AdminGuard, PermissionGuard)
+@RequirePermission('eims:system:oauth2-client')
 export class OAuth2ClientController {
   constructor(private readonly clientService: OAuth2ClientService) {}
 
@@ -32,6 +36,7 @@ export class OAuth2ClientController {
   }
 
   @Post()
+  @RequirePermission('eims:system:oauth2-client:create')
   async create(
     @Body() dto: CreateClientDto,
     @CurrentUser('userName') userName: string,
@@ -40,6 +45,7 @@ export class OAuth2ClientController {
   }
 
   @Put(':id')
+  @RequirePermission('eims:system:oauth2-client:update')
   async update(
     @Param('id') id: number,
     @Body() dto: UpdateClientDto,
@@ -49,12 +55,17 @@ export class OAuth2ClientController {
   }
 
   @Delete(':id')
+  @RequirePermission('eims:system:oauth2-client:delete')
   async remove(@Param('id') id: number) {
     return this.clientService.remove(id);
   }
 
   @Post(':id/reset-secret')
-  async resetSecret(@Param('id') id: number) {
-    return this.clientService.resetSecret(id);
+  @RequirePermission('eims:system:oauth2-client:reset-secret')
+  async resetSecret(
+    @Param('id') id: number,
+    @CurrentUser('userName') userName: string,
+  ) {
+    return this.clientService.resetSecret(id, userName);
   }
 }

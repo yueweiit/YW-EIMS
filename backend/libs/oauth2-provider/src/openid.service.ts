@@ -7,7 +7,13 @@ import {
   verify,
   createPublicKey,
 } from 'node:crypto';
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import {
+  readFileSync,
+  writeFileSync,
+  existsSync,
+  mkdirSync,
+  chmodSync,
+} from 'node:fs';
 import { join, dirname } from 'node:path';
 import type {
   OpenIdConfiguration,
@@ -55,12 +61,16 @@ export class OpenIdService implements OnModuleInit {
       });
 
       mkdirSync(dirname(absPrivatePath), { recursive: true });
-      writeFileSync(absPrivatePath, privateKey);
-      writeFileSync(absPublicPath, publicKey);
+      writeFileSync(absPrivatePath, privateKey, { mode: 0o600 });
+      writeFileSync(absPublicPath, publicKey, { mode: 0o644 });
       this.privateKey = privateKey;
       this.publicKey = publicKey;
       this.logger.log('Generated new RSA keys for OAuth2 ID Token signing');
     }
+
+    // Tighten permissions for existing keys as well. On Windows this is a
+    // no-op at the filesystem level, while Linux containers enforce it.
+    chmodSync(absPrivatePath, 0o600);
 
     // Generate a stable kid from the public key
     const keyObject = createPublicKey(this.publicKey);
@@ -107,10 +117,11 @@ export class OpenIdService implements OnModuleInit {
     const header = JSON.parse(
       Buffer.from(encodedHeader, 'base64url').toString(),
     ) as {
+      typ?: string;
       alg?: string;
       kid?: string;
     };
-    if (header.alg !== 'RS256' || header.kid !== this.kid)
+    if (header.typ !== 'JWT' || header.alg !== 'RS256' || header.kid !== this.kid)
       throw new Error('invalid JWT header');
 
     const valid = verify(
@@ -150,6 +161,7 @@ export class OpenIdService implements OnModuleInit {
       authorization_endpoint: `${this.issuer}/oauth/authorize`,
       token_endpoint: `${this.issuer}/oauth/token`,
       userinfo_endpoint: `${this.issuer}/oauth/userinfo`,
+      end_session_endpoint: `${this.issuer}/oauth/logout`,
       jwks_uri: `${this.issuer}/oauth/jwks`,
       response_types_supported: ['code'],
       grant_types_supported: ['authorization_code', 'refresh_token'],
@@ -168,6 +180,8 @@ export class OpenIdService implements OnModuleInit {
         'family_name',
         'preferred_username',
         'picture',
+        'app_user_id',
+        'app_username',
       ],
     };
   }

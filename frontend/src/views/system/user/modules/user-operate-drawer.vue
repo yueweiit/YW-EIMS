@@ -3,7 +3,7 @@ import { computed, nextTick, reactive, ref, watch } from 'vue';
 import type { FormInst, FormRules } from 'naive-ui';
 import { NButton, NDrawer, NDrawerContent, NForm, NFormItem, NInput, NSelect, NSpace } from 'naive-ui';
 import { REG_USER_NAME } from '@/constants/reg';
-import { fetchCreateUser, fetchUpdateUser } from '@/service/api';
+import { fetchCreateUser, fetchRoleOptions, fetchUpdateUser } from '@/service/api';
 import { $t } from '@/locales';
 
 defineOptions({
@@ -91,11 +91,7 @@ const rules = computed<FormRules>(() => ({
   ]
 }));
 
-const roleOptions = [
-  { label: '超级管理员', value: 'R_SUPER' },
-  { label: '管理员', value: 'R_ADMIN' },
-  { label: '普通用户', value: 'R_USER' }
-];
+const roleOptions = ref<{ label: string; value: string }[]>([]);
 
 const statusOptions = [
   { label: '启用', value: '1' },
@@ -125,8 +121,19 @@ function setFormFromRow(row: Api.User.UserRecord) {
   });
 }
 
+async function loadRoleOptions() {
+  const { data } = await fetchRoleOptions();
+  if (data) {
+    roleOptions.value = data.map(role => ({
+      label: `${role.name}（${role.code}）`,
+      value: role.code
+    }));
+  }
+}
+
 watch(visible, val => {
   if (val) {
+    void loadRoleOptions();
     if (props.type === 'edit' && props.rowData) {
       setFormFromRow(props.rowData);
     } else {

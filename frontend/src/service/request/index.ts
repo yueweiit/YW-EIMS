@@ -1,10 +1,9 @@
 import type { AxiosResponse } from 'axios';
 import { BACKEND_ERROR_CODE, createFlatRequest, createRequest } from '@sa/axios';
 import { useAuthStore } from '@/store/modules/auth';
-import { localStg } from '@/utils/storage';
 import { getServiceBaseURL } from '@/utils/service';
 import { $t } from '@/locales';
-import { getAuthorization, handleExpiredRequest, showErrorMsg } from './shared';
+import { getAuthorization, getCsrfToken, handleExpiredRequest, showErrorMsg } from './shared';
 import type { RequestInstanceState } from './type';
 
 const isHttpProxy = import.meta.env.DEV && import.meta.env.VITE_HTTP_PROXY === 'Y';
@@ -13,9 +12,9 @@ const { baseURL, otherBaseURL } = getServiceBaseURL(import.meta.env, isHttpProxy
 export const request = createFlatRequest(
   {
     baseURL,
-    headers: {
-      apifoxToken: 'XL299LiMEDZ0H5h3A29PxwQXdMJqWyY2'
-    }
+    // Let backend JSON errors (especially 401) reach onBackendFail so the
+    // refresh-token flow can run before Axios rejects the request.
+    validateStatus: status => status >= 200 && status < 500,
   },
   {
     defaultState: {
@@ -27,7 +26,10 @@ export const request = createFlatRequest(
     },
     async onRequest(config) {
       const Authorization = getAuthorization();
-      Object.assign(config.headers, { Authorization });
+      const csrfToken = getCsrfToken();
+      config.withCredentials = true;
+      if (Authorization) Object.assign(config.headers, { Authorization });
+      if (csrfToken) Object.assign(config.headers, { 'X-CSRF-Token': csrfToken });
 
       return config;
     },
@@ -39,6 +41,9 @@ export const request = createFlatRequest(
     async onBackendFail(response, instance) {
       const authStore = useAuthStore();
       const responseCode = String(response.data.code);
+      const skipAuthRefresh =
+        response.config.headers?.get?.('X-Skip-Auth-Refresh') === '1' ||
+        response.config.headers?.['X-Skip-Auth-Refresh'] === '1';
 
       function handleLogout() {
         authStore.resetStore();
@@ -87,11 +92,9 @@ export const request = createFlatRequest(
       // the api `refreshToken` can not return error code in `expiredTokenCodes`, otherwise it will be a dead loop, should return `logoutCodes` or `modalLogoutCodes`
       const expiredTokenCodes = import.meta.env.VITE_SERVICE_EXPIRED_TOKEN_CODES?.split(',') || [];
       if (expiredTokenCodes.includes(responseCode)) {
+        if (skipAuthRefresh) return null;
         const success = await handleExpiredRequest(request.state);
         if (success) {
-          const Authorization = getAuthorization();
-          Object.assign(response.config.headers, { Authorization });
-
           return instance.request(response.config) as Promise<AxiosResponse>;
         }
       }
@@ -143,13 +146,7 @@ export const demoRequest = createRequest(
       return response.data.result;
     },
     async onRequest(config) {
-      const { headers } = config;
-
-      // set token
-      const token = localStg.get('token');
-      const Authorization = token ? `Bearer ${token}` : null;
-      Object.assign(headers, { Authorization });
-
+      config.withCredentials = true;
       return config;
     },
     isBackendSuccess(response) {

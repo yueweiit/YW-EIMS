@@ -40,18 +40,24 @@ export interface CreateOAuth2BindingParams {
   appUsername?: string;
 }
 
+export interface UpdateOAuth2BindingParams {
+  appUserId: number;
+  appUsername?: string | null;
+}
+
 export interface OAuth2AuthorizeConfirmParams {
-  client_id: string;
-  redirect_uri: string;
-  scope?: string;
-  state?: string;
+  transaction_id: string;
   consent: "true" | "false";
-  code_challenge?: string;
-  code_challenge_method?: string;
 }
 
 export interface OAuth2AuthorizeConfirmResult {
   redirectUrl: string;
+}
+
+export interface OAuth2AuthorizeRequest {
+  transactionId: string;
+  clientName: string;
+  scopes: string[];
 }
 
 /** Get binding list */
@@ -77,5 +83,14 @@ export function fetchDeleteOAuth2Binding(id: number) {
   return request({
     url: `/oauth2/bindings/${id}`,
     method: "delete",
+  });
+}
+
+/** Update a binding's target account. */
+export function fetchUpdateOAuth2Binding(id: number, data: UpdateOAuth2BindingParams) {
+  return request<OAuth2BindingRecord>({
+    url: `/oauth2/bindings/${id}`,
+    method: 'put',
+    data
   });
 }

@@ -35,11 +35,31 @@ export class OAuth2Service {
     scope?: string,
     codeChallenge?: string,
     codeChallengeMethod?: string,
+    state?: string,
+    nonce?: string,
   ) {
     this.assertProviderEnabled();
     if (responseType !== 'code') {
       throw new BadRequestException(
         'unsupported_response_type: only "code" is supported',
+      );
+    }
+
+    if (!state || state.length > 512) {
+      throw new BadRequestException(
+        'invalid_request: state is required and must be at most 512 characters',
+      );
+    }
+    if (nonce !== undefined && nonce.length > 255) {
+      throw new BadRequestException('invalid_request: nonce is too long');
+    }
+    if (
+      !codeChallenge ||
+      codeChallengeMethod !== 'S256' ||
+      !/^[A-Za-z0-9_-]{43,128}$/.test(codeChallenge)
+    ) {
+      throw new BadRequestException(
+        'invalid_request: S256 code_challenge is required',
       );
     }
 
@@ -54,7 +74,7 @@ export class OAuth2Service {
       },
     });
 
-    if (!client || client.status === '2') {
+    if (!client || client.status !== '1') {
       throw new BadRequestException(
         'invalid_client: client not found or disabled',
       );
@@ -66,7 +86,12 @@ export class OAuth2Service {
       );
     }
 
-    const requestedScopes = scope ? scope.split(' ') : ['openid'];
+    const requestedScopes = scope
+      ? [...new Set(scope.split(/\s+/).filter(Boolean))]
+      : ['openid'];
+    if (requestedScopes.length === 0) {
+      throw new BadRequestException('invalid_scope: at least one scope is required');
+    }
     const allowedScopes =
       client.scopes.length > 0 ? client.scopes : ['openid', 'profile', 'email'];
     const invalidScopes = requestedScopes.filter(
@@ -77,22 +102,107 @@ export class OAuth2Service {
         `invalid_scope: scopes not allowed: ${invalidScopes.join(', ')}`,
       );
     }
-    if (codeChallenge && codeChallengeMethod !== 'S256') {
-      throw new BadRequestException(
-        'invalid_request: only S256 code_challenge_method is supported',
-      );
-    }
-    if (codeChallengeMethod && !codeChallenge) {
-      throw new BadRequestException(
-        'invalid_request: code_challenge is required',
-      );
-    }
-
     return {
       clientId: client.clientId,
       name: client.name,
       requestedScopes,
     };
+  }
+
+  /**
+   * Store the complete authorization request server-side. The browser only
+   * receives the random transaction ID, so it cannot alter redirect_uri,
+   * scopes, state, or PKCE values on the consent page.
+   */
+  async createAuthorizationRequest(
+    clientId: string,
+    redirectUri: string,
+    scopes: string[],
+    state: string,
+    codeChallenge: string,
+    codeChallengeMethod: string,
+    nonce?: string,
+  ): Promise<string> {
+    this.assertProviderEnabled();
+    const transactionId = randomBytes(32).toString('base64url');
+    const expiresIn =
+      this.configService.get<number>('OAUTH2_AUTH_CODE_EXPIRES_IN') || 600;
+
+    await this.prisma.oauth2AuthorizationRequest.create({
+      data: {
+        transactionId,
+        clientId,
+        redirectUri,
+        scopes,
+        state,
+        nonce,
+        codeChallenge,
+        codeChallengeMethod,
+        expiresAt: new Date(Date.now() + expiresIn * 1000),
+      },
+    });
+
+    return transactionId;
+  }
+
+  /** Return only consent-screen metadata; sensitive OAuth parameters stay server-side. */
+  async getAuthorizationRequest(transactionId: string) {
+    const request = await this.loadAuthorizationRequest(transactionId);
+    return {
+      transactionId: request.transactionId,
+      clientName: request.client.name,
+      scopes: request.scopes,
+    };
+  }
+
+  /** Consume an authorization request exactly once and create its callback URL. */
+  async completeAuthorizationRequest(
+    transactionId: string,
+    userId: number,
+    consent: string,
+  ) {
+    this.assertProviderEnabled();
+    const request = await this.loadAuthorizationRequest(transactionId);
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, status: true },
+    });
+    if (!user || user.status !== '1') {
+      throw new UnauthorizedException('用户不存在或已被禁用');
+    }
+
+    const now = new Date();
+    const consumed = await this.prisma.oauth2AuthorizationRequest.updateMany({
+      where: {
+        id: request.id,
+        consumedAt: null,
+        expiresAt: { gt: now },
+      },
+      data: { consumedAt: now },
+    });
+    if (consumed.count !== 1) {
+      throw new BadRequestException('OAuth 授权请求已使用或已过期');
+    }
+
+    const callbackUrl = new URL(request.redirectUri);
+    if (consent !== 'true') {
+      callbackUrl.searchParams.set('error', 'access_denied');
+      callbackUrl.searchParams.set('state', request.state);
+      return callbackUrl.toString();
+    }
+
+    const code = await this.createAuthorizationCode(
+      request.clientId,
+      user.id,
+      request.redirectUri,
+      request.scopes,
+      request.codeChallenge,
+      request.codeChallengeMethod,
+      request.nonce || undefined,
+    );
+    callbackUrl.searchParams.set('code', code);
+    callbackUrl.searchParams.set('state', request.state);
+    return callbackUrl.toString();
   }
 
   /**
@@ -103,8 +213,9 @@ export class OAuth2Service {
     userId: number,
     redirectUri: string,
     scopes: string[],
-    codeChallenge?: string,
-    codeChallengeMethod?: string,
+    codeChallenge: string,
+    codeChallengeMethod: string,
+    nonce?: string,
   ): Promise<string> {
     this.assertProviderEnabled();
     const rawCode = randomBytes(32).toString('base64url');
@@ -119,6 +230,7 @@ export class OAuth2Service {
         userId,
         redirectUri,
         scopes,
+        nonce,
         codeChallenge,
         codeChallengeMethod,
         expiresAt: new Date(Date.now() + codeExpiresIn * 1000),
@@ -145,7 +257,7 @@ export class OAuth2Service {
       select: { clientId: true, clientSecret: true, status: true },
     });
 
-    if (!client || client.status === '2') {
+    if (!client || client.status !== '1') {
       throw new UnauthorizedException('invalid_client');
     }
 
@@ -167,6 +279,7 @@ export class OAuth2Service {
         scopes: true,
         codeChallenge: true,
         codeChallengeMethod: true,
+        nonce: true,
         expiresAt: true,
         consumedAt: true,
       },
@@ -188,20 +301,23 @@ export class OAuth2Service {
       throw new UnauthorizedException('invalid_grant: redirect_uri mismatch');
     }
 
-    if (authCode.codeChallenge) {
-      if (!codeVerifier || authCode.codeChallengeMethod !== 'S256') {
-        throw new UnauthorizedException(
-          'invalid_grant: code_verifier is required',
-        );
-      }
-      const verifierHash = createHash('sha256')
-        .update(codeVerifier)
-        .digest('base64url');
-      if (verifierHash !== authCode.codeChallenge) {
-        throw new UnauthorizedException(
-          'invalid_grant: code_verifier is invalid',
-        );
-      }
+    if (
+      !authCode.codeChallenge ||
+      authCode.codeChallengeMethod !== 'S256' ||
+      !codeVerifier ||
+      !/^[A-Za-z0-9._~-]{43,128}$/.test(codeVerifier)
+    ) {
+      throw new UnauthorizedException(
+        'invalid_grant: code_verifier is required',
+      );
+    }
+    const verifierHash = createHash('sha256')
+      .update(codeVerifier)
+      .digest('base64url');
+    if (verifierHash !== authCode.codeChallenge) {
+      throw new UnauthorizedException(
+        'invalid_grant: code_verifier is invalid',
+      );
     }
 
     // Atomically consume the code
@@ -232,7 +348,7 @@ export class OAuth2Service {
       },
     });
 
-    if (!user || user.status === '2') {
+    if (!user || user.status !== '1') {
       throw new UnauthorizedException(
         'invalid_grant: user not found or disabled',
       );
@@ -243,10 +359,6 @@ export class OAuth2Service {
     const refreshTokenExpiresIn =
       this.configService.get<number>('OAUTH2_REFRESH_TOKEN_EXPIRES_IN') ||
       2592000;
-    const issuer =
-      this.configService.get<string>('OAUTH2_ISSUER') ||
-      'http://localhost:3006';
-
     const accessTokenJwt = this.openidService.signIdToken(
       {
         sub: String(user.id),
@@ -281,6 +393,7 @@ export class OAuth2Service {
         sub: String(user.id),
         aud: clientId,
       };
+      if (authCode.nonce) idTokenClaims.nonce = authCode.nonce;
 
       if (authCode.scopes.includes('profile')) {
         idTokenClaims.name = user.realName || user.userName;
@@ -328,7 +441,7 @@ export class OAuth2Service {
 
     if (
       !client ||
-      client.status === '2' ||
+      client.status !== '1' ||
       !(await this.verifyClientSecret(client.clientSecret, clientSecret))
     ) {
       throw new UnauthorizedException('invalid_client');
@@ -377,7 +490,7 @@ export class OAuth2Service {
       where: { id: tokenRecord.userId },
       select: { id: true, status: true },
     });
-    if (!user || user.status === '2') {
+    if (!user || user.status !== '1') {
       throw new UnauthorizedException(
         'invalid_grant: user not found or disabled',
       );
@@ -447,12 +560,12 @@ export class OAuth2Service {
         where: { clientId: payload.client_id },
         select: { status: true },
       });
-      if (!client || client.status === '2')
+      if (!client || client.status !== '1')
         throw new UnauthorizedException('invalid_token');
-      const userId = parseInt(payload.sub, 10);
-      if (isNaN(userId)) {
+      if (typeof payload.sub !== 'string' || !/^\d+$/.test(payload.sub)) {
         throw new UnauthorizedException('invalid_token: invalid sub claim');
       }
+      const userId = parseInt(payload.sub, 10);
 
       const user = await this.prisma.user.findUnique({
         where: { id: userId },
@@ -465,7 +578,7 @@ export class OAuth2Service {
         },
       });
 
-      if (!user || user.status === '2') {
+      if (!user || user.status !== '1') {
         throw new UnauthorizedException(
           'invalid_token: user not found or disabled',
         );
@@ -520,36 +633,78 @@ export class OAuth2Service {
    */
   async revokeToken(
     token: string,
-    clientId?: string,
-    clientSecret?: string,
+    clientId: string,
+    clientSecret: string,
   ): Promise<void> {
     this.assertProviderEnabled();
-    if (clientId && clientSecret) {
-      const client = await this.prisma.oauth2Client.findUnique({
-        where: { clientId },
-        select: { clientId: true, clientSecret: true },
-      });
-      if (
-        !client ||
-        !(await this.verifyClientSecret(client.clientSecret, clientSecret))
-      ) {
-        throw new UnauthorizedException('invalid_client');
-      }
+    const client = await this.prisma.oauth2Client.findUnique({
+      where: { clientId },
+      select: { clientId: true, clientSecret: true, status: true },
+    });
+    if (
+      !client ||
+      client.status !== '1' ||
+      !(await this.verifyClientSecret(client.clientSecret, clientSecret))
+    ) {
+      throw new UnauthorizedException('invalid_client');
     }
 
     const tokenHash = createHash('sha256').update(token).digest('hex');
-    const record = await this.prisma.oauth2RefreshToken.findUnique({
-      where: { tokenHash },
-      select: { id: true, revokedAt: true },
+    await this.prisma.oauth2RefreshToken.updateMany({
+      where: { tokenHash, clientId, revokedAt: null },
+      data: { revokedAt: new Date() },
     });
-
-    if (record && !record.revokedAt) {
-      await this.prisma.oauth2RefreshToken.update({
-        where: { id: record.id },
-        data: { revokedAt: new Date() },
-      });
-    }
     // Per RFC 7009, always return 200 even if token not found
+  }
+
+  async revokeUserRefreshTokens(userId: number, clientId?: string) {
+    return this.prisma.oauth2RefreshToken.updateMany({
+      where: {
+        userId,
+        ...(clientId ? { clientId } : {}),
+        revokedAt: null,
+      },
+      data: { revokedAt: new Date() },
+    });
+  }
+
+  async isRegisteredPostLogoutRedirect(clientId: string, redirectUri: string) {
+    const client = await this.prisma.oauth2Client.findUnique({
+      where: { clientId },
+      select: { status: true, redirectUris: true },
+    });
+    return Boolean(
+      client?.status === '1' && client.redirectUris.includes(redirectUri),
+    );
+  }
+
+  private async loadAuthorizationRequest(transactionId: string) {
+    const request = await this.prisma.oauth2AuthorizationRequest.findUnique({
+      where: { transactionId },
+      select: {
+        id: true,
+        transactionId: true,
+        clientId: true,
+        redirectUri: true,
+        scopes: true,
+        state: true,
+        nonce: true,
+        codeChallenge: true,
+        codeChallengeMethod: true,
+        expiresAt: true,
+        consumedAt: true,
+        client: { select: { name: true, status: true } },
+      },
+    });
+    if (
+      !request ||
+      request.consumedAt ||
+      request.expiresAt <= new Date() ||
+      request.client.status !== '1'
+    ) {
+      throw new BadRequestException('OAuth 授权请求无效、已使用或已过期');
+    }
+    return request;
   }
 
   private async verifyClientSecret(
@@ -563,7 +718,9 @@ export class OAuth2Service {
     ) {
       return bcrypt.compare(providedSecret, storedSecret);
     }
-    return storedSecret === providedSecret;
+    // Do not accept legacy plaintext secrets. Reset the client secret from
+    // EIMS administration before re-enabling a legacy client.
+    return false;
   }
 
   private assertProviderEnabled() {

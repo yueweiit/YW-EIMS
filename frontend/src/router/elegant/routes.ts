@@ -92,7 +92,8 @@ export const generatedRoutes: GeneratedRoute[] = [
         component: 'view.material_code-rule',
         meta: {
           title: 'material_code-rule',
-          i18nKey: 'route.material_code-rule'
+          i18nKey: 'route.material_code-rule',
+          permission: 'eims:material:code-rule'
         }
       },
       {
@@ -101,7 +102,8 @@ export const generatedRoutes: GeneratedRoute[] = [
         component: 'view.material_material',
         meta: {
           title: 'material_material',
-          i18nKey: 'route.material_material'
+          i18nKey: 'route.material_material',
+          permission: 'eims:material:material'
         }
       },
       {
@@ -110,7 +112,8 @@ export const generatedRoutes: GeneratedRoute[] = [
         component: 'view.material_unit',
         meta: {
           title: 'material_unit',
-          i18nKey: 'route.material_unit'
+          i18nKey: 'route.material_unit',
+          permission: 'eims:material:unit'
         }
       }
     ]
@@ -132,7 +135,8 @@ export const generatedRoutes: GeneratedRoute[] = [
         component: 'view.mold-product_color',
         meta: {
           title: 'mold-product_color',
-          i18nKey: 'route.mold-product_color'
+          i18nKey: 'route.mold-product_color',
+          permission: 'eims:mold:color'
         }
       },
       {
@@ -141,7 +145,8 @@ export const generatedRoutes: GeneratedRoute[] = [
         component: 'view.mold-product_erpnext-mapping',
         meta: {
           title: 'mold-product_erpnext-mapping',
-          i18nKey: 'route.mold-product_erpnext-mapping'
+          i18nKey: 'route.mold-product_erpnext-mapping',
+          permission: 'eims:mold:erpnext-mapping'
         }
       },
       {
@@ -150,7 +155,8 @@ export const generatedRoutes: GeneratedRoute[] = [
         component: 'view.mold-product_mold',
         meta: {
           title: 'mold-product_mold',
-          i18nKey: 'route.mold-product_mold'
+          i18nKey: 'route.mold-product_mold',
+          permission: 'eims:mold:mold'
         }
       },
       {
@@ -159,7 +165,8 @@ export const generatedRoutes: GeneratedRoute[] = [
         component: 'view.mold-product_mold-code',
         meta: {
           title: 'mold-product_mold-code',
-          i18nKey: 'route.mold-product_mold-code'
+          i18nKey: 'route.mold-product_mold-code',
+          permission: 'eims:mold:mold-code'
         }
       },
       {
@@ -168,7 +175,8 @@ export const generatedRoutes: GeneratedRoute[] = [
         component: 'view.mold-product_mold-material',
         meta: {
           title: 'mold-product_mold-material',
-          i18nKey: 'route.mold-product_mold-material'
+          i18nKey: 'route.mold-product_mold-material',
+          permission: 'eims:mold:mold-material'
         }
       },
       {
@@ -177,7 +185,8 @@ export const generatedRoutes: GeneratedRoute[] = [
         component: 'view.mold-product_phone-model',
         meta: {
           title: 'mold-product_phone-model',
-          i18nKey: 'route.mold-product_phone-model'
+          i18nKey: 'route.mold-product_phone-model',
+          permission: 'eims:mold:phone-model'
         }
       },
       {
@@ -186,7 +195,8 @@ export const generatedRoutes: GeneratedRoute[] = [
         component: 'view.mold-product_product',
         meta: {
           title: 'mold-product_product',
-          i18nKey: 'route.mold-product_product'
+          i18nKey: 'route.mold-product_product',
+          permission: 'eims:mold:product'
         }
       },
       {
@@ -195,7 +205,8 @@ export const generatedRoutes: GeneratedRoute[] = [
         component: 'view.mold-product_product-code',
         meta: {
           title: 'mold-product_product-code',
-          i18nKey: 'route.mold-product_product-code'
+          i18nKey: 'route.mold-product_product-code',
+          permission: 'eims:mold:product-code'
         }
       }
     ]
@@ -217,7 +228,8 @@ export const generatedRoutes: GeneratedRoute[] = [
         component: 'view.oa_approval',
         meta: {
           title: 'oa_approval',
-          i18nKey: 'route.oa_approval'
+          i18nKey: 'route.oa_approval',
+          permission: 'eims:oa:approval'
         }
       },
       {
@@ -226,7 +238,8 @@ export const generatedRoutes: GeneratedRoute[] = [
         component: 'view.oa_box-label',
         meta: {
           title: 'oa_box-label',
-          i18nKey: 'route.oa_box-label'
+          i18nKey: 'route.oa_box-label',
+          permission: 'eims:oa:box-label'
         }
       }
     ]
@@ -241,12 +254,37 @@ export const generatedRoutes: GeneratedRoute[] = [
     },
     children: [
       {
+        name: 'system_audit',
+        path: '/system/audit',
+        component: 'view.system_audit',
+        meta: {
+          title: 'system_audit',
+          i18nKey: 'route.system_audit',
+          icon: 'mdi:clipboard-text-clock-outline',
+          permission: 'eims:system:audit',
+          roles: ['R_SUPER', 'R_ADMIN']
+        }
+      },
+      {
         name: 'system_erpnext-sync-log',
         path: '/system/erpnext-sync-log',
         component: 'view.system_erpnext-sync-log',
         meta: {
           title: 'system_erpnext-sync-log',
-          i18nKey: 'route.system_erpnext-sync-log'
+          i18nKey: 'route.system_erpnext-sync-log',
+          permission: 'eims:system:erpnext-sync-log'
+        }
+      },
+      {
+        name: 'system_external-system',
+        path: '/system/external-system',
+        component: 'view.system_external-system',
+        meta: {
+          title: 'system_external-system',
+          i18nKey: 'route.system_external-system',
+          icon: 'mdi:apps-box',
+          permission: 'eims:system:external-system',
+          roles: ['R_SUPER', 'R_ADMIN']
         }
       },
       {
@@ -256,7 +294,9 @@ export const generatedRoutes: GeneratedRoute[] = [
         meta: {
           title: 'system_oauth2-binding',
           i18nKey: 'route.system_oauth2-binding',
-          icon: 'mdi:link-variant'
+          icon: 'mdi:link-variant',
+          permission: 'eims:system:oauth2-binding',
+          roles: ['R_SUPER', 'R_ADMIN']
         }
       },
       {
@@ -266,7 +306,33 @@ export const generatedRoutes: GeneratedRoute[] = [
         meta: {
           title: 'system_oauth2-client',
           i18nKey: 'route.system_oauth2-client',
-          icon: 'mdi:key-chain-variant'
+          icon: 'mdi:key-chain-variant',
+          permission: 'eims:system:oauth2-client',
+          roles: ['R_SUPER', 'R_ADMIN']
+        }
+      },
+      {
+        name: 'system_permission',
+        path: '/system/permission',
+        component: 'view.system_permission',
+        meta: {
+          title: 'system_permission',
+          i18nKey: 'route.system_permission',
+          icon: 'mdi:shield-key-outline',
+          permission: 'eims:system:permission',
+          roles: ['R_SUPER', 'R_ADMIN']
+        }
+      },
+      {
+        name: 'system_role',
+        path: '/system/role',
+        component: 'view.system_role',
+        meta: {
+          title: 'system_role',
+          i18nKey: 'route.system_role',
+          icon: 'mdi:account-key-outline',
+          permission: 'eims:system:role',
+          roles: ['R_SUPER', 'R_ADMIN']
         }
       },
       {
@@ -275,7 +341,9 @@ export const generatedRoutes: GeneratedRoute[] = [
         component: 'view.system_user',
         meta: {
           title: 'system_user',
-          i18nKey: 'route.system_user'
+          i18nKey: 'route.system_user',
+          permission: 'eims:system:user',
+          roles: ['R_SUPER', 'R_ADMIN']
         }
       }
     ]

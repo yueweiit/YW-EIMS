@@ -1,9 +1,13 @@
 <script setup lang="ts">
-import { computed, onMounted } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import { useRouter } from "vue-router";
-import { fetchOAuth2AuthorizeConfirm } from "@/service/api";
+import {
+  fetchOAuth2AuthorizeConfirm,
+  fetchOAuth2AuthorizeRequest,
+} from "@/service/api";
 import { useAuthStore } from "@/store/modules/auth";
+import type { OAuth2AuthorizeRequest } from "@/service/api/oauth2-binding";
 
 defineOptions({
   name: "OAuthConsent",
@@ -12,33 +16,47 @@ defineOptions({
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
+const loading = ref(true);
+const submitting = ref(false);
+const consentRequest = ref<OAuth2AuthorizeRequest | null>(null);
 
-const clientId = computed(() => (route.query.client_id as string) || "");
-const redirectUri = computed(() => (route.query.redirect_uri as string) || "");
-const scope = computed(() => (route.query.scope as string) || "openid");
-const state = computed(() => (route.query.state as string) || "");
-const codeChallenge = computed(
-  () => (route.query.code_challenge as string) || "",
-);
-const codeChallengeMethod = computed(
-  () => (route.query.code_challenge_method as string) || "",
+const transactionId = computed(
+  () => (route.query.transaction_id as string) || "",
 );
 const clientName = computed(
-  () => (route.query.client_name as string) || "第三方应用",
+  () => consentRequest.value?.clientName || "第三方应用",
 );
 
 onMounted(async () => {
-  if (authStore.isLogin) return;
+  if (!authStore.isLogin) {
+    await router.replace({
+      name: "login",
+      params: { module: "pwd-login" },
+      query: { redirect: route.fullPath },
+    });
+    return;
+  }
 
-  await router.replace({
-    name: "login",
-    params: { module: "pwd-login" },
-    query: { redirect: route.fullPath },
-  });
+  if (!transactionId.value) {
+    window.$message?.error("OAuth 授权请求缺少事务标识");
+    loading.value = false;
+    return;
+  }
+
+  const { data, error } = await fetchOAuth2AuthorizeRequest(
+    transactionId.value,
+  );
+  if (error || !data) {
+    window.$message?.error("OAuth 授权请求无效、已使用或已过期");
+    loading.value = false;
+    return;
+  }
+  consentRequest.value = data;
+  loading.value = false;
 });
 
 const requestedScopes = computed(() => {
-  const scopeList = scope.value.split(" ").filter(Boolean);
+  const scopeList = consentRequest.value?.scopes || [];
   const scopeLabels: Record<string, string> = {
     openid: "身份标识 (OpenID)",
     profile: "基本资料 (用户名、姓名)",
@@ -50,37 +68,29 @@ const requestedScopes = computed(() => {
   }));
 });
 
-async function handleAuthorize() {
+async function handleConsent(consent: "true" | "false") {
   if (!authStore.isLogin) {
     window.$message?.error("请先登录 EIMS，再返回 ERP 发起连接");
     return;
   }
+  if (!transactionId.value || loading.value) return;
 
-  const { data, error } = await fetchOAuth2AuthorizeConfirm({
-    client_id: clientId.value,
-    redirect_uri: redirectUri.value,
-    scope: scope.value,
-    state: state.value,
-    consent: "true",
-    ...(codeChallenge.value ? { code_challenge: codeChallenge.value } : {}),
-    ...(codeChallengeMethod.value
-      ? { code_challenge_method: codeChallengeMethod.value }
-      : {}),
-  });
-  if (!error && data?.redirectUrl) {
-    window.location.assign(data.redirectUrl);
+  submitting.value = true;
+  try {
+    const { data, error } = await fetchOAuth2AuthorizeConfirm({
+      transaction_id: transactionId.value,
+      consent,
+    });
+    if (!error && data?.redirectUrl) {
+      window.location.assign(data.redirectUrl);
+    }
+  } finally {
+    submitting.value = false;
   }
 }
 
-function handleDeny() {
-  if (!redirectUri.value) return;
-  const url = new URL(redirectUri.value);
-  url.searchParams.set("error", "access_denied");
-  if (state.value) {
-    url.searchParams.set("state", state.value);
-  }
-  window.location.href = url.toString();
-}
+const handleAuthorize = () => handleConsent("true");
+const handleDeny = () => handleConsent("false");
 </script>
 
 <template>
@@ -100,11 +110,11 @@ function handleDeny() {
       <h3 class="text-18px font-medium">授权登录</h3>
     </div>
 
-    <NAlert type="info" class="mb-16px">
+    <NAlert v-if="!loading" type="info" class="mb-16px">
       <strong>{{ clientName }}</strong> 请求使用您的 EIMS 账号登录
     </NAlert>
 
-    <div class="mb-24px">
+    <div v-if="!loading" class="mb-24px">
       <p class="mb-8px text-14px text-gray-500">该应用将获得以下权限：</p>
       <NList bordered size="small">
         <NListItem v-for="item in requestedScopes" :key="item.key">
@@ -124,11 +134,28 @@ function handleDeny() {
       </NList>
     </div>
 
-    <NSpace vertical :size="16">
-      <NButton type="primary" size="large" round block @click="handleAuthorize">
+    <NSpin v-if="loading" class="mb-24px" />
+
+    <NSpace v-else vertical :size="16">
+      <NButton
+        type="primary"
+        size="large"
+        round
+        block
+        :loading="submitting"
+        @click="handleAuthorize"
+      >
         授权登录
       </NButton>
-      <NButton size="large" round block @click="handleDeny"> 拒绝 </NButton>
+      <NButton
+        size="large"
+        round
+        block
+        :loading="submitting"
+        @click="handleDeny"
+      >
+        拒绝
+      </NButton>
     </NSpace>
 
     <p class="mt-16px text-center text-12px text-gray-400">

@@ -1,13 +1,5 @@
-export interface ExternalSystemOAuthConfig {
-  authorizeUrl?: string;
-  clientId?: string;
-  redirectUri?: string;
-  scope?: string;
-}
-
 export interface ExternalSystemRuntimeConfig {
   url?: string;
-  oauth?: ExternalSystemOAuthConfig;
 }
 
 interface RuntimeConfigFile {
@@ -36,15 +28,14 @@ export async function loadExternalSystemConfig() {
 }
 
 export function getExternalSystemUrl(key: string, fallback = '') {
-  return runtimeExternalSystems[key]?.url?.trim() || fallback;
-}
+  const value = runtimeExternalSystems[key]?.url?.trim();
+  if (!value) return fallback;
 
-export function getExternalSystemOAuthConfig(
-  key: string,
-  fallback: ExternalSystemOAuthConfig,
-) {
-  return {
-    ...fallback,
-    ...runtimeExternalSystems[key]?.oauth,
-  };
+  try {
+    const url = new URL(value);
+    if (!['http:', 'https:'].includes(url.protocol)) return fallback;
+    return url.toString();
+  } catch {
+    return fallback;
+  }
 }

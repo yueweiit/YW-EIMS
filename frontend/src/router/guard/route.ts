@@ -7,7 +7,6 @@ import type {
 import type { RouteKey, RoutePath } from "@elegant-router/types";
 import { useAuthStore } from "@/store/modules/auth";
 import { useRouteStore } from "@/store/modules/route";
-import { localStg } from "@/utils/storage";
 import { getRouteName } from "@/router/elegant/transform";
 
 /**
@@ -17,26 +16,34 @@ import { getRouteName } from "@/router/elegant/transform";
  */
 export function createRouteGuard(router: Router) {
   router.beforeEach(async (to, from) => {
+    const authStore = useAuthStore();
+    await authStore.initUserInfo();
     const location = await initRoute(to);
 
     if (location) {
       return location;
     }
 
-    const authStore = useAuthStore();
-
     const rootRoute: RouteKey = "root";
     const loginRoute: RouteKey = "login";
     const noAuthorizationRoute: RouteKey = "403";
 
-    const isLogin = Boolean(localStg.get("token"));
+    const isLogin = authStore.isLogin;
     const needLogin = !to.meta.constant;
     const routeRoles = to.meta.roles || [];
+    const routePermission = to.meta.permission;
 
     const hasRole = authStore.userInfo.roles.some((role) =>
       routeRoles.includes(role),
     );
-    const hasAuth = authStore.isStaticSuper || !routeRoles.length || hasRole;
+    const hasFunctionPermission =
+      !routePermission ||
+      authStore.isStaticSuper ||
+      authStore.userInfo.permissions.includes('*') ||
+      authStore.userInfo.permissions.includes(routePermission);
+    const hasAuth =
+      (authStore.isStaticSuper || !routeRoles.length || hasRole) &&
+      hasFunctionPermission;
 
     // OAuth consent is a login route that must remain accessible to an
     // already-authenticated browser session.
@@ -77,6 +84,7 @@ async function initRoute(
   to: RouteLocationNormalized,
 ): Promise<RouteLocationRaw | null> {
   const routeStore = useRouteStore();
+  const authStore = useAuthStore();
 
   const notFoundRoute: RouteKey = "not-found";
   const isNotFoundRoute = to.name === notFoundRoute;
@@ -98,7 +106,7 @@ async function initRoute(
     return location;
   }
 
-  const isLogin = Boolean(localStg.get("token"));
+  const isLogin = authStore.isLogin;
 
   if (!isLogin) {
     // if the user is not logged in and the route is a constant route but not the "not-found" route, then it is allowed to access.
@@ -170,7 +178,7 @@ function handleRouteSwitch(
 ) {
   // route with href
   if (to.meta.href) {
-    window.open(to.meta.href, "_blank");
+    window.open(to.meta.href, "_blank", "noopener,noreferrer");
 
     return {
       path: from.fullPath,

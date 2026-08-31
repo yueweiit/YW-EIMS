@@ -1,8 +1,13 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { useLoading } from '@sa/hooks';
-import { fetchCreateOAuth2Binding, fetchOAuth2ClientPage, fetchUserPage } from '@/service/api';
-import type { CreateOAuth2BindingParams } from '@/service/api/oauth2-binding';
+import {
+  fetchCreateOAuth2Binding,
+  fetchOAuth2ClientPage,
+  fetchUpdateOAuth2Binding,
+  fetchUserPage
+} from '@/service/api';
+import type { CreateOAuth2BindingParams, OAuth2BindingRecord } from '@/service/api/oauth2-binding';
 
 defineOptions({
   name: 'OAuth2BindingOperateDrawer'
@@ -10,6 +15,7 @@ defineOptions({
 
 interface Props {
   visible: boolean;
+  rowData?: OAuth2BindingRecord | null;
 }
 
 const props = defineProps<Props>();
@@ -31,14 +37,28 @@ const form = ref<CreateOAuth2BindingParams>({
 const userOptions = ref<{ label: string; value: number }[]>([]);
 const clientOptions = ref<{ label: string; value: string }[]>([]);
 
-const drawerTitle = computed(() => '新增账号绑定');
+const drawerTitle = computed(() => (props.rowData ? '编辑账号绑定' : '新增账号绑定'));
 
 watch(
   () => props.visible,
   val => {
     if (val) {
-      form.value = { ssoUserId: 0, clientId: '', appUserId: 0, appUsername: '' };
-      loadOptions();
+      if (props.rowData) {
+        form.value = {
+          ssoUserId: props.rowData.ssoUserId,
+          clientId: props.rowData.clientId,
+          appUserId: props.rowData.appUserId,
+          appUsername: props.rowData.appUsername || ''
+        };
+      } else {
+        form.value = {
+          ssoUserId: 0,
+          clientId: '',
+          appUserId: 0,
+          appUsername: ''
+        };
+      }
+      void loadOptions();
     }
   }
 );
@@ -83,9 +103,15 @@ async function handleSubmit() {
 
   startLoading();
   try {
-    const { error } = await fetchCreateOAuth2Binding(form.value);
+    const result = props.rowData
+      ? await fetchUpdateOAuth2Binding(props.rowData.id, {
+          appUserId: form.value.appUserId,
+          appUsername: form.value.appUsername
+        })
+      : await fetchCreateOAuth2Binding(form.value);
+    const { error } = result;
     if (!error) {
-      window.$message?.success('绑定成功');
+      window.$message?.success(props.rowData ? '保存成功' : '绑定成功');
       handleClose();
       emit('submitted');
     }
@@ -98,6 +124,11 @@ async function handleSubmit() {
 <template>
   <NDrawer :show="visible" :width="500" @update:show="handleClose">
     <NDrawerContent :title="drawerTitle" closable>
+      <NAlert type="info" :bordered="false" class="mb-16px">
+        ERP 绑定时，请填写 ERP 用户的
+        <code>custom_eims_app_user_id</code>
+        字段值，不是 ERP 用户名或数据库主键。
+      </NAlert>
       <NForm label-placement="left" label-width="120">
         <NFormItem label="SSO 用户" required>
           <NSelect
@@ -105,6 +136,7 @@ async function handleSubmit() {
             :options="userOptions"
             placeholder="选择 EIMS 用户"
             filterable
+            :disabled="Boolean(props.rowData)"
           />
         </NFormItem>
 
@@ -114,6 +146,7 @@ async function handleSubmit() {
             :options="clientOptions"
             placeholder="选择目标应用"
             filterable
+            :disabled="Boolean(props.rowData)"
           />
         </NFormItem>
 
@@ -121,7 +154,7 @@ async function handleSubmit() {
           <NInputNumber
             v-model:value="form.appUserId"
             :min="1"
-            placeholder="业务系统中的用户ID"
+            placeholder="ERP 用户的 custom_eims_app_user_id"
             class="w-full"
           />
         </NFormItem>
@@ -132,13 +165,14 @@ async function handleSubmit() {
             placeholder="业务系统中的用户名（可选，方便展示）"
           />
         </NFormItem>
+
       </NForm>
 
       <template #footer>
         <NSpace>
           <NButton @click="handleClose">取消</NButton>
           <NButton type="primary" :loading="loading" @click="handleSubmit">
-            绑定
+            {{ props.rowData ? '保存' : '绑定' }}
           </NButton>
         </NSpace>
       </template>

@@ -22,6 +22,10 @@ declare module 'vue-router' {
      * It only works when the route mode is "static", if the route mode is "dynamic", it will be ignored
      */
     roles?: string[];
+    /**
+     * Server-side EIMS permission code required by the route.
+     */
+    permission?: string;
     /** Whether to cache the route */
     keepAlive?: boolean | null;
     /**

@@ -1,7 +1,4 @@
-import {
-  getExternalSystemOAuthConfig,
-  getExternalSystemUrl,
-} from "@/config/external-system-config";
+import { getExternalSystemUrl } from "@/config/external-system-config";
 
 export interface ExternalSystem {
   nameKey: App.I18n.I18nKey;
@@ -11,42 +8,6 @@ export interface ExternalSystem {
   color: string;
   routeName: string;
   routePath: string;
-}
-
-const erpOAuthEnvConfig = {
-  authorizeUrl: import.meta.env.VITE_ERP_OAUTH_AUTHORIZE_URL || "",
-  clientId: import.meta.env.VITE_ERP_OAUTH_CLIENT_ID || "",
-  redirectUri: import.meta.env.VITE_ERP_OAUTH_REDIRECT_URI || "",
-  scope: import.meta.env.VITE_ERP_OAUTH_SCOPE || "openid profile email",
-};
-
-function createOAuthState() {
-  const values = new Uint32Array(4);
-  window.crypto.getRandomValues(values);
-  return Array.from(values, (value) =>
-    value.toString(16).padStart(8, "0"),
-  ).join("");
-}
-
-export function buildErpOAuthAuthorizeUrl() {
-  const erpOAuthConfig = getExternalSystemOAuthConfig("erp", erpOAuthEnvConfig);
-
-  if (!erpOAuthConfig.authorizeUrl || !erpOAuthConfig.clientId || !erpOAuthConfig.redirectUri) {
-    return getExternalSystemUrl(
-      "erp",
-      import.meta.env.VITE_EXTERNAL_ERP_URL || "",
-    );
-  }
-
-  const url = new URL(erpOAuthConfig.authorizeUrl);
-  url.search = new URLSearchParams({
-    response_type: "code",
-    client_id: erpOAuthConfig.clientId,
-    redirect_uri: erpOAuthConfig.redirectUri,
-    scope: erpOAuthConfig.scope || "openid profile email",
-    state: createOAuthState(),
-  }).toString();
-  return url.toString();
 }
 
 export const externalSystems: ExternalSystem[] = [
@@ -67,7 +28,11 @@ export const externalSystems: ExternalSystem[] = [
     nameKey: "page.home.externalSystems.erp",
     icon: "mdi:domain",
     href: import.meta.env.VITE_EXTERNAL_ERP_URL || "",
-    getHref: buildErpOAuthAuthorizeUrl,
+    getHref: () =>
+      getExternalSystemUrl(
+        "erp",
+        import.meta.env.VITE_EXTERNAL_ERP_URL || "",
+      ),
     color: "#2080f0",
     routeName: "external_erp",
     routePath: "/external/erp",

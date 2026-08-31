@@ -1,4 +1,10 @@
-import { IsInt, IsString, IsOptional, Min, MaxLength } from 'class-validator';
+import {
+  IsInt,
+  IsOptional,
+  IsString,
+  MaxLength,
+  Min,
+} from 'class-validator';
 
 export class CreateBindingDto {
   @IsInt()
@@ -17,4 +23,5 @@ export class CreateBindingDto {
   @IsString()
   @MaxLength(100)
   appUsername?: string;
+
 }
