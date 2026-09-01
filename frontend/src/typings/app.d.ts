@@ -555,9 +555,6 @@ declare namespace App {
             desc5: string;
           };
           creativity: string;
-          internalModules: string;
-          internalModulesDesc: string;
-          subModules: string;
           externalSystemsTitle: string;
           externalSystemsDesc: string;
           openInNewWindow: string;

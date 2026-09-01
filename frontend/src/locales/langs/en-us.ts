@@ -335,9 +335,6 @@ const local: App.I18n.Schema = {
         desc5: 'Soybean just wrote some of the workbench pages casually, and it was enough to see!'
       },
       creativity: 'Creativity',
-      internalModules: 'Internal Modules',
-      internalModulesDesc: 'Frequently used business modules',
-      subModules: 'sub-modules',
       externalSystemsTitle: 'External Systems',
       externalSystemsDesc: 'Access connected business platforms',
       openInNewWindow: 'Open in new window',

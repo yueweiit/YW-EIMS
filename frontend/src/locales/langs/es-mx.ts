@@ -329,9 +329,6 @@ const local: App.I18n.Schema = {
         desc5: 'El panel de trabajo está listo para usarse.'
       },
       creativity: 'Creatividad',
-      internalModules: 'Funciones internas',
-      internalModulesDesc: 'Módulos empresariales frecuentes',
-      subModules: 'submódulos',
       externalSystemsTitle: 'Sistemas',
       externalSystemsDesc: 'Acceso a plataformas empresariales conectadas',
       openInNewWindow: 'Abrir en una ventana nueva',
