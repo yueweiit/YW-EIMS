@@ -26,6 +26,7 @@ model User {
   authLoginTickets         AuthLoginTicket[]
   authRefreshSessions      AuthRefreshSession[]
   oauth2AuthorizationCodes Oauth2AuthorizationCode[]
+  oauth2AccessTokens       Oauth2AccessToken[]
   oauth2RefreshTokens      Oauth2RefreshToken[]
   oauth2UserBindings       Oauth2UserBinding[]
 
@@ -61,17 +62,20 @@ model DingTalkOAuthState {
 
 /// EIMS 自身登录刷新会话。只保存刷新令牌哈希，支持撤销和轮换。
 model AuthRefreshSession {
-  id        Int       @id @default(autoincrement())
-  tokenHash String    @unique @map("token_hash") @db.VarChar(64)
-  userId    Int       @map("user_id")
-  expiresAt DateTime  @map("expires_at")
-  revokedAt DateTime? @map("revoked_at")
-  createdAt DateTime  @default(now()) @map("created_at")
+  id              Int       @id @default(autoincrement())
+  tokenHash       String    @unique @map("token_hash") @db.VarChar(64)
+  accessTokenHash String?   @unique @map("access_token_hash") @db.VarChar(64)
+  familyId        String?   @map("family_id") @db.VarChar(64)
+  userId          Int       @map("user_id")
+  expiresAt       DateTime  @map("expires_at")
+  revokedAt       DateTime? @map("revoked_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([expiresAt])
+  @@index([familyId])
   @@map("auth_refresh_sessions")
   @@schema("public")
 }
@@ -93,6 +97,7 @@ model Oauth2Client {
 
   authorizationRequests Oauth2AuthorizationRequest[]
   authorizationCodes Oauth2AuthorizationCode[]
+  accessTokens        Oauth2AccessToken[]
   refreshTokens      Oauth2RefreshToken[]
   userBindings       Oauth2UserBinding[]
   externalSystem     ExternalSystem?
@@ -109,6 +114,7 @@ model Oauth2AuthorizationRequest {
   redirectUri         String    @map("redirect_uri") @db.VarChar(2000)
   scopes              String[]  @map("scopes")
   state               String    @db.VarChar(512)
+  browserNonceHash    String    @map("browser_nonce_hash") @db.VarChar(64)
   nonce               String?   @db.VarChar(255)
   codeChallenge       String    @map("code_challenge") @db.VarChar(128)
   codeChallengeMethod String    @map("code_challenge_method") @db.VarChar(10)
@@ -149,13 +155,14 @@ model Oauth2AuthorizationCode {
   @@schema("public")
 }
 
-/// OAuth2 刷新令牌表
-model Oauth2RefreshToken {
+/// OAuth2 Access Token 记录。令牌本体只在客户端保存，EIMS 只保存哈希以支持撤销。
+model Oauth2AccessToken {
   id        Int       @id @default(autoincrement())
-  tokenHash String    @unique @map("token_hash") @db.VarChar(256)
+  tokenHash String    @unique @map("token_hash") @db.VarChar(64)
   clientId  String    @map("client_id") @db.VarChar(128)
   userId    Int       @map("user_id")
   scopes    String[]  @map("scopes")
+  familyId  String?   @map("family_id") @db.VarChar(64)
   expiresAt DateTime  @map("expires_at")
   revokedAt DateTime? @map("revoked_at")
   createdAt DateTime  @default(now()) @map("created_at")
@@ -166,7 +173,43 @@ model Oauth2RefreshToken {
   @@index([clientId])
   @@index([userId])
   @@index([expiresAt])
+  @@index([familyId])
+  @@map("oauth2_access_tokens")
+  @@schema("public")
+}
+
+/// OAuth2 刷新令牌表
+model Oauth2RefreshToken {
+  id        Int       @id @default(autoincrement())
+  tokenHash String    @unique @map("token_hash") @db.VarChar(256)
+  clientId  String    @map("client_id") @db.VarChar(128)
+  userId    Int       @map("user_id")
+  scopes    String[]  @map("scopes")
+  familyId  String?   @map("family_id") @db.VarChar(64)
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  client Oauth2Client @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+  user   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([familyId])
   @@map("oauth2_refresh_tokens")
+  @@schema("public")
+}
+
+/// 多实例共享的认证接口限流桶。
+model SecurityRateLimitBucket {
+  bucketKey    String   @id @map("bucket_key") @db.VarChar(512)
+  requestCount Int      @map("request_count")
+  resetAt      DateTime @map("reset_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([resetAt])
+  @@map("security_rate_limit_buckets")
   @@schema("public")
 }
 
@@ -175,7 +218,7 @@ model Oauth2UserBinding {
   id          Int      @id @default(autoincrement())
   ssoUserId   Int      @map("sso_user_id")
   clientId    String   @map("client_id") @db.VarChar(128)
-  appUserId   Int      @map("app_user_id")
+  appUserId   String   @map("app_user_id") @db.VarChar(255)
   appUsername String?  @map("app_username") @db.VarChar(100)
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
@@ -191,7 +234,7 @@ model Oauth2UserBinding {
   @@schema("public")
 }
 
-/// 外部系统门户目录。入口地址和展示信息由 EIMS 管理，访问权限由 accessMode/allowedRoles 决定。
+/// 外部系统门户目录。入口地址、可选 SSO 启动地址和展示信息由 EIMS 管理，访问权限由 accessMode/allowedRoles 决定。
 /// accessMode=all 表示所有已登录用户可见；accessMode=roles 时必须命中 allowedRoles；R_SUPER 可以访问所有启用系统。
 model ExternalSystem {
   id            Int      @id @default(autoincrement())
@@ -201,6 +244,7 @@ model ExternalSystem {
   icon          String   @default("mdi:application-outline") @db.VarChar(100)
   color         String   @default("#2080f0") @db.VarChar(20)
   entryUrl      String   @map("entry_url") @db.VarChar(2000)
+  ssoStartUrl   String?  @map("sso_start_url") @db.VarChar(2000)
   authMode      String   @default("link") @map("auth_mode") @db.VarChar(20)
   accessMode    String   @default("roles") @map("access_mode") @db.VarChar(20)
   allowedRoles  String[] @default([]) @map("allowed_roles")
