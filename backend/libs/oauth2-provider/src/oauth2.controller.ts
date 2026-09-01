@@ -12,6 +12,8 @@ import {
   UnauthorizedException,
   BadRequestException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { createHash, randomBytes } from 'node:crypto';
 import type { Request, Response } from 'express';
 import { Public, RawResponse } from '@eims/common';
 import { AuditService } from '@eims/audit/audit.service';
@@ -20,6 +22,7 @@ import {
   CurrentUser,
   EIMS_ACCESS_COOKIE,
   clearAuthCookies,
+  getAuthCookieSecure,
   getCookie,
 } from '@eims/auth';
 import { OAuth2Service } from './oauth2.service';
@@ -32,6 +35,8 @@ import {
 import { EndSessionDto } from './dto/end-session.dto';
 import { TokenDto, RevokeDto } from './dto/token.dto';
 
+const OAUTH_TRANSACTION_COOKIE_PREFIX = 'eims_oauth_txn_';
+
 @Controller('oauth')
 export class OAuth2Controller {
   constructor(
@@ -39,6 +44,7 @@ export class OAuth2Controller {
     private readonly openidService: OpenIdService,
     private readonly authService: AuthService,
     private readonly auditService: AuditService,
+    private readonly configService: ConfigService,
   ) {}
 
   /**
@@ -72,6 +78,7 @@ export class OAuth2Controller {
       detail: { scopeCount: clientInfo.requestedScopes.length },
     });
 
+    const browserNonce = randomBytes(32).toString('base64url');
     const transactionId = await this.oauth2Service.createAuthorizationRequest(
       clientInfo.clientId,
       query.redirect_uri,
@@ -79,8 +86,17 @@ export class OAuth2Controller {
       query.state,
       query.code_challenge,
       query.code_challenge_method,
+      this.hashBrowserNonce(browserNonce),
       query.nonce,
     );
+
+    response.cookie(this.getTransactionCookieName(transactionId), browserNonce, {
+      httpOnly: true,
+      secure: getAuthCookieSecure(),
+      sameSite: 'lax',
+      path: '/',
+      maxAge: this.getAuthorizationTransactionCookieMaxAgeMs(),
+    });
 
     // Only the opaque transaction ID is exposed to the browser. The actual
     // redirect URI, state, scopes and PKCE values remain server-side.
@@ -101,8 +117,15 @@ export class OAuth2Controller {
   @Header('Cache-Control', 'no-store')
   async authorizationTransaction(
     @Query() query: AuthorizeTransactionQueryDto,
+    @Req() request: Request,
   ) {
-    return this.oauth2Service.getAuthorizationRequest(query.transaction_id);
+    return this.oauth2Service.getAuthorizationRequest(
+      query.transaction_id,
+      getCookie(
+        request,
+        this.getTransactionCookieName(query.transaction_id),
+      ),
+    );
   }
 
   /**
@@ -117,12 +140,21 @@ export class OAuth2Controller {
     @Body() dto: AuthorizeTransactionConfirmDto,
     @CurrentUser('sub') userId: number,
     @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
   ) {
     try {
       const redirectUrl = await this.oauth2Service.completeAuthorizationRequest(
         dto.transaction_id,
         userId,
         dto.consent,
+        getCookie(
+          request,
+          this.getTransactionCookieName(dto.transaction_id),
+        ),
+      );
+      response.clearCookie(
+        this.getTransactionCookieName(dto.transaction_id),
+        this.getTransactionCookieOptions(),
       );
       await this.auditService.record({
         event: dto.consent === 'true' ? 'oauth.consent' : 'oauth.consent_denied',
@@ -382,5 +414,30 @@ export class OAuth2Controller {
     } catch {
       return undefined;
     }
+  }
+
+  private getTransactionCookieName(transactionId: string) {
+    const transactionHash = createHash('sha256')
+      .update(transactionId)
+      .digest('hex');
+    return `${OAUTH_TRANSACTION_COOKIE_PREFIX}${transactionHash}`;
+  }
+
+  private hashBrowserNonce(browserNonce: string) {
+    return createHash('sha256').update(browserNonce).digest('hex');
+  }
+
+  private getTransactionCookieOptions() {
+    return {
+      secure: getAuthCookieSecure(),
+      sameSite: 'lax' as const,
+      path: '/',
+    };
+  }
+
+  private getAuthorizationTransactionCookieMaxAgeMs() {
+    const expiresIn =
+      this.configService.get<number>('OAUTH2_AUTH_CODE_EXPIRES_IN') || 600;
+    return Math.min(Math.max(expiresIn, 60), 3600) * 1000;
   }
 }

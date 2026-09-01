@@ -1,15 +1,15 @@
 import {
-  IsInt,
+  IsNotEmpty,
   IsOptional,
   IsString,
   MaxLength,
-  Min,
 } from 'class-validator';
 
 export class UpdateBindingDto {
-  @IsInt()
-  @Min(1)
-  appUserId!: number;
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(255)
+  appUserId!: string;
 
   @IsOptional()
   @IsString()

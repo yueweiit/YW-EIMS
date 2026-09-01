@@ -30,7 +30,7 @@ EIMS 作为统一身份认证中心（OAuth 2.0 + OIDC Provider），外部系�
 
 - `allowedRoles` 是 EIMS 外部系统目录中的“允许访问该系统的 EIMS 角色编码”，不是 ERP/CRM/MES 的内部角色。
 - `sub` 是 EIMS 统一用户 ID。
-- `app_user_id` 是外部系统用于查找本地用户的账号标识，由 EIMS 绑定后原样返回。
+- `app_user_id` 是外部系统用于查找本地用户的账号标识，统一按字符串保存和返回；EIMS 会去掉录入值的首尾空白。
 - `app_username` 是外部系统用户名，仅用于展示或辅助定位，不作为唯一身份依据。
 - EIMS 不返回 `app_roles`。外部系统角色必须在外部系统内部配置和校验。
 
@@ -205,11 +205,12 @@ GET {EIMS_ISSUER}/oauth/logout
 | 系统编码 | 是 | EIMS 外部系统目录唯一编码，只使用小写字母、数字、下划线、中划线 | `erp` |
 | 系统说明 | 是 | 系统用途和面向员工的简短说明 | 采购、库存和生产管理 |
 | 系统入口地址 | 是 | 用户点击 EIMS 卡片后访问的地址 | `https://erp.example.com/` |
+| SSO 启动地址 | OAuth2 系统建议填写 | 目标系统生成 `state`/PKCE 并开始 OAuth 登录的服务端地址；首页已经自动跳转时可留空 | `https://crm.example.com/front/sso/eims/start` |
 | OAuth 回调地址 | 是 | 外部系统服务端接收 `code` 的地址，必须是完整绝对 URL | `https://erp.example.com/auth/eims/callback` |
 | 单点退出回调地址 | 建议 | 退出后返回外部系统的地址；当前 EIMS 要求它也加入客户端已注册回调地址列表 | `https://erp.example.com/login` |
 | 申请的 scope | 是 | 一般为 `openid profile email`，说明是否确实需要 email | `openid profile` |
-| 本地账号匹配字段 | 是 | `app_user_id` 在本系统中对应的字段名、类型和语义 | `custom_eims_app_user_id`，整数 |
-| 本地账号匹配示例 | 是 | 提供至少两个测试用户的字段值和用户名 | 用户 A：10001 |
+| 本地账号匹配字段 | 是 | `app_user_id` 在本系统中对应的字段名、类型和语义；类型统一按字符串处理，即使原始值是数字也不能按 JSON number 传输 | `custom_eims_app_user_id`，字符串 |
+| 本地账号匹配示例 | 是 | 提供至少两个测试用户的字段值和用户名；字段值可以是数字字符串、字母或混合标识符 | 用户 A：`"10001"`；用户 B：`"ERP-USER-0002"` |
 | 本地用户名字段 | 建议 | 用于 EIMS 绑定页面展示或排查，不作为唯一匹配键 | `username` |
 | 用户状态规则 | 是 | 说明禁用、离职、锁定账号如何处理 | `disabled=true` 禁止登录 |
 | EIMS 访问范围 | 是 | 说明全员访问还是按 EIMS 角色访问 | 仅生产角色可见 |
@@ -257,6 +258,7 @@ GET {EIMS_ISSUER}/oauth/logout
 | 系统说明 | 门户卡片副标题 | 说明系统用途 |
 | 图标/颜色 | 门户展示样式 | 不影响安全 |
 | 入口地址 | 直接访问地址或外部系统首页 | 必须是 `http/https`，生产使用 HTTPS |
+| SSO 启动地址 | OAuth2 登录时优先使用的目标系统服务端启动地址 | 目标系统首页不能自动发起 SSO 时填写；不能填写 OAuth 回调地址 |
 | 登录方式 | `link` 或 `oauth2` | 需要 EIMS SSO 时选择 `oauth2` |
 | 访问策略 | `roles` 或 `all` | `roles` 表示按 EIMS 角色授权；`all` 表示所有已登录用户 |
 | 允许角色 | EIMS 角色编码列表 | 只在 `roles` 模式下生效；为空表示拒绝，不表示开放全部 |
@@ -278,7 +280,7 @@ GET {EIMS_ISSUER}/oauth/logout
 | --- | --- | --- |
 | SSO 用户 | EIMS 用户 | 由 EIMS 用户管理产生 |
 | OAuth2 应用 | 目标系统客户端 | 选择外部系统对应的 OAuth2 应用 |
-| 业务系统用户 ID | 外部系统本地账号匹配值 | 外部系统提供字段语义和具体值；EIMS 原样保存并返回为 `app_user_id` |
+| 业务系统用户 ID | 外部系统本地账号匹配值 | 外部系统提供字段语义和具体值；EIMS 按字符串规范化保存并返回为 `app_user_id` |
 | 业务系统用户名 | 外部系统用户名 | 可选，用于展示和排查；不是唯一匹配依据 |
 
 当前不再配置“业务系统角色”。EIMS 只维护“EIMS 用户 → 外部系统用户”的映射，目标系统内部角色由目标系统自己决定。
@@ -358,7 +360,7 @@ client_secret:        通过安全渠道单独交付，不写入工单、邮件�
   "name": "张三",
   "preferred_username": "zhangsan",
   "email": "zhangsan@example.com",
-  "app_user_id": 8888,
+  "app_user_id": "8888",
   "app_username": "zhangsan"
 }
 ```
@@ -372,7 +374,7 @@ client_secret:        通过安全渠道单独交付，不写入工单、邮件�
 | `given_name` | 请求 `profile` 且有姓名时 | 姓名拆分结果，适合展示 |
 | `family_name` | 请求 `profile` 且有姓名时 | 姓名拆分结果，适合展示 |
 | `picture` | 当前可选 | 用户头像地址，使用前应考虑外部请求和隐私策略 |
-| `app_user_id` | 完成绑定时 | 外部系统本地账号匹配值，由 EIMS 管理员录入并原样返回 |
+| `app_user_id` | 完成绑定时 | 外部系统本地账号匹配值，类型为字符串，由 EIMS 管理员录入并按规范化后的值返回；即使是长数字也不能转成 JSON number |
 | `app_username` | 完成绑定且填写时 | 外部系统用户名，辅助展示；不作为唯一身份依据 |
 | `app_roles` | 不提供 | 不再使用。外部系统角色由外部系统本地权限体系负责 |
 

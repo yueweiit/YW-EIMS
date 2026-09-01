@@ -192,14 +192,14 @@ Authorization: Bearer {access_token}
   "sub": "1001",
   "name": "张三",
   "preferred_username": "zhangsan",
-  "app_user_id": 8888,
+  "app_user_id": "8888",
   "app_username": "zhangsan"
 }
 ```
 
 | 字段 | 说明 |
 |------|------|
-| `app_user_id` | **你系统里的用户 ID**（如果已绑定） |
+| `app_user_id` | **你系统里的本地用户 ID**（如果已绑定），始终按字符串处理；即使原始 ID 是数字也不要转成 number |
 | `app_username` | 你系统里的用户名（方便展示） |
 
 **处理逻辑：**

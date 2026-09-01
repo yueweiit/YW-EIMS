@@ -4,7 +4,7 @@ export interface OAuth2BindingRecord {
   id: number;
   ssoUserId: number;
   clientId: string;
-  appUserId: number;
+  appUserId: string;
   appUsername?: string;
   createdAt: string;
   updatedAt: string;
@@ -36,12 +36,12 @@ export interface OAuth2BindingPageData {
 export interface CreateOAuth2BindingParams {
   ssoUserId: number;
   clientId: string;
-  appUserId: number;
+  appUserId: string;
   appUsername?: string;
 }
 
 export interface UpdateOAuth2BindingParams {
-  appUserId: number;
+  appUserId: string;
   appUsername?: string | null;
 }
 

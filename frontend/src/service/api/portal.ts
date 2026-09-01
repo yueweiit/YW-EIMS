@@ -13,7 +13,7 @@ export interface PortalSystemRecord {
   roles: string[];
   bindingStatus: PortalBindingStatus;
   canLaunch: boolean;
-  appUserId?: number | null;
+  appUserId?: string | null;
   appUsername?: string | null;
   helpUrl?: string | null;
   feedbackUrl?: string | null;
@@ -26,7 +26,7 @@ export interface PortalSystemLaunchResult {
   url: string;
   authMode: 'link' | 'oauth2';
   bindingStatus: PortalBindingStatus;
-  appUserId?: number | null;
+  appUserId?: string | null;
   appUsername?: string | null;
 }
 
@@ -38,6 +38,8 @@ export interface ExternalSystemRecord {
   icon: string;
   color: string;
   entryUrl: string;
+  effectiveEntryUrl?: string;
+  ssoStartUrl?: string | null;
   authMode: 'link' | 'oauth2';
   accessMode: 'roles' | 'all';
   allowedRoles: string[];
@@ -80,6 +82,7 @@ export interface CreateExternalSystemParams {
   icon?: string;
   color?: string;
   entryUrl: string;
+  ssoStartUrl?: string | null;
   authMode?: 'link' | 'oauth2';
   accessMode?: 'roles' | 'all';
   allowedRoles?: string[];

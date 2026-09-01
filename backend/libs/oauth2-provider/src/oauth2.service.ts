@@ -6,7 +6,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { createHash, randomBytes } from 'node:crypto';
+import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '@eims/database';
 import { OpenIdService } from './openid.service';
@@ -80,7 +80,10 @@ export class OAuth2Service {
       );
     }
 
-    if (!client.redirectUris.includes(redirectUri)) {
+    if (
+      !client.redirectUris.includes(redirectUri) ||
+      !this.isAllowedRedirectUri(redirectUri)
+    ) {
       throw new BadRequestException(
         'invalid_redirect_uri: redirect_uri does not match registered URIs',
       );
@@ -121,6 +124,7 @@ export class OAuth2Service {
     state: string,
     codeChallenge: string,
     codeChallengeMethod: string,
+    browserNonceHash: string,
     nonce?: string,
   ): Promise<string> {
     this.assertProviderEnabled();
@@ -135,6 +139,7 @@ export class OAuth2Service {
         redirectUri,
         scopes,
         state,
+        browserNonceHash,
         nonce,
         codeChallenge,
         codeChallengeMethod,
@@ -146,8 +151,11 @@ export class OAuth2Service {
   }
 
   /** Return only consent-screen metadata; sensitive OAuth parameters stay server-side. */
-  async getAuthorizationRequest(transactionId: string) {
-    const request = await this.loadAuthorizationRequest(transactionId);
+  async getAuthorizationRequest(transactionId: string, browserNonce?: string) {
+    const request = await this.loadAuthorizationRequest(
+      transactionId,
+      browserNonce,
+    );
     return {
       transactionId: request.transactionId,
       clientName: request.client.name,
@@ -160,9 +168,13 @@ export class OAuth2Service {
     transactionId: string,
     userId: number,
     consent: string,
+    browserNonce?: string,
   ) {
     this.assertProviderEnabled();
-    const request = await this.loadAuthorizationRequest(transactionId);
+    const request = await this.loadAuthorizationRequest(
+      transactionId,
+      browserNonce,
+    );
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { id: true, status: true },
@@ -300,6 +312,11 @@ export class OAuth2Service {
     if (authCode.redirectUri !== redirectUri) {
       throw new UnauthorizedException('invalid_grant: redirect_uri mismatch');
     }
+    if (!this.isAllowedRedirectUri(redirectUri)) {
+      throw new UnauthorizedException(
+        'invalid_grant: redirect_uri must use HTTPS',
+      );
+    }
 
     if (
       !authCode.codeChallenge ||
@@ -359,15 +376,13 @@ export class OAuth2Service {
     const refreshTokenExpiresIn =
       this.configService.get<number>('OAUTH2_REFRESH_TOKEN_EXPIRES_IN') ||
       2592000;
-    const accessTokenJwt = this.openidService.signIdToken(
-      {
-        sub: String(user.id),
-        client_id: clientId,
-        aud: clientId,
-        scope: authCode.scopes.join(' '),
-        token_type: 'access_token',
-      },
+    const familyId = this.createTokenFamilyId();
+    const accessTokenJwt = await this.createAccessToken(
+      clientId,
+      user.id,
+      authCode.scopes,
       accessTokenExpiresIn,
+      familyId,
     );
 
     // Generate refresh token
@@ -382,6 +397,7 @@ export class OAuth2Service {
         clientId,
         userId: user.id,
         scopes: authCode.scopes,
+        familyId,
         expiresAt: new Date(Date.now() + refreshTokenExpiresIn * 1000),
       },
     });
@@ -458,12 +474,13 @@ export class OAuth2Service {
         clientId: true,
         userId: true,
         scopes: true,
+        familyId: true,
         expiresAt: true,
         revokedAt: true,
       },
     });
 
-    if (!tokenRecord || tokenRecord.revokedAt || tokenRecord.expiresAt <= now) {
+    if (!tokenRecord || tokenRecord.expiresAt <= now) {
       throw new UnauthorizedException(
         'invalid_grant: refresh token is invalid or expired',
       );
@@ -475,12 +492,28 @@ export class OAuth2Service {
       );
     }
 
+    if (tokenRecord.revokedAt) {
+      await this.revokeRefreshTokenFamily(
+        tokenRecord.userId,
+        tokenRecord.clientId,
+        tokenRecord.familyId,
+      );
+      throw new UnauthorizedException(
+        'invalid_grant: refresh token was already used',
+      );
+    }
+
     // Rotate refresh token: revoke old, create new
     const revoked = await this.prisma.oauth2RefreshToken.updateMany({
       where: { id: tokenRecord.id, revokedAt: null, expiresAt: { gt: now } },
       data: { revokedAt: now },
     });
     if (revoked.count !== 1) {
+      await this.revokeRefreshTokenFamily(
+        tokenRecord.userId,
+        tokenRecord.clientId,
+        tokenRecord.familyId,
+      );
       throw new UnauthorizedException(
         'invalid_grant: refresh token already used',
       );
@@ -501,16 +534,14 @@ export class OAuth2Service {
     const refreshTokenExpiresIn =
       this.configService.get<number>('OAUTH2_REFRESH_TOKEN_EXPIRES_IN') ||
       2592000;
+    const familyId = tokenRecord.familyId || this.createTokenFamilyId();
 
-    const accessTokenJwt = this.openidService.signIdToken(
-      {
-        sub: String(tokenRecord.userId),
-        client_id: clientId,
-        aud: clientId,
-        scope: tokenRecord.scopes.join(' '),
-        token_type: 'access_token',
-      },
+    const accessTokenJwt = await this.createAccessToken(
+      clientId,
+      tokenRecord.userId,
+      tokenRecord.scopes,
       accessTokenExpiresIn,
+      familyId,
     );
 
     const rawRefreshToken = randomBytes(32).toString('base64url');
@@ -524,6 +555,7 @@ export class OAuth2Service {
         clientId,
         userId: tokenRecord.userId,
         scopes: tokenRecord.scopes,
+        familyId,
         expiresAt: new Date(Date.now() + refreshTokenExpiresIn * 1000),
       },
     });
@@ -556,6 +588,24 @@ export class OAuth2Service {
       ) {
         throw new UnauthorizedException('invalid_token');
       }
+      const tokenRecord = await this.prisma.oauth2AccessToken.findUnique({
+        where: { tokenHash: this.hashAccessToken(accessToken) },
+        select: {
+          clientId: true,
+          userId: true,
+          scopes: true,
+          expiresAt: true,
+          revokedAt: true,
+        },
+      });
+      if (
+        !tokenRecord ||
+        tokenRecord.revokedAt ||
+        tokenRecord.expiresAt <= new Date() ||
+        tokenRecord.clientId !== payload.client_id
+      ) {
+        throw new UnauthorizedException('invalid_token');
+      }
       const client = await this.prisma.oauth2Client.findUnique({
         where: { clientId: payload.client_id },
         select: { status: true },
@@ -566,6 +616,9 @@ export class OAuth2Service {
         throw new UnauthorizedException('invalid_token: invalid sub claim');
       }
       const userId = parseInt(payload.sub, 10);
+      if (tokenRecord.userId !== userId) {
+        throw new UnauthorizedException('invalid_token');
+      }
 
       const user = await this.prisma.user.findUnique({
         where: { id: userId },
@@ -584,8 +637,7 @@ export class OAuth2Service {
         );
       }
 
-      const scope = payload.scope || '';
-      const scopes = scope.split(' ');
+      const scopes = tokenRecord.scopes;
       const userInfo: OAuth2UserInfo = {
         sub: String(user.id),
       };
@@ -649,23 +701,53 @@ export class OAuth2Service {
       throw new UnauthorizedException('invalid_client');
     }
 
-    const tokenHash = createHash('sha256').update(token).digest('hex');
-    await this.prisma.oauth2RefreshToken.updateMany({
-      where: { tokenHash, clientId, revokedAt: null },
-      data: { revokedAt: new Date() },
+    const tokenHash = this.hashAccessToken(token);
+    const revokedAt = new Date();
+    const refreshRecord = await this.prisma.oauth2RefreshToken.findUnique({
+      where: { tokenHash },
+      select: { userId: true, clientId: true, familyId: true },
     });
-    // Per RFC 7009, always return 200 even if token not found
+    await Promise.all([
+      this.prisma.oauth2AccessToken.updateMany({
+        where: { tokenHash, clientId, revokedAt: null },
+        data: { revokedAt },
+      }),
+      this.prisma.oauth2RefreshToken.updateMany({
+        where: { tokenHash, clientId, revokedAt: null },
+        data: { revokedAt },
+      }),
+    ]);
+    if (refreshRecord && refreshRecord.clientId === clientId) {
+      await this.revokeRefreshTokenFamily(
+        refreshRecord.userId,
+        clientId,
+        refreshRecord.familyId,
+      );
+    }
+    // Per RFC 7009, always return 200 even if token not found.
   }
 
   async revokeUserRefreshTokens(userId: number, clientId?: string) {
-    return this.prisma.oauth2RefreshToken.updateMany({
-      where: {
-        userId,
-        ...(clientId ? { clientId } : {}),
-        revokedAt: null,
-      },
-      data: { revokedAt: new Date() },
-    });
+    const revokedAt = new Date();
+    const [refreshTokens, accessTokens] = await Promise.all([
+      this.prisma.oauth2RefreshToken.updateMany({
+        where: {
+          userId,
+          ...(clientId ? { clientId } : {}),
+          revokedAt: null,
+        },
+        data: { revokedAt },
+      }),
+      this.prisma.oauth2AccessToken.updateMany({
+        where: {
+          userId,
+          ...(clientId ? { clientId } : {}),
+          revokedAt: null,
+        },
+        data: { revokedAt },
+      }),
+    ]);
+    return { refreshTokens, accessTokens };
   }
 
   async isRegisteredPostLogoutRedirect(clientId: string, redirectUri: string) {
@@ -674,11 +756,16 @@ export class OAuth2Service {
       select: { status: true, redirectUris: true },
     });
     return Boolean(
-      client?.status === '1' && client.redirectUris.includes(redirectUri),
+      client?.status === '1' &&
+        client.redirectUris.includes(redirectUri) &&
+        this.isAllowedRedirectUri(redirectUri),
     );
   }
 
-  private async loadAuthorizationRequest(transactionId: string) {
+  private async loadAuthorizationRequest(
+    transactionId: string,
+    browserNonce?: string,
+  ) {
     const request = await this.prisma.oauth2AuthorizationRequest.findUnique({
       where: { transactionId },
       select: {
@@ -688,6 +775,7 @@ export class OAuth2Service {
         redirectUri: true,
         scopes: true,
         state: true,
+        browserNonceHash: true,
         nonce: true,
         codeChallenge: true,
         codeChallengeMethod: true,
@@ -704,7 +792,95 @@ export class OAuth2Service {
     ) {
       throw new BadRequestException('OAuth 授权请求无效、已使用或已过期');
     }
+    if (!browserNonce || !this.matchesHash(browserNonce, request.browserNonceHash)) {
+      throw new BadRequestException('OAuth 授权请求不属于当前浏览器');
+    }
     return request;
+  }
+
+  private async createAccessToken(
+    clientId: string,
+    userId: number,
+    scopes: string[],
+    expiresIn: number,
+    familyId: string,
+  ) {
+    const accessToken = this.openidService.signIdToken(
+      {
+        sub: String(userId),
+        client_id: clientId,
+        aud: clientId,
+        scope: scopes.join(' '),
+        token_type: 'access_token',
+      },
+      expiresIn,
+    );
+    await this.prisma.oauth2AccessToken.create({
+      data: {
+        tokenHash: this.hashAccessToken(accessToken),
+        clientId,
+        userId,
+        scopes,
+        familyId,
+        expiresAt: new Date(Date.now() + expiresIn * 1000),
+      },
+    });
+    return accessToken;
+  }
+
+  private async revokeRefreshTokenFamily(
+    userId: number,
+    clientId: string,
+    familyId?: string | null,
+  ) {
+    const revokedAt = new Date();
+    const familyWhere = {
+      userId,
+      clientId,
+      revokedAt: null,
+      ...(familyId ? { familyId } : {}),
+    };
+    const [refreshTokens, accessTokens] = await Promise.all([
+      this.prisma.oauth2RefreshToken.updateMany({
+        where: familyWhere,
+        data: { revokedAt },
+      }),
+      this.prisma.oauth2AccessToken.updateMany({
+        where: familyWhere,
+        data: { revokedAt },
+      }),
+    ]);
+    return { refreshTokens, accessTokens };
+  }
+
+  private createTokenFamilyId() {
+    return randomBytes(32).toString('base64url');
+  }
+
+  private hashAccessToken(token: string) {
+    return createHash('sha256').update(token).digest('hex');
+  }
+
+  private matchesHash(value: string, expectedHash: string) {
+    const actualHash = createHash('sha256').update(value).digest('hex');
+    const actual = Buffer.from(actualHash);
+    const expected = Buffer.from(expectedHash);
+    return (
+      actual.length === expected.length && timingSafeEqual(actual, expected)
+    );
+  }
+
+  private isAllowedRedirectUri(redirectUri: string) {
+    try {
+      const protocol = new URL(redirectUri).protocol;
+      return (
+        protocol === 'https:' ||
+        (protocol === 'http:' &&
+          this.configService.get<string>('NODE_ENV') !== 'production')
+      );
+    } catch {
+      return false;
+    }
   }
 
   private async verifyClientSecret(

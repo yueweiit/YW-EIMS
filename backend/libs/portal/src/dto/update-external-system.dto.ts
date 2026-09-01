@@ -38,6 +38,11 @@ export class UpdateExternalSystemDto {
   entryUrl?: string;
 
   @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  ssoStartUrl?: string | null;
+
+  @IsOptional()
   @IsIn(['link', 'oauth2'])
   authMode?: string;
 

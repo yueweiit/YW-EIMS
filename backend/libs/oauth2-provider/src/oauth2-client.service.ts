@@ -44,6 +44,9 @@ export class OAuth2ClientService {
           '回调地址只允许 http/https，且不能包含账号、密码或片段',
         );
       }
+      if (this.isProduction() && parsed.protocol !== 'https:') {
+        throw new BadRequestException('生产环境回调地址必须使用 HTTPS');
+      }
     }
     return normalized;
   }
@@ -192,6 +195,10 @@ export class OAuth2ClientService {
       },
     });
 
+    if (dto.status === '2' && existing.status !== '2') {
+      await this.revokeClientTokens(existing.clientId);
+    }
+
     return client;
   }
 
@@ -220,11 +227,36 @@ export class OAuth2ClientService {
       where: { id },
       data: { clientSecret: newSecretHash, updateBy: currentUserName },
     });
-    await this.prisma.oauth2RefreshToken.updateMany({
-      where: { clientId: existing.clientId, revokedAt: null },
-      data: { revokedAt: new Date() },
-    });
+    const revokedAt = new Date();
+    await Promise.all([
+      this.prisma.oauth2RefreshToken.updateMany({
+        where: { clientId: existing.clientId, revokedAt: null },
+        data: { revokedAt },
+      }),
+      this.prisma.oauth2AccessToken.updateMany({
+        where: { clientId: existing.clientId, revokedAt: null },
+        data: { revokedAt },
+      }),
+    ]);
 
     return { clientId: existing.clientId, clientSecret: newSecret };
+  }
+
+  private async revokeClientTokens(clientId: string) {
+    const revokedAt = new Date();
+    await Promise.all([
+      this.prisma.oauth2RefreshToken.updateMany({
+        where: { clientId, revokedAt: null },
+        data: { revokedAt },
+      }),
+      this.prisma.oauth2AccessToken.updateMany({
+        where: { clientId, revokedAt: null },
+        data: { revokedAt },
+      }),
+    ]);
+  }
+
+  private isProduction() {
+    return process.env.NODE_ENV === 'production';
   }
 }

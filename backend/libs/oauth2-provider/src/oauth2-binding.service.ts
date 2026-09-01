@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
   ConflictException,
@@ -66,6 +67,8 @@ export class OAuth2BindingService {
    * 创建绑定
    */
   async create(dto: CreateBindingDto) {
+    const appUserId = this.normalizeAppUserId(dto.appUserId);
+
     // 验证 SSO 用户存在
     const user = await this.prisma.user.findUnique({
       where: { id: dto.ssoUserId },
@@ -102,7 +105,7 @@ export class OAuth2BindingService {
       where: {
         clientId_appUserId: {
           clientId: dto.clientId,
-          appUserId: dto.appUserId,
+          appUserId,
         },
       },
     });
@@ -114,7 +117,7 @@ export class OAuth2BindingService {
       data: {
         ssoUserId: dto.ssoUserId,
         clientId: dto.clientId,
-        appUserId: dto.appUserId,
+        appUserId,
         appUsername: dto.appUsername,
       },
       select: {
@@ -128,7 +131,7 @@ export class OAuth2BindingService {
     });
 
     this.logger.log(
-      `Created binding: SSO user ${dto.ssoUserId} → ${dto.clientId} → app user ${dto.appUserId}`,
+      `Created binding: SSO user ${dto.ssoUserId} → ${dto.clientId} → app user ${appUserId}`,
     );
 
     return binding;
@@ -151,18 +154,20 @@ export class OAuth2BindingService {
 
   /** 更新业务系统账号，不改变 EIMS 用户和 OAuth2 应用。 */
   async update(id: number, dto: UpdateBindingDto) {
+    const appUserId = this.normalizeAppUserId(dto.appUserId);
+
     const existing = await this.prisma.oauth2UserBinding.findUnique({
       where: { id },
       select: { id: true, clientId: true, appUserId: true },
     });
     if (!existing) throw new NotFoundException('绑定关系不存在');
 
-    if (existing.appUserId !== dto.appUserId) {
+    if (existing.appUserId !== appUserId) {
       const conflictBinding = await this.prisma.oauth2UserBinding.findUnique({
         where: {
           clientId_appUserId: {
             clientId: existing.clientId,
-            appUserId: dto.appUserId,
+            appUserId,
           },
         },
         select: { id: true },
@@ -175,7 +180,7 @@ export class OAuth2BindingService {
     return this.prisma.oauth2UserBinding.update({
       where: { id },
       data: {
-        appUserId: dto.appUserId,
+        appUserId,
         appUsername: dto.appUsername?.trim() || null,
       },
       select: {
@@ -187,6 +192,24 @@ export class OAuth2BindingService {
         updatedAt: true,
       },
     });
+  }
+
+  /**
+   * 外部系统账号 ID 是不透明标识符：即使原始值是数字，也必须按字符串保存和比较。
+   * 去掉首尾空白可以避免同一个账号因录入格式不同产生重复绑定；控制字符禁止进入数据库。
+   */
+  private normalizeAppUserId(value: string) {
+    const normalized = value.trim();
+    if (!normalized) {
+      throw new BadRequestException('业务系统用户ID不能为空');
+    }
+    if (normalized.length > 255) {
+      throw new BadRequestException('业务系统用户ID长度不能超过255个字符');
+    }
+    if (/[\u0000-\u001F\u007F]/.test(normalized)) {
+      throw new BadRequestException('业务系统用户ID不能包含控制字符');
+    }
+    return normalized;
   }
 
   /**

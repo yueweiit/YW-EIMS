@@ -84,11 +84,13 @@ docker compose up -d --build
 
 ### 外部系统门户和 SSO 配置
 
-首页“系统”卡片现在由 EIMS 后端门户接口驱动，系统目录、入口地址、允许角色、说明地址、反馈地址和 OAuth2 应用关联在“系统管理 → 外部系统目录”中维护。前端只展示 `/api/portal/systems` 返回的当前用户可访问系统，点击入口时还会调用 `/api/portal/systems/:code/launch` 由后端再次校验角色、系统状态和账号绑定。
+首页“系统”卡片现在由 EIMS 后端门户接口驱动，系统目录、入口地址、可选 SSO 启动地址、允许角色、说明地址、反馈地址和 OAuth2 应用关联在“系统管理 → 外部系统目录”中维护。前端只展示 `/api/portal/systems` 返回的当前用户可访问系统，点击入口时还会调用 `/api/portal/systems/:code/launch` 由后端再次校验角色、系统状态和账号绑定。OAuth2 系统优先使用目录中的 SSO 启动地址，未配置时使用入口地址；SSO 启动地址不能填写 OAuth 回调地址。
 
 后续 ERP、CRM、MES 等系统接入 EIMS 的双方改造项、交付字段、OAuth 参数字典和验收清单，见 [EIMS SSO 外部系统接入实施与交付规范](docs/eims-sso-integration-guide.md)。
 
 `frontend/public/config/external-systems.json` 仅保留作旧版本运行时配置参考，不再承担权限控制，也不应放入 `client_secret`。新系统应先在 EIMS 的 OAuth2 应用管理中注册客户端，再在外部系统目录中选择 OAuth2 应用，并在 OAuth2 账号绑定中维护用户对应的业务账号。ERP 的 `clientId`、`clientSecret`、EIMS 地址和回调地址仍只配置在 ERP 后端。
+
+`EXTERNAL_BUDGET_URL`、`EXTERNAL_ERP_URL`、`EXTERNAL_MES_URL`、`EXTERNAL_CRM_URL` 和 `EXTERNAL_LEMOS_URL` 是后端运行时的入口覆盖配置，优先级高于数据库中的 `entryUrl`；对应的 `EXTERNAL_*_SSO_START_URL` 是 OAuth2 系统的 SSO 启动地址覆盖配置，优先级高于目录中的 `ssoStartUrl`。它们仅对对应的预置系统编码生效；其他自定义系统仍使用数据库配置。修改这些变量后需要重启 backend 容器，seed 不会覆盖已有目录记录。生产环境这些地址必须使用 HTTPS；本地测试请将 `NODE_ENV` 设为 `development`。
 
 访问策略选择“按角色授权”时，允许角色留空表示拒绝访问；只有明确选择“所有已登录用户”才会对所有已登录用户开放。选择“OAuth2 绑定”后，只有完成对应业务账号绑定的用户可以从门户进入。业务系统内部的菜单和接口权限仍必须由业务系统后端自行校验。
 

@@ -7,6 +7,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '@eims/database';
 import { RoleService } from '@eims/roles';
@@ -14,6 +15,22 @@ import { CreateExternalSystemDto } from './dto/create-external-system.dto';
 import { UpdateExternalSystemDto } from './dto/update-external-system.dto';
 
 const ACTIVE_STATUS = '1';
+
+const EXTERNAL_SYSTEM_URL_ENV: Readonly<Record<string, string>> = {
+  budget: 'EXTERNAL_BUDGET_URL',
+  erp: 'EXTERNAL_ERP_URL',
+  mes: 'EXTERNAL_MES_URL',
+  crm: 'EXTERNAL_CRM_URL',
+  lemos: 'EXTERNAL_LEMOS_URL',
+};
+
+const EXTERNAL_SYSTEM_SSO_START_URL_ENV: Readonly<Record<string, string>> = {
+  budget: 'EXTERNAL_BUDGET_SSO_START_URL',
+  erp: 'EXTERNAL_ERP_SSO_START_URL',
+  mes: 'EXTERNAL_MES_SSO_START_URL',
+  crm: 'EXTERNAL_CRM_SSO_START_URL',
+  lemos: 'EXTERNAL_LEMOS_SSO_START_URL',
+};
 
 const ADMIN_SYSTEM_SELECT = {
   id: true,
@@ -23,6 +40,7 @@ const ADMIN_SYSTEM_SELECT = {
   icon: true,
   color: true,
   entryUrl: true,
+  ssoStartUrl: true,
   authMode: true,
   accessMode: true,
   allowedRoles: true,
@@ -54,6 +72,7 @@ const PORTAL_SYSTEM_SELECT = {
   icon: true,
   color: true,
   entryUrl: true,
+  ssoStartUrl: true,
   authMode: true,
   accessMode: true,
   allowedRoles: true,
@@ -91,6 +110,7 @@ export class ExternalSystemService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly roleService: RoleService,
+    private readonly configService: ConfigService,
   ) {}
 
   async findPage(current = 1, size = 10, name?: string, status?: string) {
@@ -113,7 +133,15 @@ export class ExternalSystemService {
       this.prisma.externalSystem.count({ where }),
     ]);
 
-    return { records, total, current: page, size: pageSize };
+    return {
+      records: records.map((record) => ({
+        ...record,
+        effectiveEntryUrl: this.getConfiguredEntryUrl(record.code, record.entryUrl),
+      })),
+      total,
+      current: page,
+      size: pageSize,
+    };
   }
 
   async findOne(id: number) {
@@ -122,7 +150,10 @@ export class ExternalSystemService {
       select: ADMIN_SYSTEM_SELECT,
     });
     if (!system) throw new NotFoundException('外部系统不存在');
-    return system;
+    return {
+      ...system,
+      effectiveEntryUrl: this.getConfiguredEntryUrl(system.code, system.entryUrl),
+    };
   }
 
   async create(dto: CreateExternalSystemDto, currentUserName: string) {
@@ -183,6 +214,13 @@ export class ExternalSystemService {
     if (dto.entryUrl !== undefined) {
       data.entryUrl = this.normalizeHttpUrl(dto.entryUrl, '入口地址');
     }
+    if (dto.ssoStartUrl !== undefined) {
+      data.ssoStartUrl = this.normalizeOptionalUrl(
+        dto.ssoStartUrl,
+        'SSO启动地址',
+        ['http:', 'https:'],
+      );
+    }
     if (dto.authMode !== undefined) data.authMode = authMode;
     if (dto.accessMode !== undefined) {
       data.accessMode = accessMode;
@@ -190,7 +228,9 @@ export class ExternalSystemService {
     if (accessMode === 'all') {
       data.allowedRoles = [];
     } else if (dto.allowedRoles !== undefined) {
-      data.allowedRoles = this.normalizeRoles(dto.allowedRoles);
+      data.allowedRoles = await this.roleService.validateAssignableRoleCodes(
+        this.normalizeRoles(dto.allowedRoles),
+      );
     }
     if (dto.category !== undefined) {
       data.category = this.requireText(dto.category, '系统分类');
@@ -318,7 +358,7 @@ export class ExternalSystemService {
     return {
       code: system.code,
       name: system.name,
-      url: this.normalizeHttpUrl(system.entryUrl, '入口地址'),
+      url: this.getEffectiveLaunchUrl(system),
       authMode: system.authMode,
       bindingStatus: system.authMode === 'oauth2' ? 'bound' : 'not_required',
       appUserId: binding?.appUserId ?? null,
@@ -359,8 +399,12 @@ export class ExternalSystemService {
       canLaunch: bindingStatus === 'bound' || bindingStatus === 'not_required',
       appUserId: binding?.appUserId ?? null,
       appUsername: binding?.appUsername ?? null,
-      helpUrl: system.helpUrl,
-      feedbackUrl: system.feedbackUrl,
+      helpUrl: this.sanitizePortalUrl(system.helpUrl, ['http:', 'https:']),
+      feedbackUrl: this.sanitizePortalUrl(system.feedbackUrl, [
+        'http:',
+        'https:',
+        'mailto:',
+      ]),
       contact: system.contact,
     };
   }
@@ -370,6 +414,39 @@ export class ExternalSystemService {
     if (!system.oauthClientId || !system.oauthClient) return 'not_configured';
     if (system.oauthClient.status !== ACTIVE_STATUS) return 'not_configured';
     return binding ? 'bound' : 'unbound';
+  }
+
+  private getEffectiveEntryUrl(code: string, databaseUrl: string) {
+    return this.normalizeHttpUrl(
+      this.getConfiguredEntryUrl(code, databaseUrl),
+      '入口地址',
+    );
+  }
+
+  private getConfiguredEntryUrl(code: string, databaseUrl: string) {
+    const environmentVariable = EXTERNAL_SYSTEM_URL_ENV[code];
+    const configuredUrl = environmentVariable
+      ? this.configService.get<string>(environmentVariable)?.trim()
+      : undefined;
+    return configuredUrl || databaseUrl;
+  }
+
+  private getEffectiveLaunchUrl(
+    system: Pick<PortalSystem, 'code' | 'entryUrl' | 'ssoStartUrl' | 'authMode'>,
+  ) {
+    if (system.authMode === 'oauth2') {
+      const environmentVariable = EXTERNAL_SYSTEM_SSO_START_URL_ENV[system.code];
+      const configuredUrl = environmentVariable
+        ? this.configService.get<string>(environmentVariable)?.trim()
+        : undefined;
+      if (configuredUrl) {
+        return this.normalizeHttpUrl(configuredUrl, 'SSO启动地址');
+      }
+      if (system.ssoStartUrl?.trim()) {
+        return this.normalizeHttpUrl(system.ssoStartUrl, 'SSO启动地址');
+      }
+    }
+    return this.getEffectiveEntryUrl(system.code, system.entryUrl);
   }
 
   private hasSystemAccess(
@@ -387,6 +464,12 @@ export class ExternalSystemService {
     const accessMode = dto.accessMode || 'roles';
     const oauthClientId = this.normalizeOptionalText(dto.oauthClientId);
     await this.validateOauthClient(authMode, oauthClientId);
+    const allowedRoles =
+      accessMode === 'all'
+        ? []
+        : await this.roleService.validateAssignableRoleCodes(
+            this.normalizeRoles(dto.allowedRoles),
+          );
     return {
       code: this.normalizeCode(dto.code),
       name: this.requireText(dto.name, '系统名称'),
@@ -396,10 +479,13 @@ export class ExternalSystemService {
         : 'mdi:application-outline',
       color: dto.color ? this.normalizeColor(dto.color) : '#2080f0',
       entryUrl: this.normalizeHttpUrl(dto.entryUrl, '入口地址'),
+      ssoStartUrl: this.normalizeOptionalUrl(dto.ssoStartUrl, 'SSO启动地址', [
+        'http:',
+        'https:',
+      ]),
       authMode,
       accessMode,
-      allowedRoles:
-        accessMode === 'all' ? [] : this.normalizeRoles(dto.allowedRoles),
+      allowedRoles,
       category: dto.category
         ? this.requireText(dto.category, '系统分类')
         : '业务系统',
@@ -429,9 +515,12 @@ export class ExternalSystemService {
     if (!oauthClientId) return;
     const client = await this.prisma.oauth2Client.findUnique({
       where: { clientId: oauthClientId },
-      select: { clientId: true },
+      select: { clientId: true, status: true },
     });
     if (!client) throw new NotFoundException('关联的 OAuth2 应用不存在');
+    if (client.status !== ACTIVE_STATUS) {
+      throw new BadRequestException('关联的 OAuth2 应用已停用');
+    }
   }
 
   private normalizeCode(code: string) {
@@ -482,6 +571,17 @@ export class ExternalSystemService {
     return normalized ? this.normalizeUrl(normalized, label, protocols) : null;
   }
 
+  private sanitizePortalUrl(value: string | null, protocols: string[]) {
+    if (!value?.trim()) return null;
+    try {
+      return this.normalizeUrl(value, '地址', protocols);
+    } catch {
+      // Legacy rows may contain values written before URL validation was
+      // introduced. Do not expose them as clickable portal links.
+      return null;
+    }
+  }
+
   private normalizeUrl(value: string, label: string, protocols: string[]) {
     let parsed: URL;
     try {
@@ -497,7 +597,18 @@ export class ExternalSystemService {
     ) {
       throw new BadRequestException(`${label}只允许安全的 URL 地址`);
     }
+    if (
+      this.isProduction() &&
+      ['http:', 'https:'].includes(parsed.protocol) &&
+      parsed.protocol !== 'https:'
+    ) {
+      throw new BadRequestException(`生产环境${label}必须使用 HTTPS`);
+    }
     return parsed.toString();
+  }
+
+  private isProduction() {
+    return this.configService.get<string>('NODE_ENV') === 'production';
   }
 
   private throwUniqueConflict(error: unknown): void {

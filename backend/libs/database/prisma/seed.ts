@@ -1,7 +1,21 @@
+import { existsSync } from 'node:fs';
+import path from 'node:path';
+import { config as loadEnvironment } from 'dotenv';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
+for (const environmentFile of [
+  path.resolve(process.cwd(), '.env'),
+  path.resolve(process.cwd(), '..', '.env'),
+]) {
+  if (existsSync(environmentFile)) loadEnvironment({ path: environmentFile });
+}
+
 const prisma = new PrismaClient();
+
+function getExternalSystemUrl(environmentVariable: string, fallback: string) {
+  return process.env[environmentVariable]?.trim() || fallback;
+}
 
 const UNITS: Array<{ unitCode: string; unit: string }> = [
   { unitCode: '01', unit: 'kg' },
@@ -70,7 +84,10 @@ const EXTERNAL_SYSTEMS = [
     description: '预算编制、执行和分析管理',
     icon: 'mdi:finance',
     color: '#18a058',
-    entryUrl: 'http://8.135.70.130:8002/',
+    entryUrl: getExternalSystemUrl(
+      'EXTERNAL_BUDGET_URL',
+      'http://localhost:8002/',
+    ),
     authMode: 'link',
     category: '业务系统',
     sort: 10,
@@ -81,7 +98,10 @@ const EXTERNAL_SYSTEMS = [
     description: '订单、采购、库存和财务业务管理',
     icon: 'mdi:domain',
     color: '#2080f0',
-    entryUrl: 'http://192.168.5.202:8001/',
+    entryUrl: getExternalSystemUrl(
+      'EXTERNAL_ERP_URL',
+      'http://localhost:8001/',
+    ),
     authMode: 'link',
     category: '业务系统',
     sort: 20,
@@ -92,7 +112,10 @@ const EXTERNAL_SYSTEMS = [
     description: '生产计划、制造过程和现场执行管理',
     icon: 'mdi:factory',
     color: '#f0a020',
-    entryUrl: 'https://lemos-case.com/mes/',
+    entryUrl: getExternalSystemUrl(
+      'EXTERNAL_MES_URL',
+      'http://localhost:8004/',
+    ),
     authMode: 'link',
     category: '业务系统',
     sort: 30,
@@ -103,7 +126,10 @@ const EXTERNAL_SYSTEMS = [
     description: '客户、商机和销售过程管理',
     icon: 'mdi:account-group',
     color: '#d03050',
-    entryUrl: 'https://lemos-case.com/crm/',
+    entryUrl: getExternalSystemUrl(
+      'EXTERNAL_CRM_URL',
+      'http://localhost:5174/',
+    ),
     authMode: 'link',
     category: '业务系统',
     sort: 40,
@@ -114,7 +140,10 @@ const EXTERNAL_SYSTEMS = [
     description: '企业综合业务平台',
     icon: 'mdi:web',
     color: '#8a2be2',
-    entryUrl: 'https://lemos-case.com/',
+    entryUrl: getExternalSystemUrl(
+      'EXTERNAL_LEMOS_URL',
+      'http://localhost:8005/',
+    ),
     authMode: 'link',
     category: '业务系统',
     sort: 50,

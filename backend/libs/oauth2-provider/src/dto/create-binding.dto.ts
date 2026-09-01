@@ -1,5 +1,6 @@
 import {
   IsInt,
+  IsNotEmpty,
   IsOptional,
   IsString,
   MaxLength,
@@ -15,9 +16,10 @@ export class CreateBindingDto {
   @MaxLength(128)
   clientId!: string;
 
-  @IsInt()
-  @Min(1)
-  appUserId!: number;
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(255)
+  appUserId!: string;
 
   @IsOptional()
   @IsString()

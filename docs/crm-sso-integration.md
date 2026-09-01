@@ -14,6 +14,8 @@ CRM 作为 OAuth 2.0/OIDC 客户端，EIMS 作为统一认证中心。用户访�
 
 EIMS 会将授权请求保存在短期服务端事务中，授权页地址只包含随机 `transaction_id`；CRM 不需要读取或拼接该事务，也不能依赖浏览器地址栏中的 OAuth 参数。
 
+如果 CRM 首页未登录时不能稳定地自动跳转，EIMS 外部系统目录中的“SSO 启动地址”应配置为 CRM 的服务端启动接口，例如 `https://crm.example.com/front/sso/eims/start`。该地址不是 OAuth 回调地址；回调地址仍只填写在 OAuth2 应用的回调白名单中。
+
 ## 2. 需要双方确认的信息
 
 | 项目 | EIMS 提供 | CRM 提供 |
@@ -119,7 +121,7 @@ Authorization: Bearer {ACCESS_TOKEN}
   "name": "张三",
   "preferred_username": "zhangsan",
   "email": "zhangsan@example.com",
-  "app_user_id": 8888,
+  "app_user_id": "8888",
   "app_username": "zhangsan"
 }
 ```
@@ -131,7 +133,7 @@ Authorization: Bearer {ACCESS_TOKEN}
 | `sub` | EIMS 统一用户 ID；作为稳定的跨系统身份标识保存 |
 | `preferred_username` | EIMS 登录账号，不能替代 CRM 本地用户主键 |
 | `email` | 可用于人工核对，不建议单独作为唯一绑定依据 |
-| `app_user_id` | CRM 本地用户 ID；存在时直接登录对应 CRM 用户 |
+| `app_user_id` | CRM 本地用户 ID，始终按字符串处理；存在时直接用该值登录对应 CRM 用户 |
 | `app_username` | CRM 本地用户名，仅用于展示或核对 |
 
 如果没有 `app_user_id`，说明 CRM 账号尚未绑定。CRM 应提示“账号未绑定，请联系管理员”，不得仅凭用户名自动创建高权限账号或放行登录。
