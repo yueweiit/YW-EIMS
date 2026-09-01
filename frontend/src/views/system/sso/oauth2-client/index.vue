@@ -162,14 +162,21 @@ const columns: DataTableColumns<OAuth2ClientRecord> = [
               { default: () => $t("common.edit") },
             ),
             h(
-              NButton,
+              NPopconfirm,
               {
-                size: "small",
-                type: "warning",
-                ghost: true,
-                onClick: () => handleResetSecret(row),
+                positiveText: "确认重置",
+                negativeText: "取消",
+                onPositiveClick: () => handleResetSecret(row),
               },
-              { default: () => "重置密钥" },
+              {
+                trigger: () =>
+                  h(
+                    NButton,
+                    { size: "small", type: "warning", ghost: true },
+                    { default: () => "重置密钥" },
+                  ),
+                default: () => "重置后原密钥会立即失效，确定继续吗？",
+              },
             ),
             h(
               NPopconfirm,
