@@ -1,4 +1,5 @@
 import * as XLSX from 'xlsx';
+import { $t } from '@/locales';
 
 export interface MaterialImportRow {
   applicant: string;
@@ -51,7 +52,7 @@ export function parseExcelFile(file: File): Promise<ImportResult> {
         const sheetName = workbook.SheetNames[0];
 
         if (!sheetName) {
-          reject(new Error('Excel 文件中没有工作表'));
+          reject(new Error($t('page.ui.excelNoWorksheet')));
           return;
         }
 
@@ -59,7 +60,7 @@ export function parseExcelFile(file: File): Promise<ImportResult> {
         const rows = XLSX.utils.sheet_to_json<(string | number | null)[]>(sheet, { header: 1, defval: '' });
 
         if (rows.length < 2) {
-          reject(new Error('Excel 文件至少需要表头行和一行数据'));
+          reject(new Error($t('page.ui.excelNeedRows')));
           return;
         }
 
@@ -67,15 +68,28 @@ export function parseExcelFile(file: File): Promise<ImportResult> {
         const headerIndex = buildHeaderIndex(headers);
 
         if (headerIndex.size === 0) {
-          reject(new Error('未匹配到任何列，请确保表头包含：申请人、物料名称、编码前缀'));
+          reject(
+            new Error(
+              $t('page.ui.excelRequiredHeaderHint', {
+                headers: [$t('page.ui.applicant'), $t('page.ui.materialName'), $t('page.ui.codePrefix')].join($t('page.ui.listSeparator'))
+              })
+            )
+          );
           return;
         }
 
         const requiredFields: (keyof MaterialImportRow)[] = ['applicant', 'materialName', 'codePrefix'];
         for (const field of requiredFields) {
           if (!headerIndex.has(field)) {
-            const label = HEADER_MAP[field][0];
-            reject(new Error(`缺少必填列：${label}`));
+            const labelMap: Record<keyof MaterialImportRow, string> = {
+              applicant: $t('page.ui.applicant'),
+              materialName: $t('page.ui.materialName'),
+              codePrefix: $t('page.ui.codePrefix'),
+              unit: $t('page.ui.unitLabel'),
+              specifications: $t('page.ui.specifications')
+            };
+            const label = labelMap[field];
+            reject(new Error($t('page.ui.excelMissingRequiredColumns', { columns: label })));
             return;
           }
         }
@@ -100,7 +114,7 @@ export function parseExcelFile(file: File): Promise<ImportResult> {
             const value = row[colIdx];
             const str = value != null ? String(value).trim() : '';
             if (str) {
-              (item as Record<string, string>)[field] = str;
+              Object.assign(item, { [field]: str });
             }
           }
 
@@ -113,7 +127,7 @@ export function parseExcelFile(file: File): Promise<ImportResult> {
         }
 
         if (result.length === 0) {
-          reject(new Error('Excel 文件中没有有效数据行（申请人、物料名称、编码前缀不能为空）'));
+          reject(new Error($t('page.ui.excelNoValidRows', { module: $t('page.ui.materialRecords') })));
           return;
         }
 
@@ -125,11 +139,11 @@ export function parseExcelFile(file: File): Promise<ImportResult> {
 
         resolve({ rows: result, matchedColumns, skippedRows });
       } catch (err) {
-        reject(new Error(`解析 Excel 文件失败: ${err instanceof Error ? err.message : String(err)}`));
+        reject(new Error($t('page.ui.excelParseFailure', { message: err instanceof Error ? err.message : String(err) })));
       }
     };
 
-    reader.onerror = () => reject(new Error('读取文件失败'));
+    reader.onerror = () => reject(new Error($t('page.ui.excelReadFailure')));
     reader.readAsArrayBuffer(file);
   });
 }

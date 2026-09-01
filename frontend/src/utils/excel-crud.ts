@@ -1,4 +1,5 @@
 import * as XLSX from 'xlsx';
+import { $t } from '@/locales';
 
 type CellValue = string | number | null | undefined;
 
@@ -56,7 +57,7 @@ export function parseCrudExcelFile<TRecord, TImport extends Record<string, any>>
         const sheetName = workbook.SheetNames[0];
 
         if (!sheetName) {
-          reject(new Error('Excel 文件中没有工作表'));
+          reject(new Error($t('page.ui.excelNoWorksheet')));
           return;
         }
 
@@ -64,7 +65,7 @@ export function parseCrudExcelFile<TRecord, TImport extends Record<string, any>>
         const rows = XLSX.utils.sheet_to_json<unknown[]>(worksheet, { header: 1, defval: '' });
 
         if (rows.length < 2) {
-          reject(new Error('Excel 文件至少需要表头行和一行数据'));
+          reject(new Error($t('page.ui.excelNeedRows')));
           return;
         }
 
@@ -74,7 +75,13 @@ export function parseCrudExcelFile<TRecord, TImport extends Record<string, any>>
         const missingHeaders = requiredColumns.filter(column => !headerMap.has(column.key));
 
         if (missingHeaders.length) {
-          reject(new Error(`缺少必填列：${missingHeaders.map(column => column.label).join('、')}`));
+          reject(
+            new Error(
+              $t('page.ui.excelMissingRequiredColumns', {
+                columns: missingHeaders.map(column => column.label).join($t('page.ui.listSeparator'))
+              })
+            )
+          );
           return;
         }
 
@@ -97,24 +104,29 @@ export function parseCrudExcelFile<TRecord, TImport extends Record<string, any>>
           if (!Object.keys(item).length) return;
 
           if (missingValues.length) {
-            throw new Error(`第 ${rowIndex + 2} 行缺少：${missingValues.map(column => column.label).join('、')}`);
+            throw new Error(
+              $t('page.ui.excelMissingRowValues', {
+                row: rowIndex + 2,
+                fields: missingValues.map(column => column.label).join($t('page.ui.listSeparator'))
+              })
+            );
           }
 
           parsedRows.push(item as TImport);
         });
 
         if (!parsedRows.length) {
-          reject(new Error(`Excel 文件中没有有效的${moduleName}数据`));
+          reject(new Error($t('page.ui.excelNoValidRows', { module: moduleName })));
           return;
         }
 
         resolve({ rows: parsedRows });
       } catch (err) {
-        reject(new Error(`解析 Excel 文件失败: ${err instanceof Error ? err.message : String(err)}`));
+        reject(new Error($t('page.ui.excelParseFailure', { message: err instanceof Error ? err.message : String(err) })));
       }
     };
 
-    reader.onerror = () => reject(new Error('读取 Excel 文件失败'));
+    reader.onerror = () => reject(new Error($t('page.ui.excelReadFailure')));
     reader.readAsArrayBuffer(file);
   });
 }
@@ -130,14 +142,14 @@ export function downloadCrudTemplate<TRecord, TImport>(
     const sampleValue = sample?.[column.key as keyof TImport];
     return sampleValue ?? column.example ?? '';
   });
-  const tip = importColumns.map(column => (column.required ? '必填' : '选填'));
+  const tip = importColumns.map(column => (column.required ? $t('page.ui.requiredField') : $t('page.ui.optionalField')));
 
   const worksheet = XLSX.utils.aoa_to_sheet([header, example, tip]);
   worksheet['!cols'] = importColumns.map(column => ({ wch: Math.max(column.label.length * 2, 14) }));
 
   const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, `${moduleName}导入`);
-  XLSX.writeFile(workbook, `${moduleName}导入模板.xlsx`);
+  XLSX.utils.book_append_sheet(workbook, worksheet, `${moduleName}${$t('page.ui.importSheetSuffix')}`);
+  XLSX.writeFile(workbook, `${moduleName}${$t('page.ui.templateFileSuffix')}.xlsx`);
 }
 
 export function exportCrudRows<TRecord, TImport>(
@@ -161,5 +173,5 @@ export function exportCrudRows<TRecord, TImport>(
 
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, moduleName);
-  XLSX.writeFile(workbook, `${moduleName}数据_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  XLSX.writeFile(workbook, `${moduleName}${$t('page.ui.dataFileSuffix')}_${new Date().toISOString().slice(0, 10)}.xlsx`);
 }
