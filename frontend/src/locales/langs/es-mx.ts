@@ -225,6 +225,7 @@ const local: App.I18n.Schema = {
     500: 'Error del servidor',
     'iframe-page': 'Página externa',
     home: 'Inicio',
+    external: 'Sistemas externos',
     system: 'Administración del sistema',
     system_access: 'Usuarios y permisos',
     system_sso: 'Sistemas externos y SSO',

@@ -226,6 +226,7 @@ const local: App.I18n.Schema = {
     500: '服务器错误',
     'iframe-page': '外链页面',
     home: '首页',
+    external: '外部系统',
     system: '系统管理',
     system_access: '用户与权限',
     system_sso: '外部系统与 SSO',

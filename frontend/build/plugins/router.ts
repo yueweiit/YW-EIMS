@@ -18,6 +18,8 @@ export function setupElegantRouter() {
   };
 
   const systemRouteMeta: Record<string, Partial<RouteMeta>> = {
+    home: { hideInMenu: true },
+    external: { icon: 'mdi:apps-box', order: 1 },
     system_access: { icon: 'mdi:account-cog-outline', order: 10 },
     system_access_user: {
       icon: 'mdi:account-multiple-outline',
