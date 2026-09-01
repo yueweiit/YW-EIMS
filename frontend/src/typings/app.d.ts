@@ -601,6 +601,7 @@ declare namespace App {
             };
           };
         };
+        ui: Record<string, string>;
       };
       form: {
         required: string;
