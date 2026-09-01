@@ -21,7 +21,6 @@ declare module "@elegant-router/types" {
     "404": "/404";
     "500": "/500";
     "home": "/home";
-    "external": "/external";
     "iframe-page": "/iframe-page/:url";
     "login": "/login/:module(pwd-login|code-login|register|reset-pwd|bind-wechat|oauth-consent)?";
     "material": "/material";
@@ -87,7 +86,6 @@ declare module "@elegant-router/types" {
     | "404"
     | "500"
     | "home"
-    | "external"
     | "iframe-page"
     | "login"
     | "material"
@@ -116,7 +114,6 @@ declare module "@elegant-router/types" {
     | "iframe-page"
     | "login"
     | "home"
-    | "external"
     | "material_code-rule"
     | "material_material"
     | "material_unit"

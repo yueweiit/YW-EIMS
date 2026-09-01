@@ -47,18 +47,6 @@ export const generatedRoutes: GeneratedRoute[] = [
       title: 'home',
       i18nKey: 'route.home',
       icon: 'mdi:monitor-dashboard',
-      order: 1,
-      hideInMenu: true
-    }
-  },
-  {
-    name: 'external',
-    path: '/external',
-    component: 'layout.base$view.external',
-    meta: {
-      title: 'external',
-      i18nKey: 'route.external',
-      icon: 'mdi:apps-box',
       order: 1
     }
   },
@@ -262,7 +250,9 @@ export const generatedRoutes: GeneratedRoute[] = [
     component: 'layout.base',
     meta: {
       title: 'system',
-      i18nKey: 'route.system'
+      i18nKey: 'route.system',
+      icon: 'mdi:cog-outline',
+      order: 0
     },
     children: [
       {
