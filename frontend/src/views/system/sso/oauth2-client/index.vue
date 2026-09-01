@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { h, reactive, ref } from "vue";
+import { computed, h, reactive, ref } from "vue";
 import type { DataTableColumns } from "naive-ui";
 import {
   NButton,
@@ -45,12 +45,12 @@ const secretDialogData = ref<{ clientId: string; clientSecret: string } | null>(
   null,
 );
 
-const statusTextMap: Record<string, string> = {
-  "1": "启用",
-  "2": "禁用",
-};
+const statusTextMap = computed<Record<string, string>>(() => ({
+  "1": $t('page.ui.enabled'),
+  "2": $t('page.ui.disabled')
+}));
 
-const columns: DataTableColumns<OAuth2ClientRecord> = [
+const columns = computed<DataTableColumns<OAuth2ClientRecord>>(() => [
   {
     key: "index",
     title: $t("common.index"),
@@ -61,7 +61,7 @@ const columns: DataTableColumns<OAuth2ClientRecord> = [
   },
   {
     key: "name",
-    title: "应用名称",
+    title: $t('page.ui.appName'),
     minWidth: 150,
     ellipsis: { tooltip: true },
   },
@@ -73,7 +73,7 @@ const columns: DataTableColumns<OAuth2ClientRecord> = [
   },
   {
     key: "redirectUris",
-    title: "回调地址",
+    title: $t('page.ui.redirectUri'),
     minWidth: 250,
     render: (row) =>
       h(
@@ -124,19 +124,19 @@ const columns: DataTableColumns<OAuth2ClientRecord> = [
   },
   {
     key: "status",
-    title: "状态",
+    title: $t('page.ui.status'),
     width: 80,
     align: "center",
     render: (row) =>
       h(
         NTag,
         { type: row.status === "1" ? "success" : "error", size: "small" },
-        { default: () => statusTextMap[row.status ?? "2"] },
+        { default: () => statusTextMap.value[row.status ?? "2"] },
       ),
   },
   {
     key: "createTime",
-    title: "创建时间",
+    title: $t('page.ui.createdAt'),
     minWidth: 170,
   },
   {
@@ -164,8 +164,8 @@ const columns: DataTableColumns<OAuth2ClientRecord> = [
             h(
               NPopconfirm,
               {
-                positiveText: "确认重置",
-                negativeText: "取消",
+                positiveText: $t('page.ui.confirmReset'),
+                negativeText: $t('common.cancel'),
                 onPositiveClick: () => handleResetSecret(row),
               },
               {
@@ -173,9 +173,9 @@ const columns: DataTableColumns<OAuth2ClientRecord> = [
                   h(
                     NButton,
                     { size: "small", type: "warning", ghost: true },
-                    { default: () => "重置密钥" },
-                  ),
-                default: () => "重置后原密钥会立即失效，确定继续吗？",
+                    { default: () => $t('page.ui.resetSecret') },
+                ),
+                default: () => $t('page.ui.resetSecretConfirm'),
               },
             ),
             h(
@@ -195,7 +195,7 @@ const columns: DataTableColumns<OAuth2ClientRecord> = [
         },
       ),
   },
-];
+]);
 
 async function getData() {
   startLoading();
@@ -256,14 +256,14 @@ async function handleResetSecret(row: OAuth2ClientRecord) {
   if (!error && data) {
     secretDialogData.value = data;
     secretDialogVisible.value = true;
-    window.$message?.success("密钥已重置");
+    window.$message?.success($t('page.ui.secretReset'));
   }
 }
 
 function copySecret() {
   if (secretDialogData.value?.clientSecret) {
     navigator.clipboard.writeText(secretDialogData.value.clientSecret);
-    window.$message?.success("已复制到剪贴板");
+    window.$message?.success($t('page.ui.copiedToClipboard'));
   }
 }
 
@@ -331,11 +331,11 @@ getData();
     <NModal
       v-model:show="secretDialogVisible"
       preset="card"
-      title="Client Secret"
+      :title="$t('page.ui.copySecret')"
       style="width: 500px"
     >
       <NAlert type="warning" class="mb-16px">
-        请立即保存此 Secret，它只会显示一次。
+        {{ $t('page.ui.secretSaveOnce') }}
       </NAlert>
       <div class="mb-12px">
         <p class="text-12px text-gray-500 mb-4px">Client ID</p>
@@ -352,8 +352,8 @@ getData();
       </div>
       <template #footer>
         <NSpace justify="end">
-          <NButton @click="secretDialogVisible = false">关闭</NButton>
-          <NButton type="primary" @click="copySecret"> 复制 Secret </NButton>
+          <NButton @click="secretDialogVisible = false">{{ $t('page.ui.close') }}</NButton>
+          <NButton type="primary" @click="copySecret">{{ $t('page.ui.copySecret') }}</NButton>
         </NSpace>
       </template>
     </NModal>

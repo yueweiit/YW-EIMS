@@ -84,7 +84,7 @@ const rules = computed<FormRules>(() => ({
           return true;
         }
 
-        return new Error('请输入有效的邮箱地址');
+        return new Error($t('page.ui.emailInvalid'));
       },
       trigger: ['input', 'blur']
     }
@@ -93,10 +93,10 @@ const rules = computed<FormRules>(() => ({
 
 const roleOptions = ref<{ label: string; value: string }[]>([]);
 
-const statusOptions = [
-  { label: '启用', value: '1' },
-  { label: '禁用', value: '2' }
-];
+const statusOptions = computed(() => [
+  { label: $t('page.ui.enabled'), value: '1' },
+  { label: $t('page.ui.disabled'), value: '2' }
+]);
 
 function resetForm() {
   Object.assign(formModel, { ...defaultForm });
@@ -174,55 +174,55 @@ async function handleSubmit() {
   <NDrawer v-model:show="visible" width="420px" placement="right">
     <NDrawerContent :title="title" :native-scrollbar="false">
       <NForm ref="formRef" :model="formModel" :rules="rules" label-placement="left" label-width="90px">
-        <NFormItem label="用户名" path="userName">
+        <NFormItem :label="$t('page.ui.username')" path="userName">
           <NInput v-model:value="formModel.userName" :placeholder="$t('form.userName.required')" />
         </NFormItem>
 
-        <NFormItem label="密码" path="password">
+        <NFormItem :label="$t('page.ui.password')" path="password">
           <NInput
             v-model:value="formModel.password"
             type="password"
-            :placeholder="props.type === 'edit' ? '不修改请留空' : $t('form.pwd.required')"
+            :placeholder="props.type === 'edit' ? $t('page.ui.leaveBlankUnchanged') : $t('form.pwd.required')"
           />
         </NFormItem>
 
-        <NFormItem label="真实姓名" path="realName">
-          <NInput v-model:value="formModel.realName" placeholder="请输入真实姓名" />
+        <NFormItem :label="$t('page.ui.realName')" path="realName">
+          <NInput v-model:value="formModel.realName" :placeholder="$t('page.ui.enterRealName')" />
         </NFormItem>
 
-        <NFormItem label="邮箱" path="email">
-          <NInput v-model:value="formModel.email" placeholder="请输入 ERPNext 用户邮箱" />
+        <NFormItem :label="$t('page.ui.email')" path="email">
+          <NInput v-model:value="formModel.email" :placeholder="$t('page.ui.enterErpNextEmail')" />
         </NFormItem>
 
-        <NFormItem label="钉钉用户标识" path="dingTalkSubject">
+        <NFormItem :label="$t('page.ui.dingTalkSubject')" path="dingTalkSubject">
           <NInput
             v-model:value="formModel.dingTalkSubject"
-            placeholder="填写钉钉 OAuth 返回的 unionId/openId"
+            :placeholder="$t('page.ui.dingTalkSubjectPlaceholder')"
           />
         </NFormItem>
 
-        <NFormItem label="角色" path="roles">
+        <NFormItem :label="$t('page.ui.roles')" path="roles">
           <NSelect
             v-model:value="formModel.roles"
             multiple
             :options="roleOptions"
-            placeholder="请选择角色"
+            :placeholder="$t('page.ui.selectRole')"
           />
         </NFormItem>
 
-        <NFormItem label="按钮权限" path="buttons">
+        <NFormItem :label="$t('page.ui.buttonPermissions')" path="buttons">
           <NSelect
             v-model:value="formModel.buttons"
             multiple
             filterable
             tag
             :options="[]"
-            placeholder="请输入按钮权限标识"
+            :placeholder="$t('page.ui.buttonPermissionPlaceholder')"
           />
         </NFormItem>
 
-        <NFormItem label="状态" path="status">
-          <NSelect v-model:value="formModel.status" :options="statusOptions" placeholder="请选择状态" />
+        <NFormItem :label="$t('page.ui.status')" path="status">
+          <NSelect v-model:value="formModel.status" :options="statusOptions" :placeholder="$t('page.ui.selectStatus')" />
         </NFormItem>
       </NForm>
 

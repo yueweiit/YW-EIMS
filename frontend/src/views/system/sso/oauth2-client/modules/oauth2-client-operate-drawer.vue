@@ -10,6 +10,7 @@ import type {
   CreateOAuth2ClientParams,
   UpdateOAuth2ClientParams,
 } from "@/service/api/oauth2-client";
+import { $t } from '@/locales';
 
 defineOptions({
   name: "OAuth2ClientOperateDrawer",
@@ -46,7 +47,7 @@ const form = ref<CreateOAuth2ClientParams>({ ...defaultForm });
 const newRedirectUri = ref("");
 
 const drawerTitle = computed(() =>
-  props.type === "add" ? "新增 OAuth2 应用" : "编辑 OAuth2 应用",
+  props.type === "add" ? $t('page.ui.newOauthClient') : $t('page.ui.editOauthClient'),
 );
 
 watch(
@@ -86,13 +87,13 @@ function removeRedirectUri(index: number) {
 async function handleSubmit() {
   // Validate
   if (!form.value.name?.trim()) {
-    window.$message?.error("请输入应用名称");
+    window.$message?.error($t('page.ui.enterAppName'));
     return;
   }
 
   const validUris = form.value.redirectUris.filter((uri) => uri.trim());
   if (validUris.length === 0) {
-    window.$message?.error("请至少填写一个回调地址");
+    window.$message?.error($t('page.ui.enterRedirectUri'));
     return;
   }
 
@@ -112,7 +113,7 @@ async function handleSubmit() {
             clientSecret: data.clientSecret,
           });
         }
-        window.$message?.success("创建成功");
+        window.$message?.success($t('page.ui.created'));
         handleClose();
         emit("submitted");
       }
@@ -129,7 +130,7 @@ async function handleSubmit() {
         updateData,
       );
       if (!error) {
-        window.$message?.success("更新成功");
+        window.$message?.success($t('page.ui.updated'));
         handleClose();
         emit("submitted");
       }
@@ -139,31 +140,31 @@ async function handleSubmit() {
   }
 }
 
-const scopeOptions = [
-  { label: "openid - 身份标识", value: "openid" },
-  { label: "profile - 基本资料", value: "profile" },
-  { label: "email - 邮箱地址", value: "email" },
-];
+const scopeOptions = computed(() => [
+  { label: $t('page.ui.oauthOpenid'), value: 'openid' },
+  { label: $t('page.ui.oauthProfile'), value: 'profile' },
+  { label: $t('page.ui.oauthEmail'), value: 'email' }
+]);
 </script>
 
 <template>
   <NDrawer :show="visible" :width="500" @update:show="handleClose">
     <NDrawerContent :title="drawerTitle" closable>
       <NForm label-placement="left" label-width="100">
-        <NFormItem label="应用名称" required>
-          <NInput v-model:value="form.name" placeholder="如：ERP系统" />
+        <NFormItem :label="$t('page.ui.appName')" required>
+          <NInput v-model:value="form.name" :placeholder="$t('page.ui.appNamePlaceholder')" />
         </NFormItem>
 
-        <NFormItem label="描述">
+        <NFormItem :label="$t('page.ui.systemDescription')">
           <NInput
             v-model:value="form.description"
             type="textarea"
             :rows="2"
-            placeholder="应用用途说明"
+            :placeholder="$t('page.ui.appDescription')"
           />
         </NFormItem>
 
-        <NFormItem label="回调地址" required>
+        <NFormItem :label="$t('page.ui.redirectUri')" required>
           <NSpace vertical :size="8" class="w-full">
             <div
               v-for="(uri, index) in form.redirectUris"
@@ -182,7 +183,7 @@ const scopeOptions = [
                 size="small"
                 @click="removeRedirectUri(index)"
               >
-                删除
+                {{ $t('page.ui.remove') }}
               </NButton>
             </div>
             <NButton
@@ -192,7 +193,7 @@ const scopeOptions = [
               dashed
               @click="addRedirectUri"
             >
-              + 添加回调地址
+              {{ $t('page.ui.addRedirectUri') }}
             </NButton>
           </NSpace>
         </NFormItem>
@@ -202,23 +203,23 @@ const scopeOptions = [
             v-model:value="form.scopes"
             :options="scopeOptions"
             multiple
-            placeholder="选择允许的权限范围"
+            :placeholder="$t('page.ui.selectScopes')"
           />
         </NFormItem>
 
-        <NFormItem label="状态">
+        <NFormItem :label="$t('page.ui.status')">
           <NRadioGroup v-model:value="form.status">
-            <NRadio value="1">启用</NRadio>
-            <NRadio value="2">禁用</NRadio>
+            <NRadio value="1">{{ $t('page.ui.enabled') }}</NRadio>
+            <NRadio value="2">{{ $t('page.ui.disabled') }}</NRadio>
           </NRadioGroup>
         </NFormItem>
       </NForm>
 
       <template #footer>
         <NSpace>
-          <NButton @click="handleClose">取消</NButton>
+          <NButton @click="handleClose">{{ $t('common.cancel') }}</NButton>
           <NButton type="primary" :loading="loading" @click="handleSubmit">
-            {{ type === "add" ? "创建" : "保存" }}
+            {{ type === "add" ? $t('common.add') : $t('page.ui.save') }}
           </NButton>
         </NSpace>
       </template>

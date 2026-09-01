@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { NButton, NInput, NSelect, NSpace } from 'naive-ui';
 import { $t } from '@/locales';
 
@@ -15,35 +16,35 @@ interface Emits {
 
 const emit = defineEmits<Emits>();
 
-const entityTypeOptions = [
-  { label: '模具', value: 'MOLD' },
-  { label: '产品', value: 'PRODUCT' },
-  { label: '物料', value: 'MATERIAL' }
-];
+const entityTypeOptions = computed(() => [
+  { label: $t('page.ui.entityMold'), value: 'MOLD' },
+  { label: $t('page.ui.entityProduct'), value: 'PRODUCT' },
+  { label: $t('page.ui.entityMaterial'), value: 'MATERIAL' }
+]);
 
-const statusOptions = [
-  { label: '进行中', value: 'PENDING' },
-  { label: '成功', value: 'SUCCESS' },
-  { label: '失败', value: 'FAILED' },
-  { label: '已跳过', value: 'SKIPPED' }
-];
+const statusOptions = computed(() => [
+  { label: $t('page.ui.syncPending'), value: 'PENDING' },
+  { label: $t('page.ui.syncSuccess'), value: 'SUCCESS' },
+  { label: $t('page.ui.syncFailure'), value: 'FAILED' },
+  { label: $t('page.ui.syncSkipped'), value: 'SKIPPED' }
+]);
 </script>
 
 <template>
   <NSpace align="center" wrap>
-    <NInput v-model:value="model.entityCode" clearable placeholder="请输入编码" class="w-200px" />
+    <NInput v-model:value="model.entityCode" clearable :placeholder="$t('page.ui.enterCode')" class="w-200px" />
     <NSelect
       v-model:value="model.entityType"
       clearable
       :options="entityTypeOptions"
-      placeholder="实体类型"
+      :placeholder="$t('page.ui.entityType')"
       class="w-150px"
     />
     <NSelect
       v-model:value="model.status"
       clearable
       :options="statusOptions"
-      placeholder="状态"
+      :placeholder="$t('page.ui.status')"
       class="w-150px"
     />
     <NButton type="primary" @click="emit('search')">

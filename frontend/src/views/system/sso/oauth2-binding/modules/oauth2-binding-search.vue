@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { $t } from '@/locales';
+
 defineOptions({
   name: 'OAuth2BindingSearch'
 });
@@ -38,13 +40,13 @@ function handleReset() {
   <NSpace :size="16" wrap>
     <NInput
       :value="modelValue.clientId"
-      placeholder="应用 Client ID"
+      :placeholder="$t('page.ui.oauthClientId')"
       clearable
       style="width: 200px"
       @update:value="val => updateField('clientId', val)"
       @keyup.enter="emit('search')"
     />
-    <NButton type="primary" @click="emit('search')">搜索</NButton>
-    <NButton @click="handleReset">重置</NButton>
+    <NButton type="primary" @click="emit('search')">{{ $t('common.search') }}</NButton>
+    <NButton @click="handleReset">{{ $t('common.reset') }}</NButton>
   </NSpace>
 </template>

@@ -29,13 +29,13 @@ function reset() {
     <NInput
       v-model:value="model.codePrefix"
       clearable
-      placeholder="请输入编码前缀"
+      :placeholder="$t('page.ui.enterPrefix')"
       class="w-200px"
     />
     <NInput
       v-model:value="model.explainContent"
       clearable
-      placeholder="请输入前缀说明"
+      :placeholder="$t('page.ui.enterPrefixDescription')"
       class="w-200px"
     />
     <NButton type="primary" @click="search">

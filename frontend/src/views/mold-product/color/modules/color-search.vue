@@ -28,20 +28,20 @@ function reset() {
     <NInput
       v-model:value="model.colorCode"
       clearable
-      placeholder="请输入颜色编码"
+      :placeholder="$t('page.ui.enterColorCode')"
       class="w-200px"
     />
     <NInput
       v-model:value="model.colorName"
       clearable
-      placeholder="请输入颜色名称"
+      :placeholder="$t('page.ui.enterColorName')"
       class="w-200px"
     />
     <NButton type="primary" @click="search">
-      搜索
+      {{ $t('common.search') }}
     </NButton>
     <NButton @click="reset">
-      重置
+      {{ $t('common.reset') }}
     </NButton>
   </NSpace>
 </template>

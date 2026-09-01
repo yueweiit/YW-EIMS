@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import { $t } from '@/locales';
 
 defineOptions({
   name: 'OAuth2ClientSearch'
@@ -35,9 +36,9 @@ function handleReset() {
 
 <template>
   <NSpace wrap>
-    <NInput v-model:value="name" placeholder="应用名称" clearable style="width: 200px" @keyup.enter="handleSearch" />
-    <NButton type="primary" @click="handleSearch">搜索</NButton>
-    <NButton @click="handleReset">重置</NButton>
+    <NInput v-model:value="name" :placeholder="$t('page.ui.appName')" clearable style="width: 200px" @keyup.enter="handleSearch" />
+    <NButton type="primary" @click="handleSearch">{{ $t('common.search') }}</NButton>
+    <NButton @click="handleReset">{{ $t('common.reset') }}</NButton>
   </NSpace>
 </template>
 

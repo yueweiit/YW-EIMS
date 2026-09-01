@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { h, reactive, ref } from 'vue';
+import { computed, h, reactive, ref } from 'vue';
 import type { DataTableColumns } from 'naive-ui';
 import { NButton, NCard, NDataTable, NPopconfirm, NSpace, NTag, NPagination } from 'naive-ui';
 import { useLoading } from '@sa/hooks';
@@ -49,19 +49,26 @@ const formModel = reactive<CreatePermissionParams>({
   status: '1'
 });
 
-const typeTextMap: Record<string, string> = { menu: '菜单', button: '按钮', api: '接口' };
-const statusTextMap: Record<string, string> = { '1': '启用', '2': '禁用' };
-const typeOptions = [
-  { label: '菜单', value: 'menu' },
-  { label: '按钮', value: 'button' },
-  { label: '接口', value: 'api' }
-];
-const statusOptions = [
-  { label: '启用', value: '1' },
-  { label: '禁用', value: '2' }
-];
+const typeTextMap = computed<Record<string, string>>(() => ({
+  menu: $t('page.ui.permissionTypeMenu'),
+  button: $t('page.ui.permissionTypeButton'),
+  api: $t('page.ui.permissionTypeApi')
+}));
+const statusTextMap = computed<Record<string, string>>(() => ({
+  '1': $t('page.ui.enabled'),
+  '2': $t('page.ui.disabled')
+}));
+const typeOptions = computed(() => [
+  { label: $t('page.ui.permissionTypeMenu'), value: 'menu' },
+  { label: $t('page.ui.permissionTypeButton'), value: 'button' },
+  { label: $t('page.ui.permissionTypeApi'), value: 'api' }
+]);
+const statusOptions = computed(() => [
+  { label: $t('page.ui.enabled'), value: '1' },
+  { label: $t('page.ui.disabled'), value: '2' }
+]);
 
-const columns: DataTableColumns<PermissionRecord> = [
+const columns = computed<DataTableColumns<PermissionRecord>>(() => [
   {
     key: 'index',
     title: $t('common.index'),
@@ -71,35 +78,35 @@ const columns: DataTableColumns<PermissionRecord> = [
   },
   {
     key: 'name',
-    title: '权限名称',
+    title: $t('page.ui.permissionName'),
     minWidth: 150,
     render: row => h('div', {}, [h('div', { class: 'font-600' }, row.name), h('div', { class: 'text-12px text-gray-500' }, row.code)])
   },
   {
     key: 'type',
-    title: '类型',
+    title: $t('page.ui.permissionType'),
     width: 80,
-    render: row => h(NTag, { size: 'small', type: row.type === 'menu' ? 'info' : row.type === 'button' ? 'success' : 'warning' }, { default: () => typeTextMap[row.type] })
+    render: row => h(NTag, { size: 'small', type: row.type === 'menu' ? 'info' : row.type === 'button' ? 'success' : 'warning' }, { default: () => typeTextMap.value[row.type] })
   },
   {
     key: 'systemCode',
-    title: '所属系统',
+    title: $t('page.ui.permissionSystem'),
     width: 120,
     render: row => row.systemCode || 'EIMS'
   },
   {
     key: 'routePath',
-    title: '路由/接口标识',
+    title: $t('page.ui.routeApiIdentifier'),
     minWidth: 220,
     ellipsis: { tooltip: true },
     render: row => row.routePath || row.parentCode || '-'
   },
   {
     key: 'status',
-    title: '状态',
+    title: $t('page.ui.status'),
     width: 80,
     align: 'center',
-    render: row => h(NTag, { type: row.status === '1' ? 'success' : 'error', size: 'small' }, { default: () => statusTextMap[row.status] })
+    render: row => h(NTag, { type: row.status === '1' ? 'success' : 'error', size: 'small' }, { default: () => statusTextMap.value[row.status] })
   },
   {
     key: 'operate',
@@ -110,17 +117,17 @@ const columns: DataTableColumns<PermissionRecord> = [
     render: row => h(NSpace, { justify: 'center', size: [8, 0] }, {
       default: () => [
         h(NButton, { size: 'small', type: 'primary', ghost: true, onClick: () => handleEdit(row) }, { default: () => $t('common.edit') }),
-        h(NButton, { size: 'small', type: row.status === '1' ? 'warning' : 'success', ghost: true, onClick: () => handleToggleStatus(row) }, { default: () => row.status === '1' ? '禁用' : '启用' }),
+        h(NButton, { size: 'small', type: row.status === '1' ? 'warning' : 'success', ghost: true, onClick: () => handleToggleStatus(row) }, { default: () => row.status === '1' ? $t('page.ui.disabled') : $t('page.ui.enabled') }),
         h(NPopconfirm, {
           onPositiveClick: () => handleDelete(row)
         }, {
           trigger: () => h(NButton, { size: 'small', type: 'error', ghost: true }, { default: () => $t('common.delete') }),
-          default: () => '删除后该权限与角色的关联也会移除，确认继续？'
+          default: () => $t('page.ui.permissionDeleteConfirm')
         })
       ]
     })
   }
-];
+]);
 
 async function getData() {
   startLoading();
@@ -184,7 +191,7 @@ function handleEdit(row: PermissionRecord) {
 
 async function handleSubmit() {
   if (!formModel.name?.trim() || (drawerType.value === 'add' && !formModel.code?.trim())) {
-    window.$message?.error('请填写权限编码和权限名称');
+    window.$message?.error($t('page.ui.fillPermissionCodeName'));
     return;
   }
   startLoading();
@@ -222,7 +229,7 @@ async function handleSubmit() {
 async function handleToggleStatus(row: PermissionRecord) {
   const { error } = await fetchUpdatePermission(row.id, { status: row.status === '1' ? '2' : '1' });
   if (!error) {
-    window.$message?.success(row.status === '1' ? '权限已禁用' : '权限已启用');
+    window.$message?.success(row.status === '1' ? $t('page.ui.permissionDisabled') : $t('page.ui.permissionEnabled'));
     void getData();
   }
 }
@@ -263,19 +270,19 @@ void getData();
     <NCard :bordered="false">
       <NSpace justify="space-between" align="center" wrap>
         <NSpace :size="12" wrap>
-          <NInput v-model:value="queryParams.name" placeholder="权限名称或编码" clearable class="w-220px" @keyup.enter="handleSearch" />
-          <NSelect v-model:value="queryParams.type" :options="typeOptions" clearable placeholder="权限类型" class="w-130px" />
-          <NSelect v-model:value="queryParams.status" :options="statusOptions" clearable placeholder="状态" class="w-130px" />
-          <NButton type="primary" @click="handleSearch">搜索</NButton>
-          <NButton @click="handleReset">重置</NButton>
+          <NInput v-model:value="queryParams.name" :placeholder="$t('page.ui.permissionNameOrCode')" clearable class="w-220px" @keyup.enter="handleSearch" />
+          <NSelect v-model:value="queryParams.type" :options="typeOptions" clearable :placeholder="$t('page.ui.permissionType')" class="w-130px" />
+          <NSelect v-model:value="queryParams.status" :options="statusOptions" clearable :placeholder="$t('page.ui.status')" class="w-130px" />
+          <NButton type="primary" @click="handleSearch">{{ $t('common.search') }}</NButton>
+          <NButton @click="handleReset">{{ $t('common.reset') }}</NButton>
         </NSpace>
-        <NButton type="primary" @click="handleAdd">新增功能权限</NButton>
+        <NButton type="primary" @click="handleAdd">{{ $t('page.ui.newFunctionPermission') }}</NButton>
       </NSpace>
     </NCard>
 
     <NCard :bordered="false">
       <NAlert type="info" :bordered="false" class="mb-16px">
-        菜单权限控制页面显示，按钮和接口权限供业务页面及后端接口校验使用。禁用权限后，已分配角色也不会再获得该权限。
+        {{ $t('page.ui.permissionNotice') }}
       </NAlert>
       <NDataTable :columns="columns" :data="tableData" :loading="loading" :pagination="false" remote :row-key="row => row.id" striped />
       <div class="flex justify-end mt-16px">
@@ -284,43 +291,43 @@ void getData();
     </NCard>
 
     <NDrawer v-model:show="drawerVisible" width="560px" placement="right">
-      <NDrawerContent :title="drawerType === 'add' ? '新增功能权限' : '编辑功能权限'" closable>
+      <NDrawerContent :title="drawerType === 'add' ? $t('page.ui.newFunctionPermission') : $t('page.ui.editFunctionPermission')" closable>
         <NForm label-placement="left" label-width="100">
-          <NFormItem label="权限编码" required>
-            <NInput v-model:value="formModel.code" :disabled="drawerType === 'edit'" placeholder="如 eims:material:material:create" />
+          <NFormItem :label="$t('page.ui.permissionCode')" required>
+            <NInput v-model:value="formModel.code" :disabled="drawerType === 'edit'" :placeholder="$t('page.ui.permissionCodePlaceholder')" />
           </NFormItem>
-          <NFormItem label="权限名称" required>
-            <NInput v-model:value="formModel.name" placeholder="如 物料新增" />
+          <NFormItem :label="$t('page.ui.permissionName')" required>
+            <NInput v-model:value="formModel.name" :placeholder="$t('page.ui.permissionNamePlaceholder')" />
           </NFormItem>
-          <NFormItem label="权限类型">
+          <NFormItem :label="$t('page.ui.permissionType')">
             <NSelect v-model:value="formModel.type" :options="typeOptions" />
           </NFormItem>
-          <NFormItem label="所属系统">
-            <NSelect v-model:value="formModel.systemCode" :options="systemOptions" clearable filterable placeholder="留空表示 EIMS 内部功能" />
+          <NFormItem :label="$t('page.ui.permissionSystem')">
+            <NSelect v-model:value="formModel.systemCode" :options="systemOptions" clearable filterable :placeholder="$t('page.ui.internalEimsFunction')" />
           </NFormItem>
-          <NFormItem label="父级权限编码">
-            <NInput v-model:value="formModel.parentCode" placeholder="按钮权限可填写所属菜单编码" />
+          <NFormItem :label="$t('page.ui.parentPermissionCode')">
+            <NInput v-model:value="formModel.parentCode" :placeholder="$t('page.ui.parentPermissionPlaceholder')" />
           </NFormItem>
-          <NFormItem label="路由/接口标识">
-            <NInput v-model:value="formModel.routePath" placeholder="如 /material/material" />
+          <NFormItem :label="$t('page.ui.routeApiIdentifier')">
+            <NInput v-model:value="formModel.routePath" :placeholder="$t('page.ui.routePathPlaceholder')" />
           </NFormItem>
-          <NFormItem label="功能说明">
-            <NInput v-model:value="formModel.description" type="textarea" :rows="3" placeholder="说明该权限的用途" />
+          <NFormItem :label="$t('page.ui.functionDescription')">
+            <NInput v-model:value="formModel.description" type="textarea" :rows="3" :placeholder="$t('page.ui.functionDescriptionPlaceholder')" />
           </NFormItem>
-          <NFormItem label="排序">
+          <NFormItem :label="$t('page.ui.sort')">
             <NInputNumber v-model:value="formModel.sort" :min="0" :max="999999" class="w-full" />
           </NFormItem>
-          <NFormItem label="状态">
+          <NFormItem :label="$t('page.ui.status')">
             <NRadioGroup v-model:value="formModel.status">
-              <NRadio value="1">启用</NRadio>
-              <NRadio value="2">禁用</NRadio>
+              <NRadio value="1">{{ $t('page.ui.enabled') }}</NRadio>
+              <NRadio value="2">{{ $t('page.ui.disabled') }}</NRadio>
             </NRadioGroup>
           </NFormItem>
         </NForm>
         <template #footer>
           <NSpace justify="end">
-            <NButton @click="drawerVisible = false">取消</NButton>
-            <NButton type="primary" :loading="loading" @click="handleSubmit">保存</NButton>
+            <NButton @click="drawerVisible = false">{{ $t('common.cancel') }}</NButton>
+            <NButton type="primary" :loading="loading" @click="handleSubmit">{{ $t('page.ui.save') }}</NButton>
           </NSpace>
         </template>
       </NDrawerContent>

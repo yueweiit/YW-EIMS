@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { NButton, NCard, NSpace } from 'naive-ui';
+import { $t } from '@/locales';
 import ProductCard from './modules/ProductCard.vue';
 import { generateBoxLabelPdf } from './modules/pdf-generator';
-import { parseExcelFile, downloadTemplate } from './modules/excel-importer';
+import { parseExcelFile, downloadTemplate as downloadBoxLabelTemplate } from './modules/excel-importer';
 
 defineOptions({ name: 'BoxLabel' });
 
@@ -52,21 +53,25 @@ async function handleFileChange(event: Event) {
   try {
     const result = await parseExcelFile(file);
     products.value = result.products;
-    window.$message?.success(`成功导入 ${result.products.length} 条产品数据`);
+    window.$message?.success($t('page.ui.boxLabelImportSuccess', { count: result.products.length }));
   } catch (err) {
-    window.$message?.error(err instanceof Error ? err.message : '导入失败');
+    window.$message?.error(err instanceof Error ? err.message : $t('page.ui.importFailure'));
   } finally {
     // Reset input so the same file can be re-imported
     input.value = '';
   }
 }
+
+function handleDownloadTemplate() {
+  downloadBoxLabelTemplate();
+}
 </script>
 
 <template>
   <div class="box-label-page">
-    <NCard title="外箱标签生成器" :bordered="false">
+    <NCard :title="$t('page.ui.boxLabelTitle')" :bordered="false">
       <template #header-extra>
-        <span class="text-gray-400">填写产品信息，生成打印标签</span>
+        <span class="text-gray-400">{{ $t('page.ui.boxLabelDescription') }}</span>
       </template>
 
       <!-- Product Cards -->
@@ -92,16 +97,16 @@ async function handleFileChange(event: Event) {
           @change="handleFileChange"
         />
         <NButton type="info" ghost @click="triggerFileInput">
-          📥 导入 Excel
+          📥 {{ $t('page.ui.importExcel') }}
         </NButton>
-        <NButton type="default" ghost @click="downloadTemplate">
-          📄 下载模板
+        <NButton type="default" ghost @click="handleDownloadTemplate">
+          📄 {{ $t('page.ui.downloadTemplate') }}
         </NButton>
         <NButton type="primary" ghost @click="addProduct">
-          + 添加更多产品
+          + {{ $t('page.ui.addProduct') }}
         </NButton>
         <NButton type="primary" @click="handleGeneratePdf">
-          🎯 生成 PDF 标签
+          🎯 {{ $t('page.ui.generatePdfLabel') }}
         </NButton>
       </NSpace>
     </NCard>

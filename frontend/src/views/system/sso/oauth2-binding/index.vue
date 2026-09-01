@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { h, reactive, ref } from 'vue';
+import { computed, h, reactive, ref } from 'vue';
 import type { DataTableColumns } from 'naive-ui';
 import { NButton, NCard, NDataTable, NPopconfirm, NSpace, NPagination } from 'naive-ui';
 import { useLoading } from '@sa/hooks';
@@ -30,7 +30,7 @@ const total = ref(0);
 const drawerVisible = ref(false);
 const editRow = ref<OAuth2BindingRecord | null>(null);
 
-const columns: DataTableColumns<OAuth2BindingRecord> = [
+const columns = computed<DataTableColumns<OAuth2BindingRecord>>(() => [
   {
     key: 'index',
     title: $t('common.index'),
@@ -40,7 +40,7 @@ const columns: DataTableColumns<OAuth2BindingRecord> = [
   },
   {
     key: 'ssoUser',
-    title: 'SSO 用户',
+    title: $t('page.ui.ssoUser'),
     minWidth: 150,
     render: row => {
       const user = row.ssoUser;
@@ -50,7 +50,7 @@ const columns: DataTableColumns<OAuth2BindingRecord> = [
   },
   {
     key: 'client',
-    title: 'OAuth2 应用',
+    title: $t('page.ui.oauthClient'),
     minWidth: 150,
     render: row => {
       const client = row.client;
@@ -60,19 +60,19 @@ const columns: DataTableColumns<OAuth2BindingRecord> = [
   },
   {
     key: 'appUserId',
-    title: '业务系统用户ID',
+    title: $t('page.ui.businessUserId'),
     width: 130,
     align: 'center'
   },
   {
     key: 'appUsername',
-    title: '业务系统用户名',
+    title: $t('page.ui.businessUsername'),
     minWidth: 130,
     render: row => row.appUsername || '-'
   },
   {
     key: 'createdAt',
-    title: '创建时间',
+    title: $t('page.ui.createdAt'),
     minWidth: 170
   },
   {
@@ -100,16 +100,16 @@ const columns: DataTableColumns<OAuth2BindingRecord> = [
                   h(
                     NButton,
                     { size: 'small', type: 'error', ghost: true },
-                    { default: () => '解绑' }
+                    { default: () => $t('page.ui.unbind') }
                   ),
-                default: () => '确认解除此绑定关系？'
+                default: () => $t('page.ui.confirmUnbind')
               }
             )
           ]
         }
       )
   }
-];
+]);
 
 async function getData() {
   startLoading();
@@ -151,7 +151,7 @@ function handleEdit(row: OAuth2BindingRecord) {
 async function handleDelete(row: OAuth2BindingRecord) {
   const { error } = await fetchDeleteOAuth2Binding(row.id);
   if (!error) {
-    window.$message?.success('解绑成功');
+    window.$message?.success($t('page.ui.unbindSuccess'));
     void getData();
   }
 }
@@ -175,7 +175,7 @@ void getData();
     <NCard :bordered="false">
       <NSpace justify="space-between" align="center" wrap>
         <OAuth2BindingSearch v-model="queryParams" @search="handleSearch" @reset="handleReset" />
-        <NButton type="primary" @click="handleAdd">新增绑定</NButton>
+        <NButton type="primary" @click="handleAdd">{{ $t('page.ui.newBinding') }}</NButton>
       </NSpace>
     </NCard>
 

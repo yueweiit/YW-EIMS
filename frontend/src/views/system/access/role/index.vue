@@ -52,8 +52,10 @@ const accessRole = ref<RoleRecord | null>(null);
 const accessCatalog = ref<RoleAccessCatalog>({ systems: [], permissions: [] });
 const accessForm = reactive({ systemCodes: [] as string[], permissionCodes: [] as string[] });
 
-const statusTextMap: Record<string, string> = { '1': '启用', '2': '禁用' };
-const permissionTypeText: Record<string, string> = { menu: '菜单', button: '按钮', api: '接口' };
+const statusTextMap = computed<Record<string, string>>(() => ({
+  '1': $t('page.ui.enabled'),
+  '2': $t('page.ui.disabled')
+}));
 
 const activeSystems = computed(() => accessCatalog.value.systems.filter(system => system.status === '1'));
 const activePermissions = computed(() => accessCatalog.value.permissions.filter(permission => permission.status === '1'));
@@ -69,7 +71,7 @@ const defaultForm = () => ({
   status: '1' as Api.Common.EnableStatus
 });
 
-const columns: DataTableColumns<RoleRecord> = [
+const columns = computed<DataTableColumns<RoleRecord>>(() => [
   {
     key: 'index',
     title: $t('common.index'),
@@ -79,7 +81,7 @@ const columns: DataTableColumns<RoleRecord> = [
   },
   {
     key: 'name',
-    title: '角色名称',
+    title: $t('page.ui.roleName'),
     minWidth: 160,
     render: row =>
       h('div', {}, [
@@ -89,34 +91,34 @@ const columns: DataTableColumns<RoleRecord> = [
   },
   {
     key: 'description',
-    title: '说明',
+    title: $t('page.ui.systemDescription'),
     minWidth: 200,
     ellipsis: { tooltip: true },
     render: row => row.description || '-'
   },
   {
     key: 'systemCodes',
-    title: '可访问系统',
+    title: $t('page.ui.accessibleSystems'),
     minWidth: 190,
-    render: row => (row.systemCodes.length ? row.systemCodes.join('、') : '未单独配置')
+    render: row => (row.systemCodes.length ? row.systemCodes.join('、') : $t('page.ui.notConfiguredSeparately'))
   },
   {
     key: 'permissionCodes',
-    title: '功能权限数',
+    title: $t('page.ui.permissionCount'),
     width: 110,
     align: 'center',
-    render: row => (row.code === 'R_SUPER' ? '全部' : row.permissionCodes.length)
+    render: row => (row.code === 'R_SUPER' ? $t('page.ui.allPermissions') : row.permissionCodes.length)
   },
   {
     key: 'status',
-    title: '状态',
+    title: $t('page.ui.status'),
     width: 80,
     align: 'center',
     render: row =>
       h(
         NTag,
         { type: row.status === '1' ? 'success' : 'error', size: 'small' },
-        { default: () => statusTextMap[row.status] }
+        { default: () => statusTextMap.value[row.status] }
       )
   },
   {
@@ -128,21 +130,21 @@ const columns: DataTableColumns<RoleRecord> = [
     render: row =>
       h(NSpace, { justify: 'center', size: [8, 0] }, {
         default: () => [
-          h(NButton, { size: 'small', type: 'info', ghost: true, onClick: () => handleAccess(row) }, { default: () => '系统/功能' }),
+          h(NButton, { size: 'small', type: 'info', ghost: true, onClick: () => handleAccess(row) }, { default: () => $t('page.ui.systemFunction') }),
           h(NButton, { size: 'small', type: 'primary', ghost: true, onClick: () => handleEdit(row) }, { default: () => $t('common.edit') }),
-          h(NButton, { size: 'small', type: row.status === '1' ? 'warning' : 'success', ghost: true, onClick: () => handleToggleStatus(row) }, { default: () => row.status === '1' ? '禁用' : '启用' }),
+          h(NButton, { size: 'small', type: row.status === '1' ? 'warning' : 'success', ghost: true, onClick: () => handleToggleStatus(row) }, { default: () => row.status === '1' ? $t('page.ui.disabled') : $t('page.ui.enabled') }),
           h(
             NPopconfirm,
             { onPositiveClick: () => handleDelete(row) },
             {
               trigger: () => h(NButton, { size: 'small', type: 'error', ghost: true, disabled: row.builtIn }, { default: () => $t('common.delete') }),
-              default: () => (row.builtIn ? '内置角色不能删除' : '确认删除此角色？')
+              default: () => (row.builtIn ? $t('page.ui.builtInRoleCannotDelete') : $t('page.ui.confirmDeleteRole'))
             }
           )
         ]
       })
   }
-];
+]);
 
 async function getData() {
   startLoading();
@@ -193,7 +195,7 @@ function handleEdit(row: RoleRecord) {
 
 async function handleSubmit() {
   if (!formModel.name?.trim() || (drawerType.value === 'add' && !formModel.code?.trim())) {
-    window.$message?.error('请填写角色编码和角色名称');
+    window.$message?.error($t('page.ui.fillRoleCodeName'));
     return;
   }
   startLoading();
@@ -226,12 +228,12 @@ async function handleSubmit() {
 
 async function handleToggleStatus(row: RoleRecord) {
   if (row.code === 'R_SUPER') {
-    window.$message?.warning('超级管理员角色不能禁用');
+    window.$message?.warning($t('page.ui.superAdminCannotDisable'));
     return;
   }
   const { error } = await fetchUpdateRole(row.id, { status: row.status === '1' ? '2' : '1' });
   if (!error) {
-    window.$message?.success(row.status === '1' ? '角色已禁用' : '角色已启用');
+    window.$message?.success(row.status === '1' ? $t('page.ui.roleDisabled') : $t('page.ui.roleEnabled'));
     void getData();
   }
 }
@@ -276,7 +278,7 @@ async function saveAccess() {
       permissionCodes: accessForm.permissionCodes
     });
     if (!error) {
-      window.$message?.success('角色访问权限已保存');
+      window.$message?.success($t('page.ui.roleAccessSaved'));
       accessVisible.value = false;
       void getData();
     }
@@ -297,18 +299,18 @@ void getData();
     <NCard :bordered="false">
       <NSpace justify="space-between" align="center" wrap>
         <NSpace :size="12" wrap>
-          <NInput v-model:value="queryParams.name" placeholder="角色名称或编码" clearable class="w-220px" @keyup.enter="handleSearch" />
-          <NSelect v-model:value="queryParams.status" :options="[{ label: '启用', value: '1' }, { label: '禁用', value: '2' }]" clearable placeholder="状态" class="w-130px" />
-          <NButton type="primary" @click="handleSearch">搜索</NButton>
-          <NButton @click="handleReset">重置</NButton>
+          <NInput v-model:value="queryParams.name" :placeholder="$t('page.ui.roleNameOrCode')" clearable class="w-220px" @keyup.enter="handleSearch" />
+          <NSelect v-model:value="queryParams.status" :options="[{ label: $t('page.ui.enabled'), value: '1' }, { label: $t('page.ui.disabled'), value: '2' }]" clearable :placeholder="$t('page.ui.status')" class="w-130px" />
+          <NButton type="primary" @click="handleSearch">{{ $t('common.search') }}</NButton>
+          <NButton @click="handleReset">{{ $t('common.reset') }}</NButton>
         </NSpace>
-        <NButton type="primary" @click="handleAdd">新增角色</NButton>
+        <NButton type="primary" @click="handleAdd">{{ $t('page.ui.newRole') }}</NButton>
       </NSpace>
     </NCard>
 
     <NCard :bordered="false">
       <NAlert type="info" :bordered="false" class="mb-16px">
-        角色编码会写入用户账号并参与权限校验，创建后不建议修改。R_SUPER 为系统保留角色，不能禁用或删除。
+        {{ $t('page.ui.roleNotice') }}
       </NAlert>
       <NDataTable :columns="columns" :data="tableData" :loading="loading" :pagination="false" remote :row-key="row => row.id" striped />
       <div class="flex justify-end mt-16px">
@@ -317,59 +319,59 @@ void getData();
     </NCard>
 
     <NDrawer v-model:show="drawerVisible" width="480px" placement="right">
-      <NDrawerContent :title="drawerType === 'add' ? '新增角色' : '编辑角色'" closable>
+      <NDrawerContent :title="drawerType === 'add' ? $t('page.ui.newRole') : $t('page.ui.editRole')" closable>
         <NForm label-placement="left" label-width="90">
-          <NFormItem label="角色编码" required>
-            <NInput v-model:value="formModel.code" :disabled="drawerType === 'edit'" placeholder="如 R_PURCHASE" />
+          <NFormItem :label="$t('page.ui.roleCode')" required>
+            <NInput v-model:value="formModel.code" :disabled="drawerType === 'edit'" :placeholder="$t('page.ui.roleCodePlaceholder')" />
           </NFormItem>
-          <NFormItem label="角色名称" required>
-            <NInput v-model:value="formModel.name" placeholder="如 采购人员" />
+          <NFormItem :label="$t('page.ui.roleName')" required>
+            <NInput v-model:value="formModel.name" :placeholder="$t('page.ui.roleNamePlaceholder')" />
           </NFormItem>
-          <NFormItem label="角色说明">
-            <NInput v-model:value="formModel.description" type="textarea" :rows="3" placeholder="说明该角色负责的业务范围" />
+          <NFormItem :label="$t('page.ui.roleDescription')">
+            <NInput v-model:value="formModel.description" type="textarea" :rows="3" :placeholder="$t('page.ui.roleDescriptionPlaceholder')" />
           </NFormItem>
-          <NFormItem label="排序">
+          <NFormItem :label="$t('page.ui.sort')">
             <NInputNumber v-model:value="formModel.sort" :min="0" :max="999999" class="w-full" />
           </NFormItem>
-          <NFormItem label="状态">
+          <NFormItem :label="$t('page.ui.status')">
             <NRadioGroup v-model:value="formModel.status">
-              <NRadio value="1">启用</NRadio>
-              <NRadio value="2">禁用</NRadio>
+              <NRadio value="1">{{ $t('page.ui.enabled') }}</NRadio>
+              <NRadio value="2">{{ $t('page.ui.disabled') }}</NRadio>
             </NRadioGroup>
           </NFormItem>
         </NForm>
         <template #footer>
           <NSpace justify="end">
-            <NButton @click="drawerVisible = false">取消</NButton>
-            <NButton type="primary" :loading="loading" @click="handleSubmit">保存</NButton>
+            <NButton @click="drawerVisible = false">{{ $t('common.cancel') }}</NButton>
+            <NButton type="primary" :loading="loading" @click="handleSubmit">{{ $t('page.ui.save') }}</NButton>
           </NSpace>
         </template>
       </NDrawerContent>
     </NDrawer>
 
     <NDrawer v-model:show="accessVisible" width="720px" placement="right">
-      <NDrawerContent :title="`配置权限：${accessRole?.name || ''}`" closable>
+      <NDrawerContent :title="$t('page.ui.configurePermission', { name: accessRole?.name || '' })" closable>
         <NSpin :show="accessLoading">
           <NAlert type="info" :bordered="false" class="mb-16px">
-            系统权限控制首页入口，功能权限控制 EIMS 菜单、按钮和接口。按角色授权的系统可在此配置；“全员开放”系统由外部系统目录控制。R_SUPER 自动拥有全部权限。
+            {{ $t('page.ui.permissionNotice') }}
           </NAlert>
           <NForm label-placement="top">
-            <NFormItem label="允许访问的业务系统">
+            <NFormItem :label="$t('page.ui.allowBusinessSystems')">
               <NCheckboxGroup v-model:value="accessForm.systemCodes">
                 <NGrid :cols="2" :x-gap="16" :y-gap="8">
                   <NGi v-for="system in activeSystems" :key="system.code">
                     <NCheckbox :value="system.code" :disabled="system.accessMode === 'all'">
                       {{ system.name }}（{{ system.code }}）
-                      <NTag v-if="system.accessMode === 'all'" size="small" type="success" :bordered="false">全员开放</NTag>
+                      <NTag v-if="system.accessMode === 'all'" size="small" type="success" :bordered="false">{{ $t('page.ui.allOpen') }}</NTag>
                     </NCheckbox>
                   </NGi>
                 </NGrid>
               </NCheckboxGroup>
-              <div v-if="!activeSystems.length" class="text-12px text-gray-500">暂无启用的外部系统</div>
-              <div v-else class="mt-8px text-12px text-gray-500">“全员开放”系统由外部系统目录的访问策略控制，不受单个角色取消勾选影响。</div>
+              <div v-if="!activeSystems.length" class="text-12px text-gray-500">{{ $t('page.ui.noActiveExternalSystems') }}</div>
+              <div v-else class="mt-8px text-12px text-gray-500">{{ $t('page.ui.allOpenNotice') }}</div>
             </NFormItem>
 
-            <NFormItem label="菜单权限">
+            <NFormItem :label="$t('page.ui.menuPermissions')">
               <NGrid :cols="2" :x-gap="16" :y-gap="8">
                 <NGi v-for="permission in menuPermissions" :key="permission.code">
                   <NCheckbox :checked="permissionChecked(permission.code)" @update:checked="value => togglePermission(permission.code, value)">
@@ -379,7 +381,7 @@ void getData();
               </NGrid>
             </NFormItem>
 
-            <NFormItem v-if="buttonPermissions.length" label="按钮权限">
+            <NFormItem v-if="buttonPermissions.length" :label="$t('page.ui.buttonPermissions')">
               <NGrid :cols="2" :x-gap="16" :y-gap="8">
                 <NGi v-for="permission in buttonPermissions" :key="permission.code">
                   <NCheckbox :checked="permissionChecked(permission.code)" @update:checked="value => togglePermission(permission.code, value)">
@@ -389,7 +391,7 @@ void getData();
               </NGrid>
             </NFormItem>
 
-            <NFormItem v-if="apiPermissions.length" label="接口权限">
+            <NFormItem v-if="apiPermissions.length" :label="$t('page.ui.apiPermissions')">
               <NGrid :cols="2" :x-gap="16" :y-gap="8">
                 <NGi v-for="permission in apiPermissions" :key="permission.code">
                   <NCheckbox :checked="permissionChecked(permission.code)" @update:checked="value => togglePermission(permission.code, value)">
@@ -402,8 +404,8 @@ void getData();
         </NSpin>
         <template #footer>
           <NSpace justify="end">
-            <NButton @click="accessVisible = false">取消</NButton>
-            <NButton type="primary" :loading="accessLoading" @click="saveAccess">保存权限</NButton>
+            <NButton @click="accessVisible = false">{{ $t('common.cancel') }}</NButton>
+            <NButton type="primary" :loading="accessLoading" @click="saveAccess">{{ $t('page.ui.savePermissions') }}</NButton>
           </NSpace>
         </template>
       </NDrawerContent>

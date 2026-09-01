@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { NButton, NInput, NSelect, NSpace } from 'naive-ui';
 import { $t } from '@/locales';
 
@@ -15,10 +16,10 @@ interface Emits {
 
 const emit = defineEmits<Emits>();
 
-const statusOptions = [
-  { label: '启用', value: '1' },
-  { label: '禁用', value: '2' }
-];
+const statusOptions = computed(() => [
+  { label: $t('page.ui.enabled'), value: '1' },
+  { label: $t('page.ui.disabled'), value: '2' }
+]);
 
 function search() {
   emit('search');
@@ -41,7 +42,7 @@ function reset() {
       v-model:value="model.status"
       clearable
       :options="statusOptions"
-      placeholder="请选择状态"
+      :placeholder="$t('page.ui.selectStatus')"
       class="w-160px"
     />
     <NButton type="primary" @click="search">

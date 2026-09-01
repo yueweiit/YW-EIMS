@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { h, reactive, ref } from 'vue';
+import { computed, h, reactive, ref } from 'vue';
 import type { DataTableColumns } from 'naive-ui';
 import { NButton, NCard, NDataTable, NPopconfirm, NSpace, NPagination } from 'naive-ui';
 import { useLoading } from '@sa/hooks';
 import { fetchCreateMoldMaterial, fetchDeleteMoldMaterial, fetchMoldMaterialPage } from '@/service/api';
+import { $t } from '@/locales';
 import {
   downloadCrudTemplate,
   exportCrudRows,
@@ -33,21 +34,21 @@ const drawerType = ref<NaiveUI.TableOperateType>('add');
 const editRow = ref<Api.MoldMaterial.MoldMaterialRecord | null>(null);
 
 const excelColumns: ExcelColumn<Api.MoldMaterial.MoldMaterialRecord, Api.MoldMaterial.CreateParams>[] = [
-  { key: 'typeCode', label: '材质编码', required: true, example: 'ABS' },
-  { key: 'typeName', label: '材质名称', required: true, example: 'ABS塑料' }
+  { key: 'typeCode', label: $t('page.ui.materialTypeCode'), required: true, example: 'ABS' },
+  { key: 'typeName', label: $t('page.ui.materialTypeName'), required: true, example: 'ABS plastic' }
 ];
 
-const columns: DataTableColumns<Api.MoldMaterial.MoldMaterialRecord> = [
+const columns = computed<DataTableColumns<Api.MoldMaterial.MoldMaterialRecord>>(() => [
   {
     key: 'index',
-    title: '序号',
+    title: $t('page.ui.serialNumber'),
     width: 60,
     align: 'center',
     render: (_row, index) => (queryParams.current - 1) * queryParams.size + index + 1
   },
   {
     key: 'typeCode',
-    title: '材质编码',
+    title: $t('page.ui.materialTypeCode'),
     minWidth: 140,
     ellipsis: {
       tooltip: true
@@ -55,7 +56,7 @@ const columns: DataTableColumns<Api.MoldMaterial.MoldMaterialRecord> = [
   },
   {
     key: 'typeName',
-    title: '材质名称',
+    title: $t('page.ui.materialTypeName'),
     minWidth: 180,
     ellipsis: {
       tooltip: true
@@ -63,7 +64,7 @@ const columns: DataTableColumns<Api.MoldMaterial.MoldMaterialRecord> = [
   },
   {
     key: 'operate',
-    title: '操作',
+    title: $t('page.ui.operation'),
     width: 160,
     fixed: 'right',
     align: 'center',
@@ -73,7 +74,7 @@ const columns: DataTableColumns<Api.MoldMaterial.MoldMaterialRecord> = [
           h(
             NButton,
             { size: 'small', type: 'primary', ghost: true, onClick: () => handleEdit(row) },
-            { default: () => '编辑' }
+            { default: () => $t('common.edit') }
           ),
           h(
             NPopconfirm,
@@ -83,15 +84,15 @@ const columns: DataTableColumns<Api.MoldMaterial.MoldMaterialRecord> = [
                 h(
                   NButton,
                   { size: 'small', type: 'error', ghost: true },
-                  { default: () => '删除' }
+                  { default: () => $t('common.delete') }
                 ),
-              default: () => '确认删除？'
+              default: () => $t('page.ui.confirmDelete')
             }
           )
         ]
       })
   }
-];
+]);
 
 async function getData() {
   startLoading();
@@ -139,7 +140,7 @@ function handleEdit(row: Api.MoldMaterial.MoldMaterialRecord) {
 async function handleDelete(row: Api.MoldMaterial.MoldMaterialRecord) {
   const { error } = await fetchDeleteMoldMaterial(row.id);
   if (!error) {
-    window.$message?.success('删除成功');
+    window.$message?.success($t('common.deleteSuccess'));
     getData();
   }
 }
@@ -151,13 +152,13 @@ async function fetchExportRows() {
 }
 
 function handleDownloadTemplate() {
-  downloadCrudTemplate(excelColumns, '材质', { typeCode: 'ABS', typeName: 'ABS塑料' });
+  downloadCrudTemplate(excelColumns, $t('page.ui.materialTypeName'), { typeCode: 'ABS', typeName: 'ABS plastic' });
 }
 
 async function handleExport() {
   const rows = await fetchExportRows();
-  exportCrudRows(rows, excelColumns, '材质');
-  window.$message?.success(`已导出 ${rows.length} 条数据`);
+  exportCrudRows(rows, excelColumns, $t('page.ui.materialTypeName'));
+  window.$message?.success($t('page.ui.exportedCount', { count: rows.length }));
 }
 
 function triggerFileInput() {
@@ -172,23 +173,25 @@ async function handleFileChange(event: Event) {
 
   importing.value = true;
   try {
-    const result = await parseCrudExcelFile(file, excelColumns, '材质');
+    const result = await parseCrudExcelFile(file, excelColumns, $t('page.ui.materialTypeName'));
     let success = 0;
     const errors: string[] = [];
 
     for (const [index, row] of result.rows.entries()) {
       const { error } = await fetchCreateMoldMaterial(row);
-      if (error) errors.push(`第 ${index + 2} 行导入失败`);
+      if (error) errors.push($t('page.ui.importRowFailed', { row: index + 2 }));
       else success += 1;
     }
 
     window.$message?.[errors.length ? 'warning' : 'success'](
-      errors.length ? `导入完成：成功 ${success} 条，失败 ${errors.length} 条` : `成功导入 ${success} 条`
+      errors.length
+        ? $t('page.ui.importCompleted', { success, failed: errors.length })
+        : $t('page.ui.importedCount', { count: success })
     );
     if (errors.length) window.$message?.error(errors.slice(0, 3).join('；'));
     getData();
   } catch (err) {
-    window.$message?.error(err instanceof Error ? err.message : '导入失败');
+    window.$message?.error(err instanceof Error ? err.message : $t('page.ui.importFailure'));
   } finally {
     importing.value = false;
   }
@@ -215,10 +218,10 @@ getData();
         <MoldMaterialSearch v-model:model-value="queryParams" @search="handleSearch" @reset="handleReset" />
         <NSpace align="center" wrap>
           <input ref="fileInputRef" type="file" accept=".xlsx,.xls,.csv" style="display: none" @change="handleFileChange" />
-          <NButton type="info" ghost :loading="importing" @click="triggerFileInput">导入 Excel</NButton>
-          <NButton ghost @click="handleDownloadTemplate">下载模板</NButton>
-          <NButton type="success" ghost @click="handleExport">导出 Excel</NButton>
-          <NButton type="primary" @click="handleAdd">新增</NButton>
+          <NButton type="info" ghost :loading="importing" @click="triggerFileInput">{{ $t('page.ui.importExcel') }}</NButton>
+          <NButton ghost @click="handleDownloadTemplate">{{ $t('page.ui.downloadTemplate') }}</NButton>
+          <NButton type="success" ghost @click="handleExport">{{ $t('page.ui.exportExcel') }}</NButton>
+          <NButton type="primary" @click="handleAdd">{{ $t('page.ui.addRecord') }}</NButton>
         </NSpace>
       </NSpace>
     </NCard>

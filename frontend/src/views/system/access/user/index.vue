@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { h, reactive, ref } from 'vue';
+import { computed, h, reactive, ref } from 'vue';
 import type { DataTableColumns } from 'naive-ui';
 import { NButton, NCard, NDataTable, NPopconfirm, NSpace, NTag, NPagination } from 'naive-ui';
 import { useLoading } from '@sa/hooks';
@@ -25,12 +25,12 @@ const drawerVisible = ref(false);
 const drawerType = ref<NaiveUI.TableOperateType>('add');
 const editRow = ref<Api.User.UserRecord | null>(null);
 
-const statusTextMap: Record<string, string> = {
-  '1': '启用',
-  '2': '禁用'
-};
+const statusTextMap = computed<Record<string, string>>(() => ({
+  '1': $t('page.ui.enabled'),
+  '2': $t('page.ui.disabled')
+}));
 
-const columns: DataTableColumns<Api.User.UserRecord> = [
+const columns = computed<DataTableColumns<Api.User.UserRecord>>(() => [
   {
     key: 'index',
     title: $t('common.index'),
@@ -40,7 +40,7 @@ const columns: DataTableColumns<Api.User.UserRecord> = [
   },
   {
     key: 'userName',
-    title: '用户名',
+    title: $t('page.ui.username'),
     minWidth: 120,
     ellipsis: {
       tooltip: true
@@ -48,7 +48,7 @@ const columns: DataTableColumns<Api.User.UserRecord> = [
   },
   {
     key: 'realName',
-    title: '真实姓名',
+    title: $t('page.ui.realName'),
     minWidth: 120,
     ellipsis: {
       tooltip: true
@@ -57,7 +57,7 @@ const columns: DataTableColumns<Api.User.UserRecord> = [
   },
   {
     key: 'email',
-    title: '邮箱',
+    title: $t('page.ui.email'),
     minWidth: 180,
     ellipsis: {
       tooltip: true
@@ -66,7 +66,7 @@ const columns: DataTableColumns<Api.User.UserRecord> = [
   },
   {
     key: 'dingTalkSubject',
-    title: '钉钉绑定',
+    title: $t('page.ui.dingTalkBinding'),
     minWidth: 140,
     ellipsis: {
       tooltip: true
@@ -75,7 +75,7 @@ const columns: DataTableColumns<Api.User.UserRecord> = [
   },
   {
     key: 'roles',
-    title: '角色',
+    title: $t('page.ui.roles'),
     minWidth: 180,
     render: row =>
       h(
@@ -95,14 +95,14 @@ const columns: DataTableColumns<Api.User.UserRecord> = [
   },
   {
     key: 'status',
-    title: '状态',
+    title: $t('page.ui.status'),
     width: 80,
     align: 'center',
-    render: row => statusTextMap[row.status ?? '2']
+    render: row => statusTextMap.value[row.status ?? '2']
   },
   {
     key: 'createTime',
-    title: '创建时间',
+    title: $t('page.ui.createdAt'),
     minWidth: 170
   },
   {
@@ -135,7 +135,7 @@ const columns: DataTableColumns<Api.User.UserRecord> = [
         ]
       })
   }
-];
+]);
 
 async function getData() {
   startLoading();

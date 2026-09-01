@@ -8,6 +8,7 @@ import {
 } from "@/service/api";
 import { useAuthStore } from "@/store/modules/auth";
 import type { OAuth2AuthorizeRequest } from "@/service/api/oauth2-binding";
+import { $t } from '@/locales';
 
 defineOptions({
   name: "OAuthConsent",
@@ -24,7 +25,7 @@ const transactionId = computed(
   () => (route.query.transaction_id as string) || "",
 );
 const clientName = computed(
-  () => consentRequest.value?.clientName || "第三方应用",
+  () => consentRequest.value?.clientName || $t('page.ui.thirdPartyApp'),
 );
 
 onMounted(async () => {
@@ -38,7 +39,7 @@ onMounted(async () => {
   }
 
   if (!transactionId.value) {
-    window.$message?.error("OAuth 授权请求缺少事务标识");
+    window.$message?.error($t('page.ui.oauthMissingTransaction'));
     loading.value = false;
     return;
   }
@@ -47,7 +48,7 @@ onMounted(async () => {
     transactionId.value,
   );
   if (error || !data) {
-    window.$message?.error("OAuth 授权请求无效、已使用或已过期");
+    window.$message?.error($t('page.ui.oauthInvalidRequest'));
     loading.value = false;
     return;
   }
@@ -58,9 +59,9 @@ onMounted(async () => {
 const requestedScopes = computed(() => {
   const scopeList = consentRequest.value?.scopes || [];
   const scopeLabels: Record<string, string> = {
-    openid: "身份标识 (OpenID)",
-    profile: "基本资料 (用户名、姓名)",
-    email: "邮箱地址",
+    openid: $t('page.ui.oauthScopeOpenid'),
+    profile: $t('page.ui.oauthScopeProfile'),
+    email: $t('page.ui.oauthScopeEmail'),
   };
   return scopeList.map((s) => ({
     key: s,
@@ -70,7 +71,7 @@ const requestedScopes = computed(() => {
 
 async function handleConsent(consent: "true" | "false") {
   if (!authStore.isLogin) {
-    window.$message?.error("请先登录 EIMS，再返回 ERP 发起连接");
+    window.$message?.error($t('page.ui.oauthLoginRequired'));
     return;
   }
   if (!transactionId.value || loading.value) return;
@@ -107,15 +108,15 @@ const handleDeny = () => handleConsent("false");
           />
         </svg>
       </NIcon>
-      <h3 class="text-18px font-medium">授权登录</h3>
+      <h3 class="text-18px font-medium">{{ $t('page.ui.oauthAuthorize') }}</h3>
     </div>
 
     <NAlert v-if="!loading" type="info" class="mb-16px">
-      <strong>{{ clientName }}</strong> 请求使用您的 EIMS 账号登录
+      <strong>{{ clientName }}</strong> {{ $t('page.ui.oauthRequestLogin') }}
     </NAlert>
 
     <div v-if="!loading" class="mb-24px">
-      <p class="mb-8px text-14px text-gray-500">该应用将获得以下权限：</p>
+      <p class="mb-8px text-14px text-gray-500">{{ $t('page.ui.oauthPermissionList') }}</p>
       <NList bordered size="small">
         <NListItem v-for="item in requestedScopes" :key="item.key">
           <NIcon class="mr-8px text-green-500">
@@ -145,7 +146,7 @@ const handleDeny = () => handleConsent("false");
         :loading="submitting"
         @click="handleAuthorize"
       >
-        授权登录
+        {{ $t('page.ui.oauthAuthorize') }}
       </NButton>
       <NButton
         size="large"
@@ -154,12 +155,12 @@ const handleDeny = () => handleConsent("false");
         :loading="submitting"
         @click="handleDeny"
       >
-        拒绝
+        {{ $t('page.ui.oauthDeny') }}
       </NButton>
     </NSpace>
 
     <p class="mt-16px text-center text-12px text-gray-400">
-      授权后，该应用将能够访问您上述权限范围内的信息
+      {{ $t('page.ui.oauthAfterAuthorize') }}
     </p>
   </div>
 </template>

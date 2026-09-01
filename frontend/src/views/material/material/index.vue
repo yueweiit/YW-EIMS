@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { h, reactive, ref } from 'vue';
+import { computed, h, reactive, ref } from 'vue';
 import type { DataTableColumns } from 'naive-ui';
 import { NButton, NCard, NDataTable, NPopconfirm, NSpace, NPagination, useDialog } from 'naive-ui';
 import { useLoading } from '@sa/hooks';
+import { $t } from '@/locales';
 import { fetchDeleteMaterial, fetchMaterialPage, fetchImportMaterials, fetchUnitPage, fetchCodeRulePage, fetchSyncFromErp } from '@/service/api';
 import MaterialOperateDrawer from './modules/material-operate-drawer.vue';
 import MaterialSearch from './modules/material-search.vue';
@@ -29,17 +30,17 @@ const fileInputRef = ref<HTMLInputElement | null>(null);
 const importing = ref(false);
 const syncing = ref(false);
 
-const columns: DataTableColumns<Api.Material.MaterialRecord> = [
+const columns = computed<DataTableColumns<Api.Material.MaterialRecord>>(() => [
   {
     key: 'index',
-    title: '序号',
+    title: $t('page.ui.serialNumber'),
     width: 60,
     align: 'center',
     render: (_row, index) => (queryParams.current - 1) * queryParams.size + index + 1
   },
   {
     key: 'applicant',
-    title: '申请人',
+    title: $t('page.ui.applicant'),
     minWidth: 120,
     ellipsis: {
       tooltip: true
@@ -47,13 +48,13 @@ const columns: DataTableColumns<Api.Material.MaterialRecord> = [
   },
   {
     key: 'applicationDate',
-    title: '申请日期',
+    title: $t('page.ui.applicationDate'),
     minWidth: 140,
     render: row => row.applicationDate || '-'
   },
   {
     key: 'materialName',
-    title: '物料名称',
+    title: $t('page.ui.materialName'),
     minWidth: 180,
     ellipsis: {
       tooltip: true
@@ -61,7 +62,7 @@ const columns: DataTableColumns<Api.Material.MaterialRecord> = [
   },
   {
     key: 'specifications',
-    title: '规格',
+    title: $t('page.ui.specifications'),
     minWidth: 160,
     ellipsis: {
       tooltip: true
@@ -70,13 +71,13 @@ const columns: DataTableColumns<Api.Material.MaterialRecord> = [
   },
   {
     key: 'unit',
-    title: '单位',
+    title: $t('page.ui.unitLabel'),
     width: 100,
     render: row => row.unit || '-'
   },
   {
     key: 'code',
-    title: '编码',
+    title: $t('page.ui.code'),
     minWidth: 140,
     ellipsis: {
       tooltip: true
@@ -85,7 +86,7 @@ const columns: DataTableColumns<Api.Material.MaterialRecord> = [
   },
   {
     key: 'codePrefix',
-    title: '编码前缀',
+    title: $t('page.ui.codePrefix'),
     minWidth: 120,
     ellipsis: {
       tooltip: true
@@ -94,7 +95,7 @@ const columns: DataTableColumns<Api.Material.MaterialRecord> = [
   },
   {
     key: 'explainContent',
-    title: '前缀说明',
+    title: $t('page.ui.prefixDescription'),
     minWidth: 160,
     ellipsis: {
       tooltip: true
@@ -103,7 +104,7 @@ const columns: DataTableColumns<Api.Material.MaterialRecord> = [
   },
   {
     key: 'unitCode',
-    title: '单位编码',
+    title: $t('page.ui.unitCode'),
     minWidth: 120,
     ellipsis: {
       tooltip: true
@@ -112,7 +113,7 @@ const columns: DataTableColumns<Api.Material.MaterialRecord> = [
   },
   {
     key: 'operate',
-    title: '操作',
+    title: $t('page.ui.operation'),
     width: 160,
     fixed: 'right',
     align: 'center',
@@ -122,7 +123,7 @@ const columns: DataTableColumns<Api.Material.MaterialRecord> = [
           h(
             NButton,
             { size: 'small', type: 'primary', ghost: true, onClick: () => handleEdit(row) },
-            { default: () => '编辑' }
+            { default: () => $t('common.edit') }
           ),
           h(
             NPopconfirm,
@@ -132,15 +133,15 @@ const columns: DataTableColumns<Api.Material.MaterialRecord> = [
                 h(
                   NButton,
                   { size: 'small', type: 'error', ghost: true },
-                  { default: () => '删除' }
+                  { default: () => $t('common.delete') }
                 ),
-              default: () => '确认删除？'
+              default: () => $t('page.ui.confirmDelete')
             }
           )
         ]
       })
   }
-];
+]);
 
 async function getData() {
   startLoading();
@@ -189,7 +190,7 @@ function handleEdit(row: Api.Material.MaterialRecord) {
 async function handleDelete(row: Api.Material.MaterialRecord) {
   const { error } = await fetchDeleteMaterial(row.id);
   if (!error) {
-    window.$message?.success('删除成功');
+    window.$message?.success($t('common.deleteSuccess'));
     getData();
   }
 }
@@ -214,10 +215,10 @@ function handleExport() {
 
   if (hasFilter) {
     dialog.info({
-      title: '导出 Excel',
-      content: '当前有筛选条件，如何导出？',
-      positiveText: '按筛选条件导出',
-      negativeText: '导出全部',
+      title: $t('page.ui.exportTitle'),
+      content: $t('page.ui.exportQuestion'),
+      positiveText: $t('page.ui.exportWithFilter'),
+      negativeText: $t('page.ui.exportAll'),
       onPositiveClick: () => doExport(true),
       onNegativeClick: () => doExport(false)
     });
@@ -235,7 +236,7 @@ async function doExport(useFilter: boolean) {
     const { data, error } = await fetchMaterialPage(params);
     if (!error && data) {
       exportMaterials(data.records);
-      window.$message?.success(`已导出 ${data.records.length} 条数据`);
+      window.$message?.success($t('page.ui.exportedCount', { count: data.records.length }));
     }
   } finally {
     endLoading();
@@ -268,9 +269,9 @@ async function handleFileChange(event: Event) {
     const result = await parseExcelFile(file);
     const { data, error } = await fetchImportMaterials(result.rows);
     if (!error && data) {
-      const parts = [`成功导入 ${data.success} 条`];
+      const parts = [$t('page.ui.importedCount', { count: data.success })];
       if (data.failed > 0) {
-        parts.push(`失败 ${data.failed} 条`);
+        parts.push($t('page.ui.failedCount', { count: data.failed }));
       }
       window.$message?.success(parts.join('，'));
       if (data.errors.length > 0) {
@@ -279,7 +280,7 @@ async function handleFileChange(event: Event) {
       getData();
     }
   } catch (err) {
-    window.$message?.error(err instanceof Error ? err.message : '导入失败');
+    window.$message?.error(err instanceof Error ? err.message : $t('page.ui.importFailure'));
   } finally {
     input.value = '';
     importing.value = false;
@@ -292,16 +293,16 @@ async function handleSyncFromErp() {
     const { data, error } = await fetchSyncFromErp();
     if (!error && data) {
       window.$message?.success(
-        `同步完成：共 ${data.total} 条物料，新增 ${data.created} 条，跳过 ${data.skipped} 条` +
-        (data.failed > 0 ? `，失败 ${data.failed} 条` : '')
+        $t('page.ui.syncCompleted', { total: data.total, created: data.created, skipped: data.skipped }) +
+        (data.failed > 0 ? `, ${$t('page.ui.failedCount', { count: data.failed })}` : '')
       );
       if (data.errors.length > 0) {
-        window.$message?.warning(`失败明细：${data.errors.join('；')}`, { duration: 10000 });
+        window.$message?.warning($t('page.ui.failureDetails', { details: data.errors.join('; ') }), { duration: 10000 });
       }
       getData();
     }
   } catch (err) {
-    window.$message?.error(err instanceof Error ? err.message : '同步失败，请检查 ERP 连接');
+    window.$message?.error(err instanceof Error ? err.message : $t('page.ui.syncFailureCheckErp'));
   } finally {
     syncing.value = false;
   }
@@ -324,19 +325,19 @@ getData();
             @change="handleFileChange"
           />
           <NButton type="info" ghost :loading="importing" @click="triggerFileInput">
-            导入 Excel
+            {{ $t('page.ui.importExcel') }}
           </NButton>
           <NButton type="default" ghost @click="handleDownloadTemplate">
-            下载模板
+            {{ $t('page.ui.downloadTemplate') }}
           </NButton>
           <NButton type="success" ghost @click="handleExport">
-            导出 Excel
+            {{ $t('page.ui.exportExcel') }}
           </NButton>
           <NButton type="warning" ghost :loading="syncing" @click="handleSyncFromErp">
-            同步 ERP
+            {{ $t('page.ui.syncErp') }}
           </NButton>
           <NButton type="primary" @click="handleAdd">
-            新增
+            {{ $t('page.ui.addRecord') }}
           </NButton>
         </NSpace>
       </NSpace>

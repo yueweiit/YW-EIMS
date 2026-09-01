@@ -83,7 +83,7 @@ function handleDingTalkLogin() {
         :loading="authStore.loginLoading"
         @click="handleDingTalkLogin"
       >
-        钉钉登录
+        {{ $t('page.ui.dingTalkLogin') }}
       </NButton>
     </NSpace>
   </NForm>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { h, reactive, ref } from 'vue';
+import { computed, h, reactive, ref } from 'vue';
 import type { DataTableColumns } from 'naive-ui';
 import { NButton, NPopconfirm, NSpace, NTag } from 'naive-ui';
 import { useLoading } from '@sa/hooks';
@@ -48,7 +48,7 @@ const defaultForm: CreateExternalSystemParams = {
   authMode: 'link',
   accessMode: 'roles',
   allowedRoles: [],
-  category: '业务系统',
+  category: $t('page.ui.businessSystem'),
   helpUrl: '',
   feedbackUrl: '',
   contact: '',
@@ -58,79 +58,79 @@ const defaultForm: CreateExternalSystemParams = {
 };
 const formModel = reactive<CreateExternalSystemParams>({ ...defaultForm });
 
-const statusTextMap: Record<string, string> = {
-  '1': '启用',
-  '2': '禁用'
-};
-const authModeTextMap: Record<string, string> = {
-  link: '普通入口',
-  oauth2: 'OAuth2 绑定'
-};
+const statusTextMap = computed<Record<string, string>>(() => ({
+  '1': $t('page.ui.enabled'),
+  '2': $t('page.ui.disabled')
+}));
+const authModeTextMap = computed<Record<string, string>>(() => ({
+  link: $t('page.ui.ordinaryEntry'),
+  oauth2: $t('page.ui.oauthBinding')
+}));
 const roleOptions = ref<{ label: string; value: string }[]>([]);
-const authModeOptions = [
-  { label: '普通入口（目标系统自行登录）', value: 'link' },
-  { label: 'OAuth2 绑定（进入前先校验绑定）', value: 'oauth2' }
-];
-const accessModeOptions = [
-  { label: '按角色授权（默认拒绝）', value: 'roles' },
-  { label: '所有已登录用户', value: 'all' }
-];
-const statusOptions = [
-  { label: '启用', value: '1' },
-  { label: '禁用', value: '2' }
-];
+const authModeOptions = computed(() => [
+  { label: $t('page.ui.ordinaryEntryDescription'), value: 'link' },
+  { label: $t('page.ui.oauthBindingDescription'), value: 'oauth2' }
+]);
+const accessModeOptions = computed(() => [
+  { label: $t('page.ui.roleAccess'), value: 'roles' },
+  { label: $t('page.ui.allLoggedInUsers'), value: 'all' }
+]);
+const statusOptions = computed(() => [
+  { label: $t('page.ui.enabled'), value: '1' },
+  { label: $t('page.ui.disabled'), value: '2' }
+]);
 
-const columns: DataTableColumns<ExternalSystemRecord> = [
+const columns = computed<DataTableColumns<ExternalSystemRecord>>(() => [
   {
     key: 'name',
-    title: '系统名称',
+    title: $t('page.ui.systemName'),
     minWidth: 140,
     render: row => h('div', {}, [h('div', { class: 'font-600' }, row.name), h('div', { class: 'text-12px text-gray-500' }, row.code)])
   },
   {
     key: 'description',
-    title: '用途说明',
+    title: $t('page.ui.systemDescription'),
     minWidth: 220,
     ellipsis: { tooltip: true },
     render: row => row.description || '-'
   },
   {
     key: 'authMode',
-    title: '登录方式',
+    title: $t('page.ui.loginMode'),
     width: 130,
-    render: row => authModeTextMap[row.authMode] || row.authMode
+    render: row => authModeTextMap.value[row.authMode] || row.authMode
   },
   {
     key: 'allowedRoles',
-    title: '允许角色',
+    title: $t('page.ui.allowedRoles'),
     minWidth: 190,
     render: row =>
       row.accessMode === 'all'
-        ? '所有已登录用户'
+        ? $t('page.ui.allLoggedInUsers')
         : row.allowedRoles.length
         ? h(
             NSpace,
             { wrap: true, size: [4, 4] },
             { default: () => row.allowedRoles.map(role => h(NTag, { size: 'small', type: 'info', bordered: false }, { default: () => role })) }
           )
-          : '未授权角色'
+          : $t('page.ui.unauthorizedRoles')
   },
   {
     key: 'oauthClient',
-    title: 'OAuth2 应用',
+    title: $t('page.ui.oauthClient'),
     minWidth: 150,
     render: row => row.oauthClient?.name || '-'
   },
   {
     key: 'status',
-    title: '状态',
+    title: $t('page.ui.status'),
     width: 80,
     align: 'center',
-    render: row => h(NTag, { type: row.status === '1' ? 'success' : 'error', size: 'small' }, { default: () => statusTextMap[row.status] })
+    render: row => h(NTag, { type: row.status === '1' ? 'success' : 'error', size: 'small' }, { default: () => statusTextMap.value[row.status] })
   },
   {
     key: 'sort',
-    title: '排序',
+    title: $t('page.ui.sort'),
     width: 70,
     align: 'center'
   },
@@ -155,7 +155,7 @@ const columns: DataTableColumns<ExternalSystemRecord> = [
         ]
       })
   }
-];
+]);
 
 async function getData() {
   startLoading();
@@ -254,15 +254,15 @@ async function handleDelete(row: ExternalSystemRecord) {
 
 async function handleSubmit() {
   if (!formModel.name?.trim() || !formModel.entryUrl?.trim()) {
-    window.$message?.error('请填写系统名称和入口地址');
+    window.$message?.error($t('page.ui.fillSystemNameEntry'));
     return;
   }
   if (drawerType.value === 'add' && !formModel.code?.trim()) {
-    window.$message?.error('请填写系统编码');
+    window.$message?.error($t('page.ui.fillSystemCode'));
     return;
   }
   if (formModel.authMode === 'oauth2' && !formModel.oauthClientId) {
-    window.$message?.error('OAuth2 登录方式必须选择 OAuth2 应用');
+    window.$message?.error($t('page.ui.oauthAppRequired'));
     return;
   }
 
@@ -333,7 +333,7 @@ void getData();
         <NSpace :size="12" wrap>
           <NInput
             v-model:value="queryParams.name"
-            placeholder="系统名称"
+            :placeholder="$t('page.ui.systemName')"
             clearable
             style="width: 200px"
             @keyup.enter="handleSearch"
@@ -342,13 +342,13 @@ void getData();
             v-model:value="queryParams.status"
             :options="statusOptions"
             clearable
-            placeholder="状态"
+            :placeholder="$t('page.ui.status')"
             style="width: 130px"
           />
-          <NButton type="primary" @click="handleSearch">搜索</NButton>
-          <NButton @click="handleReset">重置</NButton>
+          <NButton type="primary" @click="handleSearch">{{ $t('common.search') }}</NButton>
+          <NButton @click="handleReset">{{ $t('common.reset') }}</NButton>
         </NSpace>
-        <NButton type="primary" @click="handleAdd">新增系统</NButton>
+        <NButton type="primary" @click="handleAdd">{{ $t('page.ui.newExternalSystem') }}</NButton>
       </NSpace>
     </NCard>
 
@@ -376,88 +376,88 @@ void getData();
     </NCard>
 
     <NDrawer v-model:show="drawerVisible" width="560px" placement="right">
-      <NDrawerContent :title="drawerType === 'add' ? '新增系统目录' : '编辑系统目录'" closable>
+      <NDrawerContent :title="drawerType === 'add' ? $t('page.ui.newExternalCatalog') : $t('page.ui.editExternalCatalog')" closable>
         <NAlert type="info" :bordered="false" class="mb-16px">
-          默认按角色授权且空角色表示拒绝访问；只有明确选择“所有已登录用户”时才会开放给所有已登录用户。选择 OAuth2 绑定后，用户还必须存在对应的账号绑定才能进入。
+          {{ $t('page.ui.accessPolicyNotice') }}
         </NAlert>
         <NForm label-placement="left" label-width="100">
-          <NFormItem label="系统编码" required>
-            <NInput v-model:value="formModel.code" :disabled="drawerType === 'edit'" placeholder="如 erp、crm、mes" />
+          <NFormItem :label="$t('page.ui.systemCode')" required>
+            <NInput v-model:value="formModel.code" :disabled="drawerType === 'edit'" :placeholder="$t('page.ui.systemCodePlaceholder')" />
           </NFormItem>
-          <NFormItem label="系统名称" required>
-            <NInput v-model:value="formModel.name" placeholder="如 ERP系统" />
+          <NFormItem :label="$t('page.ui.systemName')" required>
+            <NInput v-model:value="formModel.name" :placeholder="$t('page.ui.externalSystemNamePlaceholder')" />
           </NFormItem>
-          <NFormItem label="用途说明">
-            <NInput v-model:value="formModel.description" type="textarea" :rows="2" placeholder="员工进入前能看懂的系统用途" />
+          <NFormItem :label="$t('page.ui.systemDescription')">
+            <NInput v-model:value="formModel.description" type="textarea" :rows="2" :placeholder="$t('page.ui.systemDescriptionPlaceholder')" />
           </NFormItem>
-          <NFormItem label="系统分类">
-            <NInput v-model:value="formModel.category" placeholder="如 业务系统、办公系统" />
+          <NFormItem :label="$t('page.ui.systemCategory')">
+            <NInput v-model:value="formModel.category" :placeholder="$t('page.ui.systemCategoryPlaceholder')" />
           </NFormItem>
-          <NFormItem label="入口地址" required>
+          <NFormItem :label="$t('page.ui.entryUrl')" required>
             <NInput v-model:value="formModel.entryUrl" placeholder="https://example.com/" />
           </NFormItem>
-          <NFormItem v-if="formModel.authMode === 'oauth2'" label="SSO启动地址">
+          <NFormItem v-if="formModel.authMode === 'oauth2'" :label="$t('page.ui.ssoStartUrl')">
             <NInput
               v-model:value="formModel.ssoStartUrl"
-              placeholder="可选，如 https://crm.example.com/front/sso/eims/start；留空则使用入口地址"
+              :placeholder="$t('page.ui.ssoStartUrlPlaceholder')"
             />
           </NFormItem>
-          <NFormItem label="登录方式">
+          <NFormItem :label="$t('page.ui.loginMode')">
             <NSelect v-model:value="formModel.authMode" :options="authModeOptions" />
           </NFormItem>
-          <NFormItem label="访问策略">
+          <NFormItem :label="$t('page.ui.accessPolicy')">
             <NSelect v-model:value="formModel.accessMode" :options="accessModeOptions" />
           </NFormItem>
-          <NFormItem v-if="formModel.authMode === 'oauth2'" label="OAuth2 应用" required>
+          <NFormItem v-if="formModel.authMode === 'oauth2'" :label="$t('page.ui.oauthClient')" required>
             <NSelect
               v-model:value="formModel.oauthClientId"
               :options="oauthClientOptions"
               clearable
               filterable
-              placeholder="选择已注册的 OAuth2 应用"
+              :placeholder="$t('page.ui.oauthAppSelect')"
             />
           </NFormItem>
-          <NFormItem label="允许角色">
+          <NFormItem :label="$t('page.ui.allowedRoles')">
             <NSelect
               v-model:value="formModel.allowedRoles"
               :options="roleOptions"
               multiple
               filterable
               tag
-              placeholder="按角色授权时选择角色；留空表示拒绝访问"
+              :placeholder="$t('page.ui.allowedRolesPlaceholder')"
             />
           </NFormItem>
-          <NFormItem label="图标">
+          <NFormItem :label="$t('page.ui.icon')">
             <NInput v-model:value="formModel.icon" placeholder="mdi:domain" />
           </NFormItem>
-          <NFormItem label="颜色">
+          <NFormItem :label="$t('page.ui.color')">
             <NInput v-model:value="formModel.color" placeholder="#2080f0" />
           </NFormItem>
-          <NFormItem label="使用说明地址">
-            <NInput v-model:value="formModel.helpUrl" placeholder="可选，http/https 文档地址" />
+          <NFormItem :label="$t('page.ui.helpUrl')">
+            <NInput v-model:value="formModel.helpUrl" :placeholder="$t('page.ui.helpUrlPlaceholder')" />
           </NFormItem>
-          <NFormItem label="问题反馈地址">
-            <NInput v-model:value="formModel.feedbackUrl" placeholder="可选，http/https 或 mailto 地址" />
+          <NFormItem :label="$t('page.ui.feedbackUrl')">
+            <NInput v-model:value="formModel.feedbackUrl" :placeholder="$t('page.ui.feedbackUrlPlaceholder')" />
           </NFormItem>
-          <NFormItem label="联系方式">
-            <NInput v-model:value="formModel.contact" placeholder="未配置反馈地址时展示，如 信息化管理员" />
+          <NFormItem :label="$t('page.ui.contact')">
+            <NInput v-model:value="formModel.contact" :placeholder="$t('page.ui.contactPlaceholder')" />
           </NFormItem>
-          <NFormItem label="排序">
+          <NFormItem :label="$t('page.ui.sort')">
             <NInputNumber v-model:value="formModel.sort" :min="0" :max="999999" class="w-full" />
           </NFormItem>
-          <NFormItem label="状态">
+          <NFormItem :label="$t('page.ui.status')">
             <NRadioGroup v-model:value="formModel.status">
-              <NRadio value="1">启用</NRadio>
-              <NRadio value="2">禁用</NRadio>
+              <NRadio value="1">{{ $t('page.ui.enabled') }}</NRadio>
+              <NRadio value="2">{{ $t('page.ui.disabled') }}</NRadio>
             </NRadioGroup>
           </NFormItem>
         </NForm>
 
         <template #footer>
           <NSpace justify="end">
-            <NButton @click="drawerVisible = false">取消</NButton>
+            <NButton @click="drawerVisible = false">{{ $t('common.cancel') }}</NButton>
             <NButton type="primary" :loading="loading" @click="handleSubmit">
-              {{ drawerType === 'add' ? '创建' : '保存' }}
+              {{ drawerType === 'add' ? $t('common.add') : $t('page.ui.save') }}
             </NButton>
           </NSpace>
         </template>

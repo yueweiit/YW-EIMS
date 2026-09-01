@@ -4,6 +4,7 @@ import type { FormRules } from 'naive-ui';
 import { NButton, NDrawer, NDrawerContent, NForm, NFormItem, NSelect, NSpace } from 'naive-ui';
 import { fetchCreateMold, fetchMoldCodePage, fetchPhoneModelPage, fetchUpdateMold } from '@/service/api';
 import { useNaiveForm } from '@/hooks/common/form';
+import { $t } from '@/locales';
 
 defineOptions({
   name: 'MoldOperateDrawer'
@@ -42,20 +43,20 @@ const defaultForm: Api.Mold.CreateParams = {
 
 const formModel = reactive<Api.Mold.CreateParams>({ ...defaultForm });
 
-const title = computed(() => (props.type === 'add' ? '新增模具' : '编辑模具'));
+const title = computed(() => (props.type === 'add' ? $t('page.ui.addMold') : $t('page.ui.editMold')));
 
 const rules = computed<FormRules>(() => ({
   moldCode: [
     {
       required: true,
-      message: '请选择模具编码',
+      message: $t('page.ui.selectMoldCode'),
       trigger: 'change'
     }
   ],
   phoneName: [
     {
       required: true,
-      message: '请选择手机名称',
+      message: $t('page.ui.selectPhoneName'),
       trigger: 'change'
     }
   ]
@@ -100,7 +101,7 @@ async function loadMoldCodeOptions() {
       }));
     }
   } catch {
-    window.$message?.error('加载模具编码列表失败');
+    window.$message?.error($t('page.ui.loadMoldCodeListFailed'));
   }
 }
 
@@ -130,7 +131,7 @@ async function loadPhoneNameOptions(searchText = '', reset = true) {
       phoneNameTotal.value = data.total;
     }
   } catch {
-    window.$message?.error('加载手机型号列表失败');
+    window.$message?.error($t('page.ui.loadPhoneModelListFailed'));
   } finally {
     phoneNameLoading.value = false;
   }
@@ -163,14 +164,14 @@ async function handleSubmit() {
     if (props.type === 'add') {
       const { error } = await fetchCreateMold(body);
       if (!error) {
-        window.$message?.success('新增成功');
+        window.$message?.success($t('common.addSuccess'));
         visible.value = false;
         emit('submitted');
       }
     } else if (props.rowData) {
       const { error } = await fetchUpdateMold(props.rowData.id, body);
       if (!error) {
-        window.$message?.success('更新成功');
+        window.$message?.success($t('common.updateSuccess'));
         visible.value = false;
         emit('submitted');
       }
@@ -185,20 +186,20 @@ async function handleSubmit() {
   <NDrawer v-model:show="visible" width="420px" placement="right">
     <NDrawerContent :title="title" :native-scrollbar="false">
       <NForm ref="formRef" :model="formModel" :rules="rules" label-placement="left" label-width="90px">
-        <NFormItem label="模具编码" path="moldCode">
+        <NFormItem :label="$t('page.ui.moldCode')" path="moldCode">
           <NSelect
             v-model:value="formModel.moldCode"
             :options="moldCodeOptions"
-            placeholder="请选择模具编码"
+            :placeholder="$t('page.ui.selectMoldCode')"
             filterable
           />
         </NFormItem>
 
-        <NFormItem label="手机名称" path="phoneName">
+        <NFormItem :label="$t('page.ui.phoneName')" path="phoneName">
           <NSelect
             v-model:value="formModel.phoneName"
             :options="phoneNameOptions"
-            placeholder="请选择手机名称"
+            :placeholder="$t('page.ui.selectPhoneName')"
             filterable
             remote
             :loading="phoneNameLoading"
@@ -211,9 +212,9 @@ async function handleSubmit() {
 
       <template #footer>
         <NSpace justify="end">
-          <NButton @click="visible = false">取消</NButton>
+          <NButton @click="visible = false">{{ $t('common.cancel') }}</NButton>
           <NButton type="primary" :loading="loading" @click="handleSubmit">
-            确定
+            {{ $t('common.confirm') }}
           </NButton>
         </NSpace>
       </template>

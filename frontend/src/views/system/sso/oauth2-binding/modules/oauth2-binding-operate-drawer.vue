@@ -8,6 +8,7 @@ import {
   fetchUserPage
 } from '@/service/api';
 import type { CreateOAuth2BindingParams, OAuth2BindingRecord } from '@/service/api/oauth2-binding';
+import { $t } from '@/locales';
 
 defineOptions({
   name: 'OAuth2BindingOperateDrawer'
@@ -37,7 +38,7 @@ const form = ref<CreateOAuth2BindingParams>({
 const userOptions = ref<{ label: string; value: number }[]>([]);
 const clientOptions = ref<{ label: string; value: string }[]>([]);
 
-const drawerTitle = computed(() => (props.rowData ? '编辑账号绑定' : '新增账号绑定'));
+const drawerTitle = computed(() => (props.rowData ? $t('page.ui.editBinding') : $t('page.ui.newBindingTitle')));
 
 watch(
   () => props.visible,
@@ -89,16 +90,16 @@ function handleClose() {
 
 async function handleSubmit() {
   if (!form.value.ssoUserId) {
-    window.$message?.error('请选择 SSO 用户');
+    window.$message?.error($t('page.ui.selectSsoUser'));
     return;
   }
   if (!form.value.clientId) {
-    window.$message?.error('请选择应用');
+    window.$message?.error($t('page.ui.selectApp'));
     return;
   }
   const appUserId = form.value.appUserId.trim();
   if (!appUserId) {
-    window.$message?.error('请输入业务系统用户ID');
+    window.$message?.error($t('page.ui.enterBusinessUserId'));
     return;
   }
 
@@ -112,7 +113,7 @@ async function handleSubmit() {
       : await fetchCreateOAuth2Binding({ ...form.value, appUserId });
     const { error } = result;
     if (!error) {
-      window.$message?.success(props.rowData ? '保存成功' : '绑定成功');
+      window.$message?.success(props.rowData ? $t('page.ui.saveSuccess') : $t('page.ui.bindingSuccess'));
       handleClose();
       emit('submitted');
     }
@@ -126,45 +127,43 @@ async function handleSubmit() {
   <NDrawer :show="visible" :width="500" @update:show="handleClose">
     <NDrawerContent :title="drawerTitle" closable>
       <NAlert type="info" :bordered="false" class="mb-16px">
-        ERP 绑定时，请填写 ERP 用户的
-        <code>custom_eims_app_user_id</code>
-        字段值，按字符串填写，不是 ERP 用户名或数据库主键。
+        {{ $t('page.ui.erpBindingNotice') }}
       </NAlert>
       <NForm label-placement="left" label-width="120">
-        <NFormItem label="SSO 用户" required>
+        <NFormItem :label="$t('page.ui.ssoUser')" required>
           <NSelect
             v-model:value="form.ssoUserId"
             :options="userOptions"
-            placeholder="选择 EIMS 用户"
+            :placeholder="$t('page.ui.selectEimsUser')"
             filterable
             :disabled="Boolean(props.rowData)"
           />
         </NFormItem>
 
-        <NFormItem label="OAuth2 应用" required>
+        <NFormItem :label="$t('page.ui.oauthClient')" required>
           <NSelect
             v-model:value="form.clientId"
             :options="clientOptions"
-            placeholder="选择目标应用"
+            :placeholder="$t('page.ui.selectTargetApp')"
             filterable
             :disabled="Boolean(props.rowData)"
           />
         </NFormItem>
 
-        <NFormItem label="业务系统用户ID" required>
+        <NFormItem :label="$t('page.ui.businessUserId')" required>
           <NInput
             v-model:value="form.appUserId"
             :maxlength="255"
             show-count
-            placeholder="外部系统用于匹配用户的唯一ID（按字符串填写）"
+            :placeholder="$t('page.ui.businessUserIdPlaceholder')"
             class="w-full"
           />
         </NFormItem>
 
-        <NFormItem label="业务系统用户名">
+        <NFormItem :label="$t('page.ui.businessUsername')">
           <NInput
             v-model:value="form.appUsername"
-            placeholder="业务系统中的用户名（可选，方便展示）"
+            :placeholder="$t('page.ui.businessUsernamePlaceholder')"
           />
         </NFormItem>
 
@@ -172,9 +171,9 @@ async function handleSubmit() {
 
       <template #footer>
         <NSpace>
-          <NButton @click="handleClose">取消</NButton>
+          <NButton @click="handleClose">{{ $t('common.cancel') }}</NButton>
           <NButton type="primary" :loading="loading" @click="handleSubmit">
-            {{ props.rowData ? '保存' : '绑定' }}
+            {{ props.rowData ? $t('page.ui.save') : $t('page.ui.bind') }}
           </NButton>
         </NSpace>
       </template>

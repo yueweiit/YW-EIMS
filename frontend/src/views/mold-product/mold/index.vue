@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { h, reactive, ref } from 'vue';
+import { computed, h, reactive, ref } from 'vue';
 import type { DataTableColumns } from 'naive-ui';
 import { NButton, NCard, NDataTable, NPopconfirm, NSpace, NPagination } from 'naive-ui';
 import { useLoading } from '@sa/hooks';
 import { fetchDeleteMold, fetchImportMolds, fetchMoldCodePage, fetchMoldPage } from '@/service/api';
+import { $t } from '@/locales';
 import MoldOperateDrawer from './modules/mold-operate-drawer.vue';
 import MoldSearch from './modules/mold-search.vue';
 import { downloadTemplate, exportMolds, parseExcelFile } from './modules/mold-excel-importer';
@@ -27,17 +28,17 @@ const editRow = ref<Api.Mold.MoldRecord | null>(null);
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const importing = ref(false);
 
-const columns: DataTableColumns<Api.Mold.MoldRecord> = [
+const columns = computed<DataTableColumns<Api.Mold.MoldRecord>>(() => [
   {
     key: 'index',
-    title: '序号',
+    title: $t('page.ui.serialNumber'),
     width: 60,
     align: 'center',
     render: (_row, index) => (queryParams.current - 1) * queryParams.size + index + 1
   },
   {
     key: 'moldCode',
-    title: '模具编码',
+    title: $t('page.ui.moldCode'),
     minWidth: 140,
     ellipsis: {
       tooltip: true
@@ -45,7 +46,7 @@ const columns: DataTableColumns<Api.Mold.MoldRecord> = [
   },
   {
     key: 'moldType',
-    title: '模具类型',
+    title: $t('page.ui.moldType'),
     minWidth: 120,
     ellipsis: {
       tooltip: true
@@ -54,7 +55,7 @@ const columns: DataTableColumns<Api.Mold.MoldRecord> = [
   },
   {
     key: 'moldName',
-    title: '模具名称',
+    title: $t('page.ui.moldName'),
     minWidth: 160,
     ellipsis: {
       tooltip: true
@@ -63,7 +64,7 @@ const columns: DataTableColumns<Api.Mold.MoldRecord> = [
   },
   {
     key: 'phoneName',
-    title: '手机名称',
+    title: $t('page.ui.phoneName'),
     minWidth: 140,
     ellipsis: {
       tooltip: true
@@ -72,7 +73,7 @@ const columns: DataTableColumns<Api.Mold.MoldRecord> = [
   },
   {
     key: 'phoneCode',
-    title: '手机编码',
+    title: $t('page.ui.phoneCode'),
     minWidth: 120,
     ellipsis: {
       tooltip: true
@@ -81,7 +82,7 @@ const columns: DataTableColumns<Api.Mold.MoldRecord> = [
   },
   {
     key: 'typeCode',
-    title: '材质编码',
+    title: $t('page.ui.materialTypeCode'),
     minWidth: 120,
     ellipsis: {
       tooltip: true
@@ -90,7 +91,7 @@ const columns: DataTableColumns<Api.Mold.MoldRecord> = [
   },
   {
     key: 'typeName',
-    title: '材质名称',
+    title: $t('page.ui.materialTypeName'),
     minWidth: 140,
     ellipsis: {
       tooltip: true
@@ -99,7 +100,7 @@ const columns: DataTableColumns<Api.Mold.MoldRecord> = [
   },
   {
     key: 'itemCode',
-    title: '项目编码',
+    title: $t('page.ui.projectCode'),
     minWidth: 140,
     ellipsis: {
       tooltip: true
@@ -108,7 +109,7 @@ const columns: DataTableColumns<Api.Mold.MoldRecord> = [
   },
   {
     key: 'operate',
-    title: '操作',
+    title: $t('page.ui.operation'),
     width: 160,
     fixed: 'right',
     align: 'center',
@@ -118,7 +119,7 @@ const columns: DataTableColumns<Api.Mold.MoldRecord> = [
           h(
             NButton,
             { size: 'small', type: 'primary', ghost: true, onClick: () => handleEdit(row) },
-            { default: () => '编辑' }
+            { default: () => $t('common.edit') }
           ),
           h(
             NPopconfirm,
@@ -128,15 +129,15 @@ const columns: DataTableColumns<Api.Mold.MoldRecord> = [
                 h(
                   NButton,
                   { size: 'small', type: 'error', ghost: true },
-                  { default: () => '删除' }
+                  { default: () => $t('common.delete') }
                 ),
-              default: () => '确认删除？'
+              default: () => $t('page.ui.confirmDelete')
             }
           )
         ]
       })
   }
-];
+]);
 
 async function getData() {
   startLoading();
@@ -185,7 +186,7 @@ function handleEdit(row: Api.Mold.MoldRecord) {
 async function handleDelete(row: Api.Mold.MoldRecord) {
   const { error } = await fetchDeleteMold(row.id);
   if (!error) {
-    window.$message?.success('删除成功');
+    window.$message?.success($t('common.deleteSuccess'));
     getData();
   }
 }
@@ -224,10 +225,11 @@ async function handleDownloadTemplate() {
 }
 
 async function handleExport() {
-  const { data, error } = await fetchMoldPage({ current: 1, size: 100, ...queryParams });
+  const exportParams = { ...queryParams, current: 1, size: 100 };
+  const { data, error } = await fetchMoldPage(exportParams);
   if (!error && data) {
     exportMolds(data.records);
-    window.$message?.success('导出成功');
+    window.$message?.success($t('page.ui.exportedCount', { count: data.records.length }));
   }
 }
 
@@ -245,9 +247,9 @@ async function handleFileChange(event: Event) {
     const result = await parseExcelFile(file);
     const { data, error } = await fetchImportMolds({ rows: result.rows });
     if (!error && data) {
-      let msg = `导入完成：成功 ${data.success} 条`;
+      let msg = $t('page.ui.importedCount', { count: data.success });
       if (data.failed > 0) {
-        msg += `，失败 ${data.failed} 条`;
+        msg = $t('page.ui.importCompleted', { success: data.success, failed: data.failed });
         window.$message?.warning(msg, { duration: 8000, closable: true });
       } else {
         window.$message?.success(msg);
@@ -255,7 +257,7 @@ async function handleFileChange(event: Event) {
       getData();
     }
   } catch (e) {
-    window.$message?.error(e instanceof Error ? e.message : '导入失败');
+    window.$message?.error(e instanceof Error ? e.message : $t('page.ui.importFailure'));
   } finally {
     importing.value = false;
     input.value = '';
@@ -270,10 +272,10 @@ async function handleFileChange(event: Event) {
         <MoldSearch v-model:model-value="queryParams" @search="handleSearch" @reset="handleReset" />
         <NSpace>
           <input ref="fileInputRef" type="file" accept=".xlsx,.xls,.csv" style="display: none" @change="handleFileChange" />
-          <NButton type="info" ghost :loading="importing" @click="triggerFileInput">导入 Excel</NButton>
-          <NButton type="default" ghost @click="handleDownloadTemplate">下载模板</NButton>
-          <NButton type="success" ghost @click="handleExport">导出 Excel</NButton>
-          <NButton type="primary" @click="handleAdd">新增</NButton>
+          <NButton type="info" ghost :loading="importing" @click="triggerFileInput">{{ $t('page.ui.importExcel') }}</NButton>
+          <NButton type="default" ghost @click="handleDownloadTemplate">{{ $t('page.ui.downloadTemplate') }}</NButton>
+          <NButton type="success" ghost @click="handleExport">{{ $t('page.ui.exportExcel') }}</NButton>
+          <NButton type="primary" @click="handleAdd">{{ $t('page.ui.addRecord') }}</NButton>
         </NSpace>
       </NSpace>
     </NCard>

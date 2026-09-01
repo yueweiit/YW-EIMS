@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { h, reactive, ref } from 'vue';
+import { computed, h, reactive, ref } from 'vue';
 import type { DataTableColumns } from 'naive-ui';
 import { NButton, NCard, NDataTable, NPagination, NPopconfirm, NSpace, NTag } from 'naive-ui';
 import { useLoading } from '@sa/hooks';
@@ -20,20 +20,20 @@ const queryParams = reactive<Api.ErpNextSyncLog.QueryParams>({
 });
 const total = ref(0);
 
-const entityTypeTagMap: Record<Api.ErpNextSyncLog.EntityType, { label: string; type: 'info' | 'success' | 'default' }> = {
-  MOLD: { label: '模具', type: 'info' },
-  PRODUCT: { label: '产品', type: 'success' },
-  MATERIAL: { label: '物料', type: 'default' }
-};
+const entityTypeTagMap = computed<Record<Api.ErpNextSyncLog.EntityType, { label: string; type: 'info' | 'success' | 'default' }>>(() => ({
+  MOLD: { label: $t('page.ui.entityMold'), type: 'info' },
+  PRODUCT: { label: $t('page.ui.entityProduct'), type: 'success' },
+  MATERIAL: { label: $t('page.ui.entityMaterial'), type: 'default' }
+}));
 
-const statusTagMap: Record<Api.ErpNextSyncLog.SyncLogStatus, { label: string; type: 'success' | 'error' | 'warning' | 'default' }> = {
-  PENDING: { label: '进行中', type: 'default' },
-  SUCCESS: { label: '成功', type: 'success' },
-  FAILED: { label: '失败', type: 'error' },
-  SKIPPED: { label: '已跳过', type: 'warning' }
-};
+const statusTagMap = computed<Record<Api.ErpNextSyncLog.SyncLogStatus, { label: string; type: 'success' | 'error' | 'warning' | 'default' }>>(() => ({
+  PENDING: { label: $t('page.ui.syncPending'), type: 'default' },
+  SUCCESS: { label: $t('page.ui.syncSuccess'), type: 'success' },
+  FAILED: { label: $t('page.ui.syncFailure'), type: 'error' },
+  SKIPPED: { label: $t('page.ui.syncSkipped'), type: 'warning' }
+}));
 
-const columns: DataTableColumns<Api.ErpNextSyncLog.SyncLogRecord> = [
+const columns = computed<DataTableColumns<Api.ErpNextSyncLog.SyncLogRecord>>(() => [
   {
     key: 'index',
     title: $t('common.index'),
@@ -43,49 +43,49 @@ const columns: DataTableColumns<Api.ErpNextSyncLog.SyncLogRecord> = [
   },
   {
     key: 'entityType',
-    title: '实体类型',
+    title: $t('page.ui.entityType'),
     width: 100,
     render: row => {
-      const cfg = entityTypeTagMap[row.entityType] || { label: row.entityType, type: 'default' as const };
+      const cfg = entityTypeTagMap.value[row.entityType] || { label: row.entityType, type: 'default' as const };
       return h(NTag, { size: 'small', type: cfg.type }, { default: () => cfg.label });
     }
   },
   {
     key: 'entityCode',
-    title: '编码',
+    title: $t('page.ui.code'),
     minWidth: 140,
     ellipsis: { tooltip: true }
   },
   {
     key: 'entityName',
-    title: '名称',
+    title: $t('page.ui.name'),
     minWidth: 180,
     ellipsis: { tooltip: true }
   },
   {
     key: 'status',
-    title: '状态',
+    title: $t('page.ui.status'),
     width: 100,
     render: row => {
-      const cfg = statusTagMap[row.status] || { label: row.status, type: 'default' as const };
+      const cfg = statusTagMap.value[row.status] || { label: row.status, type: 'default' as const };
       return h(NTag, { size: 'small', type: cfg.type }, { default: () => cfg.label });
     }
   },
   {
     key: 'message',
-    title: '消息',
+    title: $t('page.ui.message'),
     minWidth: 200,
     ellipsis: { tooltip: true }
   },
   {
     key: 'retryCount',
-    title: '重试次数',
+    title: $t('page.ui.retryCount'),
     width: 90,
     align: 'center'
   },
   {
     key: 'lastTriedAt',
-    title: '最近尝试',
+    title: $t('page.ui.lastAttempt'),
     width: 170,
     render: row => (row.lastTriedAt ? new Date(row.lastTriedAt).toLocaleString() : '-')
   },
@@ -102,13 +102,13 @@ const columns: DataTableColumns<Api.ErpNextSyncLog.SyncLogRecord> = [
         { onPositiveClick: () => handleRetry(row) },
         {
           trigger: () =>
-            h(NButton, { size: 'small', type: 'warning', ghost: true }, { default: () => '重试' }),
-          default: () => '确认重试该同步任务？'
+            h(NButton, { size: 'small', type: 'warning', ghost: true }, { default: () => $t('page.ui.retry') }),
+          default: () => $t('page.ui.confirmRetry')
         }
       );
     }
   }
-];
+]);
 
 async function getData() {
   startLoading();
@@ -141,7 +141,7 @@ function handleReset() {
 async function handleRetry(row: Api.ErpNextSyncLog.SyncLogRecord) {
   const { error } = await fetchRetrySyncLog(row.id);
   if (!error) {
-    window.$message?.success('重试完成');
+    window.$message?.success($t('page.ui.retryCompleted'));
     getData();
   }
 }

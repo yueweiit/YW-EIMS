@@ -94,7 +94,7 @@ onMounted(async () => {
     delete query.dingtalk_ticket;
     await router.replace({ name: "login", query });
   } else if (error) {
-    window.$message?.error("钉钉登录失败，请确认账号已绑定或联系管理员");
+    window.$message?.error($t('page.ui.dingTalkLoginFailed'));
     const query = { ...route.query };
     delete query.dingtalk_error;
     await router.replace({ name: "login", query });

@@ -29,13 +29,13 @@ function reset() {
     <NInput
       v-model:value="model.unitCode"
       clearable
-      placeholder="请输入单位编码"
+      :placeholder="$t('page.ui.enterUnitCode')"
       class="w-200px"
     />
     <NInput
       v-model:value="model.unit"
       clearable
-      placeholder="请输入单位名称"
+      :placeholder="$t('page.ui.enterUnitName')"
       class="w-200px"
     />
     <NButton type="primary" @click="search">

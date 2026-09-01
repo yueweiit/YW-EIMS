@@ -20,12 +20,12 @@ const launchingCode = ref('');
 
 const gap = computed(() => (appStore.isMobile ? 12 : 16));
 
-const bindingStatusText: Record<PortalBindingStatus, string> = {
-  bound: '账号已绑定',
-  unbound: '账号未绑定',
-  not_required: '无需绑定',
-  not_configured: '待配置'
-};
+const bindingStatusText = computed<Record<PortalBindingStatus, string>>(() => ({
+  bound: $t('page.ui.bound'),
+  unbound: $t('page.ui.unbound'),
+  not_required: $t('page.ui.notRequired'),
+  not_configured: $t('page.ui.notConfigured')
+}));
 
 function bindingTagType(status: PortalBindingStatus) {
   const types: Record<PortalBindingStatus, 'default' | 'success' | 'warning' | 'error'> = {
@@ -49,14 +49,14 @@ async function loadSystems() {
 
 function showUnavailableMessage(system: PortalSystemRecord) {
   if (system.bindingStatus === 'unbound') {
-    window.$message?.warning('当前用户尚未绑定该系统账号，请联系管理员');
+    window.$message?.warning($t('page.ui.userNotBound'));
     return;
   }
   if (system.bindingStatus === 'not_configured') {
-    window.$message?.warning('该系统尚未完成统一登录配置，请联系管理员');
+    window.$message?.warning($t('page.ui.systemNotConfigured'));
     return;
   }
-  window.$message?.warning('当前用户暂时不能进入该系统');
+  window.$message?.warning($t('page.ui.systemCannotLaunch'));
 }
 
 async function openSystem(system: PortalSystemRecord) {
@@ -76,7 +76,7 @@ async function openSystem(system: PortalSystemRecord) {
     const { data, error } = await fetchPortalSystemLaunch(system.code);
     if (error || !data?.url) {
       popup?.close();
-      window.$message?.error('系统入口暂时不可用，请联系管理员');
+      window.$message?.error($t('page.ui.systemEntryUnavailable'));
       return;
     }
     if (popup) {
@@ -89,7 +89,7 @@ async function openSystem(system: PortalSystemRecord) {
     }
   } catch {
     popup?.close();
-    window.$message?.error('系统入口暂时不可用，请稍后重试');
+    window.$message?.error($t('page.ui.systemEntryRetry'));
   } finally {
     launchingCode.value = '';
   }
@@ -104,7 +104,7 @@ function showFeedback(system: PortalSystemRecord) {
     openInfo(system.feedbackUrl);
     return;
   }
-  window.$message?.info(system.contact || '请联系信息化管理员反馈问题');
+  window.$message?.info(system.contact || $t('page.ui.feedbackAdmin'));
 }
 
 onMounted(loadSystems);
@@ -123,7 +123,7 @@ onMounted(loadSystems);
     </div>
 
     <NSpin :show="loading">
-      <NEmpty v-if="!loading && !systems.length" description="暂无可访问的系统" />
+      <NEmpty v-if="!loading && !systems.length" :description="$t('page.ui.noAccessibleSystems')" />
       <NGrid v-else :cols="'1 s:2 m:3 l:5'" :x-gap="gap" :y-gap="gap" responsive="screen">
         <NGi v-for="item in systems" :key="item.code" :span="1">
           <NCard
@@ -143,7 +143,7 @@ onMounted(loadSystems);
               <div class="min-w-0 flex-1">
                 <div class="external-name truncate">{{ item.name }}</div>
                 <div class="external-description truncate">
-                  {{ item.description || '已接入的企业业务系统' }}
+                  {{ item.description || $t('page.ui.connectedBusinessSystems') }}
                 </div>
               </div>
               <SvgIcon
@@ -165,9 +165,9 @@ onMounted(loadSystems);
 
             <div class="system-actions mt-8px flex items-center gap-4px">
               <NButton text size="tiny" :disabled="!item.helpUrl" @click.stop="openInfo(item.helpUrl)">
-                使用说明
+                {{ $t('page.ui.usageGuide') }}
               </NButton>
-              <NButton text size="tiny" @click.stop="showFeedback(item)">问题反馈</NButton>
+              <NButton text size="tiny" @click.stop="showFeedback(item)">{{ $t('page.ui.problemFeedback') }}</NButton>
             </div>
           </NCard>
         </NGi>
