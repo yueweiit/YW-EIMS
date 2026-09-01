@@ -1,12 +1,10 @@
 <script setup lang="ts">
-import HeaderBanner from './modules/header-banner.vue';
 import QuickNav from './modules/quick-nav.vue';
 import ExternalNav from './modules/external-nav.vue';
 </script>
 
 <template>
   <div class="home-page">
-    <HeaderBanner />
     <NCard :bordered="false" class="home-section card-wrapper">
       <QuickNav />
     </NCard>

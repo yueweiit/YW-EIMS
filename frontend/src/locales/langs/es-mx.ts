@@ -306,8 +306,6 @@ const local: App.I18n.Schema = {
     },
     home: {
       branchDesc: 'Espacio de trabajo empresarial para la gestión diaria.',
-      greeting: '¡Buenos días, {userName}! Que tengas un día lleno de energía.',
-      weatherDesc: 'Hoy estará parcialmente nublado, 20℃ - 25℃.',
       projectCount: 'Proyectos',
       todo: 'Pendientes',
       message: 'Mensajes',
