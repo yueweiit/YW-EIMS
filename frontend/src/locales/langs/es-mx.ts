@@ -1,6 +1,6 @@
 const local: App.I18n.Schema = {
   system: {
-    title: 'YUEWEI EIMS',
+    title: 'YUEWEI企业信息管理系统',
     updateTitle: 'Notificación de actualización del sistema',
     updateContent: 'Se detectó una nueva versión del sistema. ¿Deseas actualizar la página ahora?',
     updateConfirm: 'Actualizar ahora',
