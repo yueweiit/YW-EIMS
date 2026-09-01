@@ -254,97 +254,143 @@ export const generatedRoutes: GeneratedRoute[] = [
     },
     children: [
       {
-        name: 'system_audit',
-        path: '/system/audit',
-        component: 'view.system_audit',
+        name: 'system_access',
+        path: '/system/access',
         meta: {
-          title: 'system_audit',
-          i18nKey: 'route.system_audit',
-          icon: 'mdi:clipboard-text-clock-outline',
-          permission: 'eims:system:audit',
-          roles: ['R_SUPER', 'R_ADMIN']
-        }
+          title: 'system_access',
+          i18nKey: 'route.system_access',
+          icon: 'mdi:account-cog-outline',
+          order: 10
+        },
+        children: [
+          {
+            name: 'system_access_permission',
+            path: '/system/permission',
+            component: 'view.system_access_permission',
+            meta: {
+              title: 'system_access_permission',
+              i18nKey: 'route.system_access_permission',
+              icon: 'mdi:shield-key-outline',
+              order: 30,
+              permission: 'eims:system:permission',
+              roles: ['R_SUPER', 'R_ADMIN']
+            }
+          },
+          {
+            name: 'system_access_role',
+            path: '/system/role',
+            component: 'view.system_access_role',
+            meta: {
+              title: 'system_access_role',
+              i18nKey: 'route.system_access_role',
+              icon: 'mdi:account-key-outline',
+              order: 20,
+              permission: 'eims:system:role',
+              roles: ['R_SUPER', 'R_ADMIN']
+            }
+          },
+          {
+            name: 'system_access_user',
+            path: '/system/user',
+            component: 'view.system_access_user',
+            meta: {
+              title: 'system_access_user',
+              i18nKey: 'route.system_access_user',
+              icon: 'mdi:account-multiple-outline',
+              order: 10,
+              permission: 'eims:system:user',
+              roles: ['R_SUPER', 'R_ADMIN']
+            }
+          }
+        ]
       },
       {
-        name: 'system_erpnext-sync-log',
-        path: '/system/erpnext-sync-log',
-        component: 'view.system_erpnext-sync-log',
+        name: 'system_operations',
+        path: '/system/operations',
         meta: {
-          title: 'system_erpnext-sync-log',
-          i18nKey: 'route.system_erpnext-sync-log',
-          permission: 'eims:system:erpnext-sync-log'
-        }
+          title: 'system_operations',
+          i18nKey: 'route.system_operations',
+          icon: 'mdi:clipboard-pulse-outline',
+          order: 30
+        },
+        children: [
+          {
+            name: 'system_operations_audit',
+            path: '/system/audit',
+            component: 'view.system_operations_audit',
+            meta: {
+              title: 'system_operations_audit',
+              i18nKey: 'route.system_operations_audit',
+              icon: 'mdi:clipboard-text-clock-outline',
+              order: 10,
+              permission: 'eims:system:audit',
+              roles: ['R_SUPER', 'R_ADMIN']
+            }
+          },
+          {
+            name: 'system_operations_erpnext-sync-log',
+            path: '/system/erpnext-sync-log',
+            component: 'view.system_operations_erpnext-sync-log',
+            meta: {
+              title: 'system_operations_erpnext-sync-log',
+              i18nKey: 'route.system_operations_erpnext-sync-log',
+              icon: 'mdi:clipboard-text-outline',
+              order: 20,
+              permission: 'eims:system:erpnext-sync-log'
+            }
+          }
+        ]
       },
       {
-        name: 'system_external-system',
-        path: '/system/external-system',
-        component: 'view.system_external-system',
+        name: 'system_sso',
+        path: '/system/sso',
         meta: {
-          title: 'system_external-system',
-          i18nKey: 'route.system_external-system',
-          icon: 'mdi:apps-box',
-          permission: 'eims:system:external-system',
-          roles: ['R_SUPER', 'R_ADMIN']
-        }
-      },
-      {
-        name: 'system_oauth2-binding',
-        path: '/system/oauth2-binding',
-        component: 'view.system_oauth2-binding',
-        meta: {
-          title: 'system_oauth2-binding',
-          i18nKey: 'route.system_oauth2-binding',
-          icon: 'mdi:link-variant',
-          permission: 'eims:system:oauth2-binding',
-          roles: ['R_SUPER', 'R_ADMIN']
-        }
-      },
-      {
-        name: 'system_oauth2-client',
-        path: '/system/oauth2-client',
-        component: 'view.system_oauth2-client',
-        meta: {
-          title: 'system_oauth2-client',
-          i18nKey: 'route.system_oauth2-client',
-          icon: 'mdi:key-chain-variant',
-          permission: 'eims:system:oauth2-client',
-          roles: ['R_SUPER', 'R_ADMIN']
-        }
-      },
-      {
-        name: 'system_permission',
-        path: '/system/permission',
-        component: 'view.system_permission',
-        meta: {
-          title: 'system_permission',
-          i18nKey: 'route.system_permission',
-          icon: 'mdi:shield-key-outline',
-          permission: 'eims:system:permission',
-          roles: ['R_SUPER', 'R_ADMIN']
-        }
-      },
-      {
-        name: 'system_role',
-        path: '/system/role',
-        component: 'view.system_role',
-        meta: {
-          title: 'system_role',
-          i18nKey: 'route.system_role',
-          icon: 'mdi:account-key-outline',
-          permission: 'eims:system:role',
-          roles: ['R_SUPER', 'R_ADMIN']
-        }
-      },
-      {
-        name: 'system_user',
-        path: '/system/user',
-        component: 'view.system_user',
-        meta: {
-          title: 'system_user',
-          i18nKey: 'route.system_user',
-          permission: 'eims:system:user',
-          roles: ['R_SUPER', 'R_ADMIN']
-        }
+          title: 'system_sso',
+          i18nKey: 'route.system_sso',
+          icon: 'mdi:key-link',
+          order: 20
+        },
+        children: [
+          {
+            name: 'system_sso_external-system',
+            path: '/system/external-system',
+            component: 'view.system_sso_external-system',
+            meta: {
+              title: 'system_sso_external-system',
+              i18nKey: 'route.system_sso_external-system',
+              icon: 'mdi:apps-box',
+              order: 10,
+              permission: 'eims:system:external-system',
+              roles: ['R_SUPER', 'R_ADMIN']
+            }
+          },
+          {
+            name: 'system_sso_oauth2-binding',
+            path: '/system/oauth2-binding',
+            component: 'view.system_sso_oauth2-binding',
+            meta: {
+              title: 'system_sso_oauth2-binding',
+              i18nKey: 'route.system_sso_oauth2-binding',
+              icon: 'mdi:link-variant',
+              order: 30,
+              permission: 'eims:system:oauth2-binding',
+              roles: ['R_SUPER', 'R_ADMIN']
+            }
+          },
+          {
+            name: 'system_sso_oauth2-client',
+            path: '/system/oauth2-client',
+            component: 'view.system_sso_oauth2-client',
+            meta: {
+              title: 'system_sso_oauth2-client',
+              i18nKey: 'route.system_sso_oauth2-client',
+              icon: 'mdi:key-chain-variant',
+              order: 20,
+              permission: 'eims:system:oauth2-client',
+              roles: ['R_SUPER', 'R_ADMIN']
+            }
+          }
+        ]
       }
     ]
   }

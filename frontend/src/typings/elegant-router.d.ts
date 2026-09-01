@@ -40,14 +40,17 @@ declare module "@elegant-router/types" {
     "oa_approval": "/oa/approval";
     "oa_box-label": "/oa/box-label";
     "system": "/system";
-    "system_audit": "/system/audit";
-    "system_erpnext-sync-log": "/system/erpnext-sync-log";
-    "system_external-system": "/system/external-system";
-    "system_oauth2-binding": "/system/oauth2-binding";
-    "system_oauth2-client": "/system/oauth2-client";
-    "system_permission": "/system/permission";
-    "system_role": "/system/role";
-    "system_user": "/system/user";
+    "system_access": "/system/access";
+    "system_access_permission": "/system/permission";
+    "system_access_role": "/system/role";
+    "system_access_user": "/system/user";
+    "system_operations": "/system/operations";
+    "system_operations_audit": "/system/audit";
+    "system_operations_erpnext-sync-log": "/system/erpnext-sync-log";
+    "system_sso": "/system/sso";
+    "system_sso_external-system": "/system/external-system";
+    "system_sso_oauth2-binding": "/system/oauth2-binding";
+    "system_sso_oauth2-client": "/system/oauth2-client";
   };
 
   /**
@@ -124,14 +127,14 @@ declare module "@elegant-router/types" {
     | "mold-product_product"
     | "oa_approval"
     | "oa_box-label"
-    | "system_audit"
-    | "system_erpnext-sync-log"
-    | "system_external-system"
-    | "system_oauth2-binding"
-    | "system_oauth2-client"
-    | "system_permission"
-    | "system_role"
-    | "system_user"
+    | "system_access_permission"
+    | "system_access_role"
+    | "system_access_user"
+    | "system_operations_audit"
+    | "system_operations_erpnext-sync-log"
+    | "system_sso_external-system"
+    | "system_sso_oauth2-binding"
+    | "system_sso_oauth2-client"
   >;
 
   /**

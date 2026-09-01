@@ -30,7 +30,7 @@ const { loading, startLoading, endLoading } = useLoading(false);
 const form = ref<CreateOAuth2BindingParams>({
   ssoUserId: 0,
   clientId: '',
-  appUserId: 0,
+  appUserId: '',
   appUsername: ''
 });
 
@@ -54,7 +54,7 @@ watch(
         form.value = {
           ssoUserId: 0,
           clientId: '',
-          appUserId: 0,
+          appUserId: '',
           appUsername: ''
         };
       }
@@ -96,7 +96,8 @@ async function handleSubmit() {
     window.$message?.error('请选择应用');
     return;
   }
-  if (!form.value.appUserId || form.value.appUserId <= 0) {
+  const appUserId = form.value.appUserId.trim();
+  if (!appUserId) {
     window.$message?.error('请输入业务系统用户ID');
     return;
   }
@@ -105,10 +106,10 @@ async function handleSubmit() {
   try {
     const result = props.rowData
       ? await fetchUpdateOAuth2Binding(props.rowData.id, {
-          appUserId: form.value.appUserId,
+          appUserId,
           appUsername: form.value.appUsername
         })
-      : await fetchCreateOAuth2Binding(form.value);
+      : await fetchCreateOAuth2Binding({ ...form.value, appUserId });
     const { error } = result;
     if (!error) {
       window.$message?.success(props.rowData ? '保存成功' : '绑定成功');
@@ -127,7 +128,7 @@ async function handleSubmit() {
       <NAlert type="info" :bordered="false" class="mb-16px">
         ERP 绑定时，请填写 ERP 用户的
         <code>custom_eims_app_user_id</code>
-        字段值，不是 ERP 用户名或数据库主键。
+        字段值，按字符串填写，不是 ERP 用户名或数据库主键。
       </NAlert>
       <NForm label-placement="left" label-width="120">
         <NFormItem label="SSO 用户" required>
@@ -151,10 +152,11 @@ async function handleSubmit() {
         </NFormItem>
 
         <NFormItem label="业务系统用户ID" required>
-          <NInputNumber
+          <NInput
             v-model:value="form.appUserId"
-            :min="1"
-            placeholder="ERP 用户的 custom_eims_app_user_id"
+            :maxlength="255"
+            show-count
+            placeholder="外部系统用于匹配用户的唯一ID（按字符串填写）"
             class="w-full"
           />
         </NFormItem>

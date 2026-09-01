@@ -44,6 +44,7 @@ const defaultForm: CreateExternalSystemParams = {
   icon: 'mdi:application-outline',
   color: '#2080f0',
   entryUrl: '',
+  ssoStartUrl: '',
   authMode: 'link',
   accessMode: 'roles',
   allowedRoles: [],
@@ -214,6 +215,7 @@ function handleEdit(row: ExternalSystemRecord) {
     icon: row.icon,
     color: row.color,
     entryUrl: row.entryUrl,
+    ssoStartUrl: row.ssoStartUrl || '',
     authMode: row.authMode,
     accessMode: row.accessMode,
     allowedRoles: [...row.allowedRoles],
@@ -271,7 +273,8 @@ async function handleSubmit() {
         ...formModel,
         code: formModel.code.trim(),
         name: formModel.name.trim(),
-        entryUrl: formModel.entryUrl.trim()
+        entryUrl: formModel.entryUrl.trim(),
+        ssoStartUrl: formModel.ssoStartUrl?.trim() || null
       });
       if (!error) {
         window.$message?.success($t('common.addSuccess'));
@@ -285,6 +288,7 @@ async function handleSubmit() {
         icon: formModel.icon,
         color: formModel.color,
         entryUrl: formModel.entryUrl.trim(),
+        ssoStartUrl: formModel.ssoStartUrl?.trim() || null,
         authMode: formModel.authMode,
         accessMode: formModel.accessMode,
         allowedRoles: formModel.allowedRoles,
@@ -391,6 +395,12 @@ void getData();
           </NFormItem>
           <NFormItem label="入口地址" required>
             <NInput v-model:value="formModel.entryUrl" placeholder="https://example.com/" />
+          </NFormItem>
+          <NFormItem v-if="formModel.authMode === 'oauth2'" label="SSO启动地址">
+            <NInput
+              v-model:value="formModel.ssoStartUrl"
+              placeholder="可选，如 https://crm.example.com/front/sso/eims/start；留空则使用入口地址"
+            />
           </NFormItem>
           <NFormItem label="登录方式">
             <NSelect v-model:value="formModel.authMode" :options="authModeOptions" />
