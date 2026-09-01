@@ -109,7 +109,10 @@ export class AuthController {
     const userId = await this.authService.resolveAccessTokenUserId(
       getCookie(request, EIMS_ACCESS_COOKIE),
     );
-    if (refreshToken) await this.authService.logout({ refreshToken });
+    await this.authService.logout(
+      { refreshToken },
+      getCookie(request, EIMS_ACCESS_COOKIE),
+    );
     clearAuthCookies(response);
     await this.auditService.record({ event: 'auth.logout', userId, request });
     return { authenticated: false };

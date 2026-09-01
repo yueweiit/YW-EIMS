@@ -4,6 +4,7 @@ import {
   ExecutionContext,
   UnauthorizedException,
 } from '@nestjs/common';
+import { createHash } from 'node:crypto';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { IS_PUBLIC_KEY } from '@eims/common';
@@ -42,11 +43,25 @@ export class JwtAuthGuard implements CanActivate {
       if (!Number.isInteger(payload.sub) || payload.sub < 1) {
         throw new UnauthorizedException('token expired or invalid');
       }
-      const user = await this.prisma.user.findUnique({
-        where: { id: payload.sub },
-        select: { status: true },
-      });
-      if (!user || user.status !== '1') {
+      const [session, user] = await Promise.all([
+        this.prisma.authRefreshSession.findUnique({
+          where: {
+            accessTokenHash: createHash('sha256').update(token).digest('hex'),
+          },
+          select: { revokedAt: true, expiresAt: true },
+        }),
+        this.prisma.user.findUnique({
+          where: { id: payload.sub },
+          select: { status: true },
+        }),
+      ]);
+      if (
+        !session ||
+        session.revokedAt ||
+        session.expiresAt <= new Date() ||
+        !user ||
+        user.status !== '1'
+      ) {
         throw new UnauthorizedException('用户不存在或已被禁用');
       }
       request.user = payload;

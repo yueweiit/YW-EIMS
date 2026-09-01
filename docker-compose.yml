@@ -26,7 +26,9 @@ services:
     env_file:
       - .env
     environment:
-      NODE_ENV: production
+      # Production is the safe default; set NODE_ENV=development explicitly
+      # in the local .env when testing over plain HTTP.
+      NODE_ENV: ${NODE_ENV:-production}
       PORT: 3000
       DATABASE_URL: ${DATABASE_URL}
       JWT_SECRET: ${JWT_SECRET}

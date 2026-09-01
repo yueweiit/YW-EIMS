@@ -72,9 +72,10 @@ export class AuditService {
 
   private getIpAddress(request?: Request) {
     if (!request) return undefined;
-    const forwarded = request.headers['x-forwarded-for'];
-    const forwardedValue = Array.isArray(forwarded) ? forwarded[0] : forwarded;
-    return (forwardedValue?.split(',')[0].trim() || request.ip || '').slice(0, 64) || undefined;
+    // Express parses X-Forwarded-For only after the trusted proxy is
+    // configured in main.ts. Never prefer the raw header here because a
+    // direct client could spoof it and poison the audit trail.
+    return (request.ip || request.socket.remoteAddress || '').slice(0, 64) || undefined;
   }
 
   private sanitizeDetail(detail?: Record<string, AuditValue>) {

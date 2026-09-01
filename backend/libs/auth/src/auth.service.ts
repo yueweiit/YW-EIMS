@@ -75,17 +75,21 @@ export class AuthService {
         where: { tokenHash: this.hashRefreshToken(refreshToken) },
         select: {
           id: true,
+          familyId: true,
           expiresAt: true,
           revokedAt: true,
           user: { select: { id: true, userName: true, status: true } },
         },
       });
-      if (
-        !session ||
-        session.revokedAt ||
-        session.expiresAt <= now ||
-        session.user.status !== '1'
-      ) {
+      if (!session || session.expiresAt <= now) {
+        throw new UnauthorizedException('refresh token expired or invalid');
+      }
+      if (session.revokedAt) {
+        await this.revokeSessionFamily(session.user.id, session.familyId);
+        throw new UnauthorizedException('refresh token already used');
+      }
+      if (session.user.status !== '1') {
+        await this.revokeSessionFamily(session.user.id, session.familyId);
         throw new UnauthorizedException('refresh token expired or invalid');
       }
 
@@ -98,24 +102,43 @@ export class AuthService {
         data: { revokedAt: now },
       });
       if (revoked.count !== 1) {
+        // A second use of the same refresh token indicates token theft or a
+        // replay race. Revoke every token in this family, including any token
+        // issued by the winning request.
+        await this.revokeSessionFamily(session.user.id, session.familyId);
         throw new UnauthorizedException('refresh token already used');
       }
 
-      return this.generateTokens(session.user.id, session.user.userName);
+      return this.generateTokens(
+        session.user.id,
+        session.user.userName,
+        session.familyId || undefined,
+      );
     } catch {
       throw new UnauthorizedException('refresh token expired or invalid');
     }
   }
 
-  async logout(dto: RefreshTokenDto) {
-    if (!dto.refreshToken) return {};
-    await this.prisma.authRefreshSession.updateMany({
-      where: {
-        tokenHash: this.hashRefreshToken(dto.refreshToken),
-        revokedAt: null,
-      },
-      data: { revokedAt: new Date() },
-    });
+  async logout(dto: RefreshTokenDto, accessToken?: string) {
+    const revokedAt = new Date();
+    if (dto.refreshToken) {
+      await this.prisma.authRefreshSession.updateMany({
+        where: {
+          tokenHash: this.hashRefreshToken(dto.refreshToken),
+          revokedAt: null,
+        },
+        data: { revokedAt },
+      });
+    }
+    if (accessToken) {
+      await this.prisma.authRefreshSession.updateMany({
+        where: {
+          accessTokenHash: this.hashAccessToken(accessToken),
+          revokedAt: null,
+        },
+        data: { revokedAt },
+      });
+    }
     return {};
   }
 
@@ -123,6 +146,17 @@ export class AuthService {
   async revokeAllSessions(userId: number) {
     return this.prisma.authRefreshSession.updateMany({
       where: { userId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+  }
+
+  private async revokeSessionFamily(userId: number, familyId?: string | null) {
+    return this.prisma.authRefreshSession.updateMany({
+      where: {
+        userId,
+        revokedAt: null,
+        ...(familyId ? { familyId } : {}),
+      },
       data: { revokedAt: new Date() },
     });
   }
@@ -212,7 +246,11 @@ export class AuthService {
     return this.generateTokens(user.id, user.userName);
   }
 
-  private async generateTokens(userId: number, userName: string) {
+  private async generateTokens(
+    userId: number,
+    userName: string,
+    familyId = randomBytes(32).toString('base64url'),
+  ) {
     const payload = { sub: userId, userName };
     const token = await this.jwtService.signAsync(payload, {
       secret: this.configService.get<string>('JWT_SECRET'),
@@ -222,6 +260,8 @@ export class AuthService {
     await this.prisma.authRefreshSession.create({
       data: {
         tokenHash: this.hashRefreshToken(refreshToken),
+        accessTokenHash: this.hashAccessToken(token),
+        familyId,
         userId,
         expiresAt: new Date(Date.now() + this.getRefreshSessionLifetimeMs()),
       },
@@ -230,6 +270,10 @@ export class AuthService {
   }
 
   private hashRefreshToken(token: string) {
+    return createHash('sha256').update(token).digest('hex');
+  }
+
+  private hashAccessToken(token: string) {
     return createHash('sha256').update(token).digest('hex');
   }
 

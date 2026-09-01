@@ -68,7 +68,10 @@ export function useRouterPush(inSetup = true) {
       }
     };
 
-    const redirect = redirectUrl || route.value.fullPath;
+    const redirect =
+      getSafeInternalRedirect(redirectUrl) ||
+      getSafeInternalRedirect(route.value.fullPath) ||
+      '/';
 
     options.query = {
       redirect
@@ -94,7 +97,7 @@ export function useRouterPush(inSetup = true) {
    * @param [needRedirect=true] Whether to redirect after login. Default is `true`
    */
   async function redirectFromLogin(needRedirect = true) {
-    const redirect = route.value.query?.redirect as string;
+    const redirect = getSafeInternalRedirect(route.value.query?.redirect);
 
     if (needRedirect && redirect) {
       await routerPush(redirect);
@@ -112,4 +115,17 @@ export function useRouterPush(inSetup = true) {
     toggleLoginModule,
     redirectFromLogin
   };
+}
+
+function getSafeInternalRedirect(value: unknown) {
+  if (typeof value !== 'string' || !value.startsWith('/') || value.startsWith('//')) {
+    return undefined;
+  }
+  try {
+    const parsed = new URL(value, window.location.origin);
+    if (parsed.origin !== window.location.origin) return undefined;
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return undefined;
+  }
 }

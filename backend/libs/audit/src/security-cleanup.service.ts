@@ -30,6 +30,14 @@ export class SecurityCleanupService {
           ],
         },
       }),
+      this.prisma.oauth2AccessToken.deleteMany({
+        where: {
+          OR: [
+            { expiresAt: { lt: now } },
+            { revokedAt: { lt: oldRevoked } },
+          ],
+        },
+      }),
       this.prisma.authRefreshSession.deleteMany({
         where: {
           OR: [
@@ -46,6 +54,9 @@ export class SecurityCleanupService {
       }),
       this.prisma.securityAuditLog.deleteMany({
         where: { createdAt: { lt: oldAudit } },
+      }),
+      this.prisma.securityRateLimitBucket.deleteMany({
+        where: { resetAt: { lt: now } },
       }),
     ]);
     const removed = results.reduce((sum, result) => sum + result.count, 0);

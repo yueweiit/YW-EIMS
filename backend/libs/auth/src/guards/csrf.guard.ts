@@ -22,11 +22,13 @@ export class CsrfGuard implements CanActivate {
     if (['GET', 'HEAD', 'OPTIONS'].includes(request.method)) return true;
 
     // Login and the one-time DingTalk exchange create a session; they cannot
-    // rely on a CSRF cookie yet. Existing sessions are protected by the guard.
+    // rely on a CSRF cookie yet. Validate the browser origin to prevent login
+    // CSRF, while still allowing non-browser clients that send no Origin.
     if (
       request.path === '/auth/login' ||
       request.path === '/auth/dingtalk/exchange'
     ) {
+      assertTrustedOrigin(request);
       return true;
     }
 
@@ -45,6 +47,33 @@ export class CsrfGuard implements CanActivate {
       throw new ForbiddenException('CSRF token missing or invalid');
     }
     return true;
+  }
+}
+
+function assertTrustedOrigin(request: Request) {
+  const originHeader = request.headers.origin;
+  const refererHeader = request.headers.referer;
+  const origin = Array.isArray(originHeader) ? originHeader[0] : originHeader;
+  const referer = Array.isArray(refererHeader) ? refererHeader[0] : refererHeader;
+  let browserOrigin = origin?.trim();
+
+  if (!browserOrigin && referer) {
+    try {
+      browserOrigin = new URL(referer).origin;
+    } catch {
+      throw new ForbiddenException('请求来源无效');
+    }
+  }
+  if (!browserOrigin) return;
+
+  const allowedOrigins = [
+    process.env.EIMS_FRONTEND_URL || 'http://localhost:9527',
+    ...(process.env.CORS_ORIGINS || 'http://localhost:9527').split(','),
+  ]
+    .map(value => value.trim().replace(/\/$/, ''))
+    .filter(Boolean);
+  if (!allowedOrigins.includes(browserOrigin.replace(/\/$/, ''))) {
+    throw new ForbiddenException('请求来源不受信任');
   }
 }
 

@@ -13,6 +13,7 @@ export function fetchLogin(userName: string, password: string) {
   return request<Api.Auth.SessionResult>({
     url: '/auth/login',
     method: 'post',
+    headers: { 'X-Skip-Auth-Refresh': '1' },
     data: {
       userName,
       password
@@ -60,6 +61,7 @@ export function fetchDingTalkLoginToken(ticket: string) {
   return request<Api.Auth.SessionResult>({
     url: '/auth/dingtalk/exchange',
     method: 'post',
+    headers: { 'X-Skip-Auth-Refresh': '1' },
     data: { ticket }
   });
 }
