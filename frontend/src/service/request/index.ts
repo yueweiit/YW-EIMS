@@ -124,6 +124,14 @@ export const request = createFlatRequest(
 
       // when the token is expired, refresh token and retry request, so no need to show error message
       const expiredTokenCodes = import.meta.env.VITE_SERVICE_EXPIRED_TOKEN_CODES?.split(',') || [];
+      const skipAuthError =
+        error.config?.headers?.get?.('X-Skip-Auth-Error') === '1' ||
+        error.config?.headers?.['X-Skip-Auth-Error'] === '1';
+
+      if (skipAuthError && expiredTokenCodes.includes(backendErrorCode)) {
+        return;
+      }
+
       if (expiredTokenCodes.includes(backendErrorCode) && !skipAuthRefresh) {
         return;
       }

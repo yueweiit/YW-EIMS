@@ -2,6 +2,10 @@ import { request } from '../request';
 import { getServiceBaseURL } from '@/utils/service';
 
 const isHttpProxy = import.meta.env.DEV && import.meta.env.VITE_HTTP_PROXY === 'Y';
+const silentAuthHeaders = {
+  'X-Skip-Auth-Refresh': '1',
+  'X-Skip-Auth-Error': '1'
+};
 
 /**
  * Login
@@ -25,7 +29,7 @@ export function fetchLogin(userName: string, password: string) {
 export function fetchGetUserInfo() {
   return request<Api.Auth.UserInfo>({
     url: '/auth/getUserInfo',
-    headers: { 'X-Skip-Auth-Refresh': '1' }
+    headers: { ...silentAuthHeaders }
   });
 }
 
@@ -38,7 +42,7 @@ export function fetchRefreshToken() {
   return request<Api.Auth.SessionResult>({
     url: '/auth/refreshToken',
     method: 'post',
-    headers: { 'X-Skip-Auth-Refresh': '1' }
+    headers: { ...silentAuthHeaders }
   });
 }
 
@@ -46,7 +50,8 @@ export function fetchRefreshToken() {
 export function fetchLogout() {
   return request({
     url: '/auth/logout',
-    method: 'post'
+    method: 'post',
+    headers: { ...silentAuthHeaders }
   });
 }
 

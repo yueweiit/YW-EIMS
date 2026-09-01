@@ -11,6 +11,8 @@ import { useRouteStore } from '../route';
 import { useTabStore } from '../tab';
 import { clearAuthStorage } from './shared';
 
+let resetPromise: Promise<void> | null = null;
+
 export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   const route = useRoute();
   const authStore = useAuthStore();
@@ -43,23 +45,42 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
 
   /** Reset auth store */
   async function resetStore() {
-    recordUserId();
-
-    if (token.value || userInfo.userId) {
-      void fetchLogout().catch(() => undefined);
+    if (resetPromise) {
+      return resetPromise;
     }
 
-    clearAuthStorage();
-    initialized = false;
+    resetPromise = (async () => {
+      recordUserId();
 
-    authStore.$reset();
+      // Wait for the server to revoke the cookie session before navigating to
+      // the login route. Otherwise its route guard can call getUserInfo with
+      // the old cookie and race with logout.
+      if (token.value || userInfo.userId) {
+        try {
+          await fetchLogout();
+        } catch {
+          // Local cleanup and redirect must still happen when the server is unavailable.
+        }
+      }
 
-    if (!route.meta.constant) {
-      await toLogin();
+      clearAuthStorage();
+      initialized = false;
+
+      authStore.$reset();
+
+      if (!route.meta.constant) {
+        await toLogin();
+      }
+
+      tabStore.cacheTabs();
+      await routeStore.resetStore();
+    })();
+
+    try {
+      await resetPromise;
+    } finally {
+      resetPromise = null;
     }
-
-    tabStore.cacheTabs();
-    routeStore.resetStore();
   }
 
   /** Record the user ID of the previous login session Used to compare with the current user ID on next login */
