@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { NButton, NInput, NSpace } from 'naive-ui';
+import { $t } from '@/locales';
 
 defineOptions({
   name: 'MaterialSearch'
@@ -28,26 +29,26 @@ function reset() {
     <NInput
       v-model:value="model.applicant"
       clearable
-      placeholder="请输入申请人"
+      :placeholder="$t('page.ui.enterApplicant')"
       class="w-200px"
     />
     <NInput
       v-model:value="model.materialName"
       clearable
-      placeholder="请输入物料名称"
+      :placeholder="$t('page.ui.enterMaterialName')"
       class="w-200px"
     />
     <NInput
       v-model:value="model.code"
       clearable
-      placeholder="请输入物料编码"
+      :placeholder="$t('page.ui.enterMaterialCode')"
       class="w-200px"
     />
     <NButton type="primary" @click="search">
-      搜索
+      {{ $t('common.search') }}
     </NButton>
     <NButton @click="reset">
-      重置
+      {{ $t('common.reset') }}
     </NButton>
   </NSpace>
 </template>

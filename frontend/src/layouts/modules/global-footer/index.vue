@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { $t } from '@/locales';
+
 defineOptions({
   name: 'GlobalFooter'
 });
@@ -7,7 +9,7 @@ defineOptions({
 <template>
   <DarkModeContainer class="h-full flex-center">
     <a href="#" target="_blank" rel="noopener noreferrer">
-      Copyright © 2026 YUEWEI企业信息管理系统
+      Copyright © 2026 {{ $t('system.title') }}
     </a>
   </DarkModeContainer>
 </template>

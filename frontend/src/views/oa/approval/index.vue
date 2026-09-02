@@ -28,7 +28,7 @@ const basicFields = [
   { key: '创建人', label: 'page.oa.approval.creator' },
   { key: '创建人部门', label: 'page.oa.approval.creatorDept' },
   { key: '创建时间', label: 'page.oa.approval.createTime' }
-];
+] as const;
 
 const dynamicFields = ref<{ key: string; value: string }[]>([]);
 
@@ -41,10 +41,14 @@ const statusTagType = (status: string) => {
 
 const statusLabel = (status: string) => {
   const map: Record<string, string> = {
-    COMPLETED: '已完成',
-    RUNNING: '进行中',
-    TERMINATED: '已终止',
-    CANCELED: '已取消'
+    COMPLETED: $t('page.ui.approvalCompleted'),
+    RUNNING: $t('page.ui.approvalRunning'),
+    TERMINATED: $t('page.ui.approvalTerminated'),
+    CANCELED: $t('page.ui.approvalCanceled'),
+    已完成: $t('page.ui.approvalCompleted'),
+    进行中: $t('page.ui.approvalRunning'),
+    已终止: $t('page.ui.approvalTerminated'),
+    已取消: $t('page.ui.approvalCanceled')
   };
   return map[status] || status;
 };

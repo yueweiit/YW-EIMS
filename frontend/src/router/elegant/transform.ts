@@ -168,7 +168,7 @@ const routeMap: RouteMap = {
   "500": "/500",
   "home": "/home",
   "iframe-page": "/iframe-page/:url",
-  "login": "/login/:module(pwd-login|code-login|register|reset-pwd|bind-wechat)?",
+  "login": "/login/:module(pwd-login|code-login|register|reset-pwd|bind-wechat|oauth-consent)?",
   "material": "/material",
   "material_code-rule": "/material/code-rule",
   "material_material": "/material/material",
@@ -186,8 +186,17 @@ const routeMap: RouteMap = {
   "oa_approval": "/oa/approval",
   "oa_box-label": "/oa/box-label",
   "system": "/system",
-  "system_erpnext-sync-log": "/system/erpnext-sync-log",
-  "system_user": "/system/user"
+  "system_access": "/system/access",
+  "system_access_permission": "/system/permission",
+  "system_access_role": "/system/role",
+  "system_access_user": "/system/user",
+  "system_operations": "/system/operations",
+  "system_operations_audit": "/system/audit",
+  "system_operations_erpnext-sync-log": "/system/erpnext-sync-log",
+  "system_sso": "/system/sso",
+  "system_sso_external-system": "/system/external-system",
+  "system_sso_oauth2-binding": "/system/oauth2-binding",
+  "system_sso_oauth2-client": "/system/oauth2-client"
 };
 
 /**

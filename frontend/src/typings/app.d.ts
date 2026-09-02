@@ -296,7 +296,7 @@ declare namespace App {
   namespace I18n {
     type RouteKey = import('@elegant-router/types').RouteKey;
 
-    type LangType = 'en-US' | 'zh-CN';
+    type LangType = 'en-US' | 'es-MX' | 'zh-CN';
 
     type LangOption = {
       label: string;
@@ -526,11 +526,12 @@ declare namespace App {
           bindWeChat: {
             title: string;
           };
+          oauthConsent: {
+            title: string;
+          };
         };
         home: {
           branchDesc: string;
-          greeting: string;
-          weatherDesc: string;
           projectCount: string;
           todo: string;
           message: string;
@@ -554,7 +555,53 @@ declare namespace App {
             desc5: string;
           };
           creativity: string;
+          externalSystemsTitle: string;
+          externalSystemsDesc: string;
+          openInNewWindow: string;
+          externalSystems: {
+            budget: string;
+            erp: string;
+            mes: string;
+            crm: string;
+            lemos: string;
+          };
         };
+        oa: {
+          approval: {
+            searchPlaceholder: string;
+            search: string;
+            basicInfo: string;
+            formFields: string;
+            timeline: string;
+            pushToErp: string;
+            noResult: string;
+            formName: string;
+            approvalCode: string;
+            approvalStatus: string;
+            creator: string;
+            creatorDept: string;
+            createTime: string;
+            ccList: string;
+            viewInDingtalk: string;
+            erpSync: {
+              title: string;
+              org: string;
+              orgPlaceholder: string;
+              supplier: string;
+              supplierPlaceholder: string;
+              docDate: string;
+              docDatePlaceholder: string;
+              oaCode: string;
+              waybill: string;
+              waybillPlaceholder: string;
+              remark: string;
+              remarkPlaceholder: string;
+              pushSuccess: string;
+              pushFailed: string;
+            };
+          };
+        };
+        ui: Record<string, string>;
       };
       form: {
         required: string;

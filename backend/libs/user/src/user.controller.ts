@@ -7,14 +7,18 @@ import {
   Body,
   Param,
   Query,
+  UseGuards,
 } from '@nestjs/common';
-import { CurrentUser } from '@eims/auth';
+import { AdminGuard, CurrentUser } from '@eims/auth';
+import { PermissionGuard, RequirePermission } from '@eims/roles';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { QueryUserDto } from './dto/query-user.dto';
 
 @Controller('user')
+@UseGuards(AdminGuard, PermissionGuard)
+@RequirePermission('eims:system:user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
@@ -29,24 +33,32 @@ export class UserController {
   }
 
   @Post()
+  @RequirePermission('eims:system:user:create')
   async create(
     @Body() dto: CreateUserDto,
     @CurrentUser('userName') userName: string,
+    @CurrentUser('roles') userRoles?: string[],
   ) {
-    return this.userService.create(dto, userName);
+    return this.userService.create(dto, userName, userRoles || []);
   }
 
   @Put(':id')
+  @RequirePermission('eims:system:user:update')
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateUserDto,
     @CurrentUser('userName') userName: string,
+    @CurrentUser('roles') userRoles?: string[],
   ) {
-    return this.userService.update(Number(id), dto, userName);
+    return this.userService.update(Number(id), dto, userName, userRoles || []);
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: string) {
-    return this.userService.remove(Number(id));
+  @RequirePermission('eims:system:user:delete')
+  async remove(
+    @Param('id') id: string,
+    @CurrentUser('roles') userRoles?: string[],
+  ) {
+    return this.userService.remove(Number(id), userRoles || []);
   }
 }

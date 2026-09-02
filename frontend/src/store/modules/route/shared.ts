@@ -10,8 +10,12 @@ import { $t } from '@/locales';
  * @param routes Auth routes
  * @param roles Roles
  */
-export function filterAuthRoutesByRoles(routes: ElegantConstRoute[], roles: string[]) {
-  return routes.flatMap(route => filterAuthRouteByRoles(route, roles));
+export function filterAuthRoutesByRoles(
+  routes: ElegantConstRoute[],
+  roles: string[],
+  permissions: string[] = []
+) {
+  return routes.flatMap(route => filterAuthRouteByRoles(route, roles, permissions));
 }
 
 /**
@@ -20,19 +24,28 @@ export function filterAuthRoutesByRoles(routes: ElegantConstRoute[], roles: stri
  * @param route Auth route
  * @param roles Roles
  */
-function filterAuthRouteByRoles(route: ElegantConstRoute, roles: string[]): ElegantConstRoute[] {
+function filterAuthRouteByRoles(
+  route: ElegantConstRoute,
+  roles: string[],
+  permissions: string[]
+): ElegantConstRoute[] {
   const routeRoles = (route.meta && route.meta.roles) || [];
+  const routePermission = route.meta?.permission;
 
   // if the route's "roles" is empty, then it is allowed to access
   const isEmptyRoles = !routeRoles.length;
 
   // if the user's role is included in the route's "roles", then it is allowed to access
-  const hasPermission = routeRoles.some(role => roles.includes(role));
+  const hasRolePermission = routeRoles.some(role => roles.includes(role));
+  const hasFunctionPermission =
+    !routePermission || permissions.includes('*') || permissions.includes(routePermission);
 
   const filterRoute = { ...route };
 
   if (filterRoute.children?.length) {
-    filterRoute.children = filterRoute.children.flatMap(item => filterAuthRouteByRoles(item, roles));
+    filterRoute.children = filterRoute.children.flatMap(item =>
+      filterAuthRouteByRoles(item, roles, permissions)
+    );
   }
 
   // Exclude the route if it has no children after filtering
@@ -40,7 +53,7 @@ function filterAuthRouteByRoles(route: ElegantConstRoute, roles: string[]): Eleg
     return [];
   }
 
-  return hasPermission || isEmptyRoles ? [filterRoute] : [];
+  return (isEmptyRoles || hasRolePermission) && hasFunctionPermission ? [filterRoute] : [];
 }
 
 /**

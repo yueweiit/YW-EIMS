@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { NButton, NInput, NSpace } from 'naive-ui';
+import { $t } from '@/locales';
 
 defineOptions({
   name: 'MoldSearch'
@@ -28,26 +29,26 @@ function reset() {
     <NInput
       v-model:value="model.moldCode"
       clearable
-      placeholder="请输入模具编码"
+      :placeholder="$t('page.ui.enterMoldCode')"
       class="w-200px"
     />
     <NInput
       v-model:value="model.phoneName"
       clearable
-      placeholder="请输入手机名称"
+      :placeholder="$t('page.ui.selectPhoneName')"
       class="w-200px"
     />
     <NInput
       v-model:value="model.itemCode"
       clearable
-      placeholder="请输入项目编码"
+      :placeholder="$t('page.ui.enterProjectCode')"
       class="w-200px"
     />
     <NButton type="primary" @click="search">
-      搜索
+      {{ $t('common.search') }}
     </NButton>
     <NButton @click="reset">
-      重置
+      {{ $t('common.reset') }}
     </NButton>
   </NSpace>
 </template>

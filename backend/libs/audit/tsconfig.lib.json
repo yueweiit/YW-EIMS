@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../dist/libs/audit",
+    "declaration": true,
+    "tsBuildInfoFile": "../../dist/libs/audit/tsconfig.lib.tsbuildinfo"
+  },
+  "include": ["src/**/*.ts"]
+}

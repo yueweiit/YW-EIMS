@@ -1,18 +1,19 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue';
-import type { Component } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { getPaletteColorByNumber, mixColor } from '@sa/color';
-import { loginModuleRecord } from '@/constants/app';
-import { useAppStore } from '@/store/modules/app';
-import { useThemeStore } from '@/store/modules/theme';
-import { $t } from '@/locales';
-import { useAuthStore } from '@/store/modules/auth';
-import PwdLogin from './modules/pwd-login.vue';
-import CodeLogin from './modules/code-login.vue';
-import Register from './modules/register.vue';
-import ResetPwd from './modules/reset-pwd.vue';
-import BindWechat from './modules/bind-wechat.vue';
+import { computed, onMounted } from "vue";
+import type { Component } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { getPaletteColorByNumber, mixColor } from "@sa/color";
+import { loginModuleRecord } from "@/constants/app";
+import { useAppStore } from "@/store/modules/app";
+import { useThemeStore } from "@/store/modules/theme";
+import { $t } from "@/locales";
+import { useAuthStore } from "@/store/modules/auth";
+import PwdLogin from "./modules/pwd-login.vue";
+import CodeLogin from "./modules/code-login.vue";
+import Register from "./modules/register.vue";
+import ResetPwd from "./modules/reset-pwd.vue";
+import BindWechat from "./modules/bind-wechat.vue";
+import OAuthConsent from "./modules/oauth-consent.vue";
 
 interface Props {
   /** The login module */
@@ -33,21 +34,33 @@ interface LoginModule {
 }
 
 const moduleMap: Record<UnionKey.LoginModule, LoginModule> = {
-  'pwd-login': { label: loginModuleRecord['pwd-login'], component: PwdLogin },
-  'code-login': { label: loginModuleRecord['code-login'], component: CodeLogin },
+  "pwd-login": { label: loginModuleRecord["pwd-login"], component: PwdLogin },
+  "code-login": {
+    label: loginModuleRecord["code-login"],
+    component: CodeLogin,
+  },
   register: { label: loginModuleRecord.register, component: Register },
-  'reset-pwd': { label: loginModuleRecord['reset-pwd'], component: ResetPwd },
-  'bind-wechat': { label: loginModuleRecord['bind-wechat'], component: BindWechat }
+  "reset-pwd": { label: loginModuleRecord["reset-pwd"], component: ResetPwd },
+  "bind-wechat": {
+    label: loginModuleRecord["bind-wechat"],
+    component: BindWechat,
+  },
+  "oauth-consent": {
+    label: loginModuleRecord["oauth-consent"],
+    component: OAuthConsent,
+  },
 };
 
-const activeModule = computed(() => moduleMap[props.module || 'pwd-login']);
+const activeModule = computed(() => moduleMap[props.module || "pwd-login"]);
 
 const bgThemeColor = computed(() =>
-  themeStore.darkMode ? getPaletteColorByNumber(themeStore.themeColor, 600) : themeStore.themeColor
+  themeStore.darkMode
+    ? getPaletteColorByNumber(themeStore.themeColor, 600)
+    : themeStore.themeColor,
 );
 
 const bgColor = computed(() => {
-  const COLOR_WHITE = '#ffffff';
+  const COLOR_WHITE = "#ffffff";
 
   const ratio = themeStore.darkMode ? 0.5 : 0.2;
 
@@ -55,35 +68,53 @@ const bgColor = computed(() => {
 });
 
 function getQueryString(value: unknown) {
-  return typeof value === 'string' ? value : '';
+  return typeof value === "string" ? value : "";
+}
+
+function getHashValue(key: string) {
+  return (
+    new URLSearchParams(window.location.hash.replace(/^#/, "")).get(key) || ""
+  );
 }
 
 onMounted(async () => {
-  const ticket = getQueryString(route.query.dingtalk_ticket);
+  const ticket =
+    getQueryString(route.query.dingtalk_ticket) ||
+    getHashValue("dingtalk_ticket");
   const error = getQueryString(route.query.dingtalk_error);
 
   if (ticket) {
     await authStore.loginWithDingTalkTicket(ticket);
+    window.history.replaceState(
+      null,
+      "",
+      `${window.location.pathname}${window.location.search}`,
+    );
     const query = { ...route.query };
     delete query.dingtalk_ticket;
-    await router.replace({ name: 'login', query });
+    await router.replace({ name: "login", query });
   } else if (error) {
-    window.$message?.error('钉钉登录失败，请确认账号已绑定或联系管理员');
+    window.$message?.error($t('page.ui.dingTalkLoginFailed'));
     const query = { ...route.query };
     delete query.dingtalk_error;
-    await router.replace({ name: 'login', query });
+    await router.replace({ name: "login", query });
   }
 });
 </script>
 
 <template>
-  <div class="relative size-full flex-center overflow-hidden" :style="{ backgroundColor: bgColor }">
+  <div
+    class="relative size-full flex-center overflow-hidden"
+    :style="{ backgroundColor: bgColor }"
+  >
     <WaveBg :theme-color="bgThemeColor" />
     <NCard :bordered="false" class="relative z-4 w-auto rd-12px">
       <div class="w-400px lt-sm:w-300px">
         <header class="flex-y-center justify-between">
           <SystemLogo class="size-64px lt-sm:size-48px" />
-          <h3 class="text-28px text-primary font-500 lt-sm:text-22px">{{ $t('system.title') }}</h3>
+          <h3 class="text-28px text-primary font-500 lt-sm:text-22px">
+            {{ $t("system.title") }}
+          </h3>
           <div class="i-flex-col">
             <ThemeSchemaSwitch
               :theme-schema="themeStore.themeScheme"
@@ -101,9 +132,15 @@ onMounted(async () => {
           </div>
         </header>
         <main class="pt-24px">
-          <h3 class="text-18px text-primary font-medium">{{ $t(activeModule.label) }}</h3>
+          <h3 class="text-18px text-primary font-medium">
+            {{ $t(activeModule.label) }}
+          </h3>
           <div class="pt-24px">
-            <Transition :name="themeStore.page.animateMode" mode="out-in" appear>
+            <Transition
+              :name="themeStore.page.animateMode"
+              mode="out-in"
+              appear
+            >
               <component :is="activeModule.component" />
             </Transition>
           </div>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { NButton, NCard, NDivider, NForm, NFormItem, NGrid, NGi, NInput, NSpace } from 'naive-ui';
+import { $t } from '@/locales';
 
 defineOptions({ name: 'ProductCard' });
 
@@ -28,43 +29,43 @@ function handleDelete() {
 </script>
 
 <template>
-  <NCard :title="`📦 产品 ${index + 1}`" :bordered="true" class="product-card">
+  <NCard :title="`📦 ${$t('page.ui.productItem')} ${index + 1}`" :bordered="true" class="product-card">
     <!-- 产品基本信息 Section -->
-    <div class="section-title">产品基本信息</div>
+    <div class="section-title">{{ $t('page.ui.productBasicInfo') }}</div>
     <NForm label-placement="left" label-width="120px">
       <NGrid :cols="2" :x-gap="12">
         <NGi :span="2">
-          <NFormItem label="日期/批次/英文名称">
+          <NFormItem :label="$t('page.ui.dateBatchEnglishName')">
             <NInput
               :value="product.dateBatchEnglishName"
-              placeholder="请输入日期/批次/英文名称"
+              :placeholder="$t('page.ui.dateBatchEnglishNamePlaceholder')"
               @update:value="val => updateField('dateBatchEnglishName', val)"
             />
           </NFormItem>
         </NGi>
         <NGi>
-          <NFormItem label="品名编码（型号）">
+          <NFormItem :label="$t('page.ui.modelCode')">
             <NInput
               :value="product.modelCode"
-              placeholder="请输入品名编码或型号"
+              :placeholder="$t('page.ui.modelCodePlaceholder')"
               @update:value="val => updateField('modelCode', val)"
             />
           </NFormItem>
         </NGi>
         <NGi>
-          <NFormItem label="规格/颜色">
+          <NFormItem :label="$t('page.ui.specification')">
             <NInput
               :value="product.specification"
-              placeholder="请输入规格/颜色"
+              :placeholder="$t('page.ui.specificationPlaceholder')"
               @update:value="val => updateField('specification', val)"
             />
           </NFormItem>
         </NGi>
         <NGi>
-          <NFormItem label="西语名称">
+          <NFormItem :label="$t('page.ui.spanishName')">
             <NInput
               :value="product.spanishName"
-              placeholder="请输入西班牙语名称"
+              :placeholder="$t('page.ui.spanishNamePlaceholder')"
               @update:value="val => updateField('spanishName', val)"
             />
           </NFormItem>
@@ -75,32 +76,32 @@ function handleDelete() {
     <NDivider />
 
     <!-- 箱号数据 Section -->
-    <div class="section-title">箱号数据</div>
+    <div class="section-title">{{ $t('page.ui.boxData') }}</div>
     <NForm label-placement="left" label-width="120px">
       <NGrid :cols="3" :x-gap="12">
         <NGi>
-          <NFormItem label="箱号">
+          <NFormItem :label="$t('page.ui.boxNo')">
             <NInput
               :value="product.boxNo"
-              placeholder="请输入箱号"
+              :placeholder="$t('page.ui.boxNoPlaceholder')"
               @update:value="val => updateField('boxNo', val)"
             />
           </NFormItem>
         </NGi>
         <NGi>
-          <NFormItem label="数量">
+          <NFormItem :label="$t('page.ui.quantity')">
             <NInput
               :value="product.quantity"
-              placeholder="请输入数量"
+              :placeholder="$t('page.ui.quantityPlaceholder')"
               @update:value="val => updateField('quantity', val)"
             />
           </NFormItem>
         </NGi>
         <NGi>
-          <NFormItem label="重量 (KG)">
+          <NFormItem :label="$t('page.ui.weightKg')">
             <NInput
               :value="product.weightKg"
-              placeholder="请输入重量"
+              :placeholder="$t('page.ui.weightKgPlaceholder')"
               @update:value="val => updateField('weightKg', val)"
             />
           </NFormItem>
@@ -113,7 +114,7 @@ function handleDelete() {
     <!-- Delete Button -->
     <NSpace justify="end">
       <NButton type="error" ghost :disabled="!canDelete" @click="handleDelete">
-        删除此产品
+        {{ $t('page.ui.deleteProduct') }}
       </NButton>
     </NSpace>
   </NCard>

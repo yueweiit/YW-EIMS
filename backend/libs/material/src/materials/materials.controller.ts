@@ -8,7 +8,9 @@ import {
   Param,
   Query,
   ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
+import { PermissionGuard, RequirePermission } from '@eims/roles';
 import { MaterialsService } from './materials.service';
 import { CreateMaterialDto } from './dto/create-material.dto';
 import { UpdateMaterialDto } from './dto/update-material.dto';
@@ -17,6 +19,8 @@ import { ImportMaterialDto } from './dto/import-material.dto';
 import type { ImportExistingMaterialRow } from './materials.service';
 
 @Controller('material')
+@UseGuards(PermissionGuard)
+@RequirePermission('eims:material:material')
 export class MaterialsController {
   constructor(private readonly materialsService: MaterialsService) {}
 
@@ -37,28 +41,33 @@ export class MaterialsController {
   }
 
   @Post('import')
+  @RequirePermission('eims:material:material:import')
   async import(@Body() dto: ImportMaterialDto) {
     return this.materialsService.batchCreate(dto.rows);
   }
 
   /** 从 ERP 同步全部物料到本地 */
   @Post('sync-from-erp')
+  @RequirePermission('eims:material:material:sync')
   async syncFromErp() {
     return this.materialsService.syncFromErp();
   }
 
   /** 导入已有编码的物料（不生成新编码，已存在跳过） */
   @Post('import-existing')
+  @RequirePermission('eims:material:material:import-existing')
   async importExisting(@Body() rows: ImportExistingMaterialRow[]) {
     return this.materialsService.importExisting(rows);
   }
 
   @Post()
+  @RequirePermission('eims:material:material:create')
   async create(@Body() dto: CreateMaterialDto) {
     return this.materialsService.create(dto);
   }
 
   @Put(':id')
+  @RequirePermission('eims:material:material:update')
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateMaterialDto,
@@ -67,6 +76,7 @@ export class MaterialsController {
   }
 
   @Delete(':id')
+  @RequirePermission('eims:material:material:delete')
   async remove(@Param('id', ParseIntPipe) id: number) {
     return this.materialsService.remove(id);
   }

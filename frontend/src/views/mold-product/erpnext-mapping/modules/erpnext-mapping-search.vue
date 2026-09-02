@@ -23,10 +23,10 @@ const emit = defineEmits<Emits>();
       v-model:value="model.type"
       clearable
       :options="erpNextMappingTypeOptions"
-      placeholder="请选择映射类型"
+      :placeholder="$t('page.ui.selectMappingType')"
       class="w-200px"
     />
-    <NInput v-model:value="model.sourceKey" clearable placeholder="请输入源值" class="w-220px" />
+    <NInput v-model:value="model.sourceKey" clearable :placeholder="$t('page.ui.enterSourceValue')" class="w-220px" />
     <NButton type="primary" @click="emit('search')">
       {{ $t('common.search') }}
     </NButton>

@@ -8,7 +8,9 @@ import {
   Param,
   Query,
   ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
+import { PermissionGuard, RequirePermission } from '@eims/roles';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -16,6 +18,8 @@ import { QueryProductDto } from './dto/query-product.dto';
 import { ImportProductDto } from './dto/import-product.dto';
 
 @Controller('mold-product/products')
+@UseGuards(PermissionGuard)
+@RequirePermission('eims:mold:product')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
@@ -25,6 +29,7 @@ export class ProductsController {
   }
 
   @Post('import')
+  @RequirePermission('eims:mold:product:import')
   async import(@Body() dto: ImportProductDto) {
     return this.productsService.batchCreate(dto.rows);
   }
@@ -35,11 +40,13 @@ export class ProductsController {
   }
 
   @Post()
+  @RequirePermission('eims:mold:product:create')
   async create(@Body() dto: CreateProductDto) {
     return this.productsService.create(dto);
   }
 
   @Put(':id')
+  @RequirePermission('eims:mold:product:update')
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateProductDto,
@@ -48,6 +55,7 @@ export class ProductsController {
   }
 
   @Delete(':id')
+  @RequirePermission('eims:mold:product:delete')
   async remove(@Param('id', ParseIntPipe) id: number) {
     return this.productsService.remove(id);
   }

@@ -4,6 +4,7 @@ import type { FormRules } from 'naive-ui';
 import { NButton, NDrawer, NDrawerContent, NForm, NFormItem, NInput, NSpace } from 'naive-ui';
 import { fetchCreateColor, fetchUpdateColor } from '@/service/api';
 import { useNaiveForm } from '@/hooks/common/form';
+import { $t } from '@/locales';
 
 defineOptions({
   name: 'ColorOperateDrawer'
@@ -36,30 +37,30 @@ const defaultForm: Api.Color.CreateParams = {
 
 const formModel = reactive<Api.Color.CreateParams>({ ...defaultForm });
 
-const title = computed(() => (props.type === 'add' ? '新增颜色' : '编辑颜色'));
+const title = computed(() => (props.type === 'add' ? $t('page.ui.addColor') : $t('page.ui.editColor')));
 
 const rules = computed<FormRules>(() => ({
   colorCode: [
     {
       required: true,
-      message: '请输入颜色编码',
+      message: $t('page.ui.enterColorCode'),
       trigger: 'blur'
     },
     {
       max: 50,
-      message: '颜色编码长度不能超过50个字符',
+      message: $t('page.ui.colorCodeMax'),
       trigger: 'blur'
     }
   ],
   colorName: [
     {
       required: true,
-      message: '请输入颜色名称',
+      message: $t('page.ui.enterColorName'),
       trigger: 'blur'
     },
     {
       max: 100,
-      message: '颜色名称长度不能超过100个字符',
+      message: $t('page.ui.colorNameMax'),
       trigger: 'blur'
     }
   ]
@@ -105,14 +106,14 @@ async function handleSubmit() {
     if (props.type === 'add') {
       const { error } = await fetchCreateColor(body);
       if (!error) {
-        window.$message?.success('新增成功');
+        window.$message?.success($t('common.addSuccess'));
         visible.value = false;
         emit('submitted');
       }
     } else if (props.rowData) {
       const { error } = await fetchUpdateColor(props.rowData.id, body);
       if (!error) {
-        window.$message?.success('更新成功');
+        window.$message?.success($t('common.updateSuccess'));
         visible.value = false;
         emit('submitted');
       }
@@ -127,20 +128,20 @@ async function handleSubmit() {
   <NDrawer v-model:show="visible" width="420px" placement="right">
     <NDrawerContent :title="title" :native-scrollbar="false">
       <NForm ref="formRef" :model="formModel" :rules="rules" label-placement="left" label-width="90px">
-        <NFormItem label="颜色编码" path="colorCode">
-          <NInput v-model:value="formModel.colorCode" placeholder="请输入颜色编码" />
+        <NFormItem :label="$t('page.ui.colorCode')" path="colorCode">
+          <NInput v-model:value="formModel.colorCode" :placeholder="$t('page.ui.enterColorCode')" />
         </NFormItem>
 
-        <NFormItem label="颜色名称" path="colorName">
-          <NInput v-model:value="formModel.colorName" placeholder="请输入颜色名称" />
+        <NFormItem :label="$t('page.ui.colorName')" path="colorName">
+          <NInput v-model:value="formModel.colorName" :placeholder="$t('page.ui.enterColorName')" />
         </NFormItem>
       </NForm>
 
       <template #footer>
         <NSpace justify="end">
-          <NButton @click="visible = false">取消</NButton>
+          <NButton @click="visible = false">{{ $t('common.cancel') }}</NButton>
           <NButton type="primary" :loading="loading" @click="handleSubmit">
-            确定
+            {{ $t('common.confirm') }}
           </NButton>
         </NSpace>
       </template>

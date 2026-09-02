@@ -28,26 +28,26 @@ function reset() {
     <NInput
       v-model:value="model.productType"
       clearable
-      placeholder="请输入产品类型"
+      :placeholder="$t('page.ui.enterProductType')"
       class="w-200px"
     />
     <NInput
       v-model:value="model.phoneShortName"
       clearable
-      placeholder="请输入手机简称"
+      :placeholder="$t('page.ui.enterPhoneShortName')"
       class="w-200px"
     />
     <NInput
       v-model:value="model.itemCode"
       clearable
-      placeholder="请输入项目编码"
+      :placeholder="$t('page.ui.enterProjectCode')"
       class="w-200px"
     />
     <NButton type="primary" @click="search">
-      搜索
+      {{ $t('common.search') }}
     </NButton>
     <NButton @click="reset">
-      重置
+      {{ $t('common.reset') }}
     </NButton>
   </NSpace>
 </template>

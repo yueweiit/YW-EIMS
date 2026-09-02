@@ -8,7 +8,7 @@ YW-EIMS（Enterprise Information Management System）是一个前后端分离的
 | --- | --- |
 | 后端 | NestJS 11、TypeScript、Prisma 6、PostgreSQL、JWT |
 | 前端 | Vue 3、Vite 8、TypeScript、Naive UI、Pinia、UnoCSS |
-| 包管理 | pnpm |
+| 部署方式 | Docker Compose |
 | 外部集成 | ERPNext Item API、钉钉 OA 数据库/接口 |
 
 ## 项目结构
@@ -51,65 +51,70 @@ YW-EIMS/
 
 ## 环境要求
 
-- Node.js >= 20.19.0
-- pnpm >= 10.5.0
-- PostgreSQL 14+（本地或远程实例）
+- Docker Engine 24+
+- Docker Compose v2+
+- 生产环境建议使用 HTTPS 反向代理
 
-## 快速启动
+## Docker 部署
 
-### 1. 配置数据库
+### 1. 配置环境变量
 
-创建业务数据库，例如：
-
-```sql
-CREATE DATABASE eims;
-```
-
-复制并编辑后端配置：
+复制根目录环境变量模板并填写生产配置：
 
 ```bash
-cd backend
 copy .env.example .env       # Windows
 # cp .env.example .env       # macOS/Linux
 ```
 
-至少需要配置 `DATABASE_URL`、JWT 密钥。ERPNext 和钉钉相关变量按实际集成需求配置；未配置 ERPNext Token 时，远程同步会跳过，不影响本地业务保存。
+至少需要修改 PostgreSQL、`DATABASE_URL`、`JWT_SECRET` 和 `JWT_REFRESH_SECRET`。钉钉 OAuth、ERPNext、OAuth2/OIDC SSO 等功能还需要补充对应的环境变量。
 
-### 2. 安装后端依赖并初始化数据库
+`DATABASE_URL` 在容器内必须使用 PostgreSQL 服务名 `postgres`，例如：
 
-```bash
-cd backend
-pnpm install
-pnpm prisma:generate
-pnpm prisma:validate
-pnpm prisma:migrate
-pnpm prisma:seed
+```env
+DATABASE_URL=postgresql://eims:strong-password@postgres:5432/eims?schema=public
 ```
 
-Prisma Schema 位于 `backend/libs/database/prisma/schema.prisma`，手动执行 Prisma 命令时必须添加：
+### 2. 构建并启动
 
 ```bash
---schema libs/database/prisma/schema.prisma
+docker compose up -d --build
 ```
 
-### 3. 启动后端
+前端默认通过 `APP_PORT` 暴露，访问 `http://localhost:8003`（可在 `.env` 中修改）。后端 API 通过前端 Nginx 的 `/api` 反向代理访问，不需要单独暴露宿主机端口。Docker 环境下 OAuth2/OIDC 的 `OAUTH2_ISSUER` 应配置为浏览器可访问的前端根地址，例如 `http://localhost:8003`，不要追加 `/api`。
+
+### 外部系统门户和 SSO 配置
+
+首页“系统”卡片现在由 EIMS 后端门户接口驱动，系统目录、入口地址、可选 SSO 启动地址、允许角色、说明地址、反馈地址和 OAuth2 应用关联在“系统管理 → 外部系统目录”中维护。前端只展示 `/api/portal/systems` 返回的当前用户可访问系统，点击入口时还会调用 `/api/portal/systems/:code/launch` 由后端再次校验角色、系统状态和账号绑定。OAuth2 系统优先使用目录中的 SSO 启动地址，未配置时使用入口地址；SSO 启动地址不能填写 OAuth 回调地址。
+
+后续 ERP、CRM、MES 等系统接入 EIMS 的双方改造项、交付字段、OAuth 参数字典和验收清单，见 [EIMS SSO 外部系统接入实施与交付规范](docs/eims-sso-integration-guide.md)。
+
+`frontend/public/config/external-systems.json` 仅保留作旧版本运行时配置参考，不再承担权限控制，也不应放入 `client_secret`。新系统应先在 EIMS 的 OAuth2 应用管理中注册客户端，再在外部系统目录中选择 OAuth2 应用，并在 OAuth2 账号绑定中维护用户对应的业务账号。ERP 的 `clientId`、`clientSecret`、EIMS 地址和回调地址仍只配置在 ERP 后端。
+
+`EXTERNAL_BUDGET_URL`、`EXTERNAL_ERP_URL`、`EXTERNAL_MES_URL`、`EXTERNAL_CRM_URL` 和 `EXTERNAL_LEMOS_URL` 是后端运行时的入口覆盖配置，优先级高于数据库中的 `entryUrl`；对应的 `EXTERNAL_*_SSO_START_URL` 是 OAuth2 系统的 SSO 启动地址覆盖配置，优先级高于目录中的 `ssoStartUrl`。它们仅对对应的预置系统编码生效；其他自定义系统仍使用数据库配置。修改这些变量后需要重启 backend 容器，seed 不会覆盖已有目录记录。生产环境这些地址必须使用 HTTPS；本地测试请将 `NODE_ENV` 设为 `development`。
+
+访问策略选择“按角色授权”时，允许角色留空表示拒绝访问；只有明确选择“所有已登录用户”才会对所有已登录用户开放。选择“OAuth2 绑定”后，只有完成对应业务账号绑定的用户可以从门户进入。业务系统内部的菜单和接口权限仍必须由业务系统后端自行校验。
+
+### 3. 执行数据库迁移和种子数据
+
+首次部署或升级数据库结构时执行：
 
 ```bash
-cd backend
-pnpm start:dev
+docker compose run --rm backend npx prisma migrate deploy --schema libs/database/prisma/schema.prisma
+docker compose run --rm backend npx ts-node libs/database/prisma/seed.ts
 ```
 
-API 默认地址为 `http://localhost:3000`。
+Prisma Schema 位于 `backend/libs/database/prisma/schema.prisma`。生产环境只执行 `migrate deploy`，不要使用 `prisma db push`。
 
-### 4. 启动前端
+### 4. 常用 Docker 命令
 
 ```bash
-cd frontend
-pnpm install
-pnpm dev
+docker compose ps
+docker compose logs -f backend
+docker compose logs -f frontend
+docker compose restart backend
+docker compose down
+docker compose down -v       # 删除数据库数据卷，请谨慎执行
 ```
-
-前端默认地址为 `http://localhost:9527`，开发环境通过 Vite 代理访问后端 `/api`。
 
 ## 默认账号
 
@@ -119,34 +124,14 @@ pnpm dev
 
 首次运行种子脚本后使用该账号登录。生产环境请立即修改密码和 JWT 密钥。
 
-## 常用命令
+## 本地开发辅助
 
-### 后端
-
-```bash
-cd backend
-pnpm start:dev          # 开发模式
-pnpm build              # 构建
-pnpm lint               # ESLint 修复
-pnpm test               # 单元测试
-pnpm prisma:generate   # 生成 Prisma Client
-pnpm prisma:validate   # 校验 Schema
-pnpm prisma:migrate    # 创建并应用迁移
-pnpm prisma:seed       # 初始化/补充种子数据
-pnpm prisma:studio     # 打开 Prisma Studio
-```
-
-### 前端
+项目部署和运行以 Docker Compose 为准。需要调试源码时，可以单独启动依赖服务：
 
 ```bash
-cd frontend
-pnpm dev                # 开发模式
-pnpm build              # 生产构建
-pnpm build:test         # 测试环境构建
-pnpm typecheck          # TypeScript 类型检查
-pnpm lint               # Oxlint + ESLint 修复
-pnpm gen-route          # 生成路由
+docker compose up -d postgres
 ```
+
 
 ## API 约定
 
@@ -156,7 +141,7 @@ pnpm gen-route          # 生成路由
 { "code": "0000", "msg": "success", "data": {} }
 ```
 
-- 请求鉴权：`Authorization: Bearer <token>`
+- EIMS 浏览器会话：HttpOnly Cookie（写操作同时校验 CSRF Token）；服务端 OAuth 接口仍使用 `Authorization: Bearer <token>`
 - Token 过期：业务码 `9999`
 - 强制退出：业务码 `8888`
 - 业务冲突（HTTP 409）会返回具体原因，前端统一以警告提示展示
@@ -173,6 +158,8 @@ pnpm gen-route          # 生成路由
 | OA | `/oa/*` |
 | ERPNext 映射 | `/erpnext-mapping` |
 | ERPNext 同步日志 | `/erpnext-sync-log` |
+| 门户系统 | `/portal/systems` |
+| 我的门户权限 | `/portal/me/permissions` |
 
 ## 数据库约定
 

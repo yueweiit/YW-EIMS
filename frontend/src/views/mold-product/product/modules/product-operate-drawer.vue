@@ -4,6 +4,7 @@ import type { FormRules } from 'naive-ui';
 import { NButton, NDrawer, NDrawerContent, NForm, NFormItem, NSelect, NSpace } from 'naive-ui';
 import { fetchCreateProduct, fetchPhoneModelPage, fetchProductCodePage, fetchUpdateProduct } from '@/service/api';
 import { useNaiveForm } from '@/hooks/common/form';
+import { $t } from '@/locales';
 
 defineOptions({
   name: 'ProductOperateDrawer'
@@ -42,20 +43,20 @@ const defaultForm: Api.Product.CreateParams = {
 
 const formModel = reactive<Api.Product.CreateParams>({ ...defaultForm });
 
-const title = computed(() => (props.type === 'add' ? '新增产品' : '编辑产品'));
+const title = computed(() => (props.type === 'add' ? $t('page.ui.addProduct') : $t('page.ui.editProduct')));
 
 const rules = computed<FormRules>(() => ({
   productType: [
     {
       required: true,
-      message: '请选择产品类型',
+      message: $t('page.ui.selectProductType'),
       trigger: 'change'
     }
   ],
   phoneShortName: [
     {
       required: true,
-      message: '请选择手机简称',
+      message: $t('page.ui.selectPhoneShortName'),
       trigger: 'change'
     }
   ]
@@ -108,7 +109,7 @@ async function loadProductTypeOptions() {
         }));
     }
   } catch {
-    window.$message?.error('加载产品类型列表失败');
+    window.$message?.error($t('page.ui.loadProductTypeListFailed'));
   }
 }
 
@@ -139,7 +140,7 @@ async function loadPhoneShortNameOptions(searchText = '', reset = true) {
       phoneShortNameTotal.value = data.total;
     }
   } catch {
-    window.$message?.error('加载手机型号列表失败');
+    window.$message?.error($t('page.ui.loadPhoneModelListFailed'));
   } finally {
     phoneShortNameLoading.value = false;
   }
@@ -173,14 +174,14 @@ async function handleSubmit() {
       const { data, error } = await fetchCreateProduct(body);
       if (!error) {
         const count = Array.isArray(data) ? data.length : data ? 1 : 0;
-        window.$message?.success(`成功生成 ${count} 条品目`);
+        window.$message?.success($t('page.ui.generatedProductItems', { count }));
         visible.value = false;
         emit('submitted');
       }
     } else if (props.rowData) {
       const { error } = await fetchUpdateProduct(props.rowData.id, body);
       if (!error) {
-        window.$message?.success('更新成功');
+        window.$message?.success($t('common.updateSuccess'));
         visible.value = false;
         emit('submitted');
       }
@@ -195,20 +196,20 @@ async function handleSubmit() {
   <NDrawer v-model:show="visible" width="420px" placement="right">
     <NDrawerContent :title="title" :native-scrollbar="false">
       <NForm ref="formRef" :model="formModel" :rules="rules" label-placement="left" label-width="90px">
-        <NFormItem label="产品类型" path="productType">
+        <NFormItem :label="$t('page.ui.productType')" path="productType">
           <NSelect
             v-model:value="formModel.productType"
             :options="productTypeOptions"
-            placeholder="请选择产品类型"
+            :placeholder="$t('page.ui.selectProductType')"
             filterable
           />
         </NFormItem>
 
-        <NFormItem label="手机简称" path="phoneShortName">
+        <NFormItem :label="$t('page.ui.phoneShortName')" path="phoneShortName">
           <NSelect
             v-model:value="formModel.phoneShortName"
             :options="phoneShortNameOptions"
-            placeholder="请选择手机简称"
+            :placeholder="$t('page.ui.selectPhoneShortName')"
             filterable
             remote
             :loading="phoneShortNameLoading"
@@ -221,9 +222,9 @@ async function handleSubmit() {
 
       <template #footer>
         <NSpace justify="end">
-          <NButton @click="visible = false">取消</NButton>
+          <NButton @click="visible = false">{{ $t('common.cancel') }}</NButton>
           <NButton type="primary" :loading="loading" @click="handleSubmit">
-            确定
+            {{ $t('common.confirm') }}
           </NButton>
         </NSpace>
       </template>

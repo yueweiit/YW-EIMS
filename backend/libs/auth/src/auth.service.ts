@@ -3,12 +3,11 @@ import {
   ForbiddenException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { createHash } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '@eims/database';
-import type { JwtPayload } from './auth.types';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 
@@ -28,7 +27,7 @@ export class AuthService {
       throw new UnauthorizedException('用户名或密码错误');
     }
 
-    if (user.status === '2') {
+    if (user.status !== '1') {
       throw new ForbiddenException('账号已禁用，请联系管理员');
     }
 
@@ -43,36 +42,142 @@ export class AuthService {
   async getUserInfo(userId: number) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, userName: true, roles: true, buttons: true },
+      select: {
+        id: true,
+        userName: true,
+        roles: true,
+        buttons: true,
+        status: true,
+      },
     });
-    if (!user) {
-      throw new UnauthorizedException('用户不存在');
+    if (!user || user.status !== '1') {
+      throw new UnauthorizedException('用户不存在或已被禁用');
     }
+    const roles = await this.getActiveRoleCodes(user.roles);
+    const permissions = await this.getActivePermissionCodes(roles);
     return {
       userId: String(user.id),
       userName: user.userName,
-      roles: user.roles,
+      roles,
       buttons: user.buttons,
+      permissions,
     };
   }
 
   async refreshToken(dto: RefreshTokenDto) {
     try {
-      const payload = await this.jwtService.verifyAsync<JwtPayload>(
-        dto.refreshToken,
-        {
-          secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-        },
-      );
-      const user = await this.prisma.user.findUnique({
-        where: { id: payload.sub },
-      });
-      if (!user) {
-        throw new UnauthorizedException('用户不存在');
+      if (!dto.refreshToken) {
+        throw new UnauthorizedException('refresh token missing');
       }
-      return this.generateTokens(user.id, user.userName);
+      const refreshToken = dto.refreshToken;
+      const now = new Date();
+      const session = await this.prisma.authRefreshSession.findUnique({
+        where: { tokenHash: this.hashRefreshToken(refreshToken) },
+        select: {
+          id: true,
+          familyId: true,
+          expiresAt: true,
+          revokedAt: true,
+          user: { select: { id: true, userName: true, status: true } },
+        },
+      });
+      if (!session || session.expiresAt <= now) {
+        throw new UnauthorizedException('refresh token expired or invalid');
+      }
+      if (session.revokedAt) {
+        await this.revokeSessionFamily(session.user.id, session.familyId);
+        throw new UnauthorizedException('refresh token already used');
+      }
+      if (session.user.status !== '1') {
+        await this.revokeSessionFamily(session.user.id, session.familyId);
+        throw new UnauthorizedException('refresh token expired or invalid');
+      }
+
+      const revoked = await this.prisma.authRefreshSession.updateMany({
+        where: {
+          id: session.id,
+          revokedAt: null,
+          expiresAt: { gt: now },
+        },
+        data: { revokedAt: now },
+      });
+      if (revoked.count !== 1) {
+        // A second use of the same refresh token indicates token theft or a
+        // replay race. Revoke every token in this family, including any token
+        // issued by the winning request.
+        await this.revokeSessionFamily(session.user.id, session.familyId);
+        throw new UnauthorizedException('refresh token already used');
+      }
+
+      return this.generateTokens(
+        session.user.id,
+        session.user.userName,
+        session.familyId || undefined,
+      );
     } catch {
       throw new UnauthorizedException('refresh token expired or invalid');
+    }
+  }
+
+  async logout(dto: RefreshTokenDto, accessToken?: string) {
+    const revokedAt = new Date();
+    if (dto.refreshToken) {
+      await this.prisma.authRefreshSession.updateMany({
+        where: {
+          tokenHash: this.hashRefreshToken(dto.refreshToken),
+          revokedAt: null,
+        },
+        data: { revokedAt },
+      });
+    }
+    if (accessToken) {
+      await this.prisma.authRefreshSession.updateMany({
+        where: {
+          accessTokenHash: this.hashAccessToken(accessToken),
+          revokedAt: null,
+        },
+        data: { revokedAt },
+      });
+    }
+    return {};
+  }
+
+  /** Revoke every EIMS browser session for a user (used by single logout). */
+  async revokeAllSessions(userId: number) {
+    return this.prisma.authRefreshSession.updateMany({
+      where: { userId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+  }
+
+  private async revokeSessionFamily(userId: number, familyId?: string | null) {
+    return this.prisma.authRefreshSession.updateMany({
+      where: {
+        userId,
+        revokedAt: null,
+        ...(familyId ? { familyId } : {}),
+      },
+      data: { revokedAt: new Date() },
+    });
+  }
+
+  /** Resolve a cookie access token without throwing; used by public logout. */
+  async resolveAccessTokenUserId(token?: string) {
+    if (!token) return undefined;
+    try {
+      const payload = await this.jwtService.verifyAsync<{ sub?: number }>(token, {
+        secret: this.configService.get<string>('JWT_SECRET'),
+      });
+      if (!Number.isInteger(payload.sub) || (payload.sub || 0) < 1) {
+        return undefined;
+      }
+      const user = await this.prisma.user.findUnique({
+        where: { id: payload.sub },
+        select: { id: true, status: true },
+      });
+      return user?.status === '1' ? user.id : undefined;
+    } catch {
+      return undefined;
     }
   }
 
@@ -96,7 +201,7 @@ export class AuthService {
       throw new UnauthorizedException('该钉钉账号存在多个 EIMS 绑定，请联系管理员');
     }
     const [user] = users;
-    if (user.status === '2') {
+    if (user.status !== '1') {
       throw new ForbiddenException('EIMS 用户已被禁用');
     }
     return user.id;
@@ -134,25 +239,94 @@ export class AuthService {
       where: { id: record.userId },
       select: { id: true, userName: true, status: true },
     });
-    if (!user || user.status === '2') {
+    if (!user || user.status !== '1') {
       throw new UnauthorizedException('用户不存在或已被禁用');
     }
 
     return this.generateTokens(user.id, user.userName);
   }
 
-  private async generateTokens(userId: number, userName: string) {
+  private async generateTokens(
+    userId: number,
+    userName: string,
+    familyId = randomBytes(32).toString('base64url'),
+  ) {
     const payload = { sub: userId, userName };
-    const [token, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(payload, {
-        secret: this.configService.get<string>('JWT_SECRET'),
-        expiresIn: this.configService.get('JWT_EXPIRES_IN'),
-      }),
-      this.jwtService.signAsync(payload, {
-        secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-        expiresIn: this.configService.get('JWT_REFRESH_EXPIRES_IN'),
-      }),
-    ]);
+    const token = await this.jwtService.signAsync(payload, {
+      secret: this.configService.get<string>('JWT_SECRET'),
+      expiresIn: this.configService.get('JWT_EXPIRES_IN'),
+    });
+    const refreshToken = randomBytes(32).toString('base64url');
+    await this.prisma.authRefreshSession.create({
+      data: {
+        tokenHash: this.hashRefreshToken(refreshToken),
+        accessTokenHash: this.hashAccessToken(token),
+        familyId,
+        userId,
+        expiresAt: new Date(Date.now() + this.getRefreshSessionLifetimeMs()),
+      },
+    });
     return { token, refreshToken };
+  }
+
+  private hashRefreshToken(token: string) {
+    return createHash('sha256').update(token).digest('hex');
+  }
+
+  private hashAccessToken(token: string) {
+    return createHash('sha256').update(token).digest('hex');
+  }
+
+  private async getActiveRoleCodes(userRoles: string[]) {
+    const normalizedRoles = [
+      ...new Set(userRoles.map(role => role.trim()).filter(Boolean)),
+    ];
+    if (normalizedRoles.length === 0) return [];
+
+    const activeRoles = await this.prisma.systemRole.findMany({
+      where: { code: { in: normalizedRoles }, status: '1' },
+      select: { code: true },
+    });
+    const activeCodes = new Set(activeRoles.map(role => role.code));
+    return normalizedRoles.filter(role => activeCodes.has(role));
+  }
+
+  private async getActivePermissionCodes(userRoles: string[]) {
+    if (userRoles.includes('R_SUPER')) return ['*'];
+    if (userRoles.length === 0) return [];
+
+    const roles = await this.prisma.systemRole.findMany({
+      where: { code: { in: userRoles }, status: '1' },
+      select: { id: true },
+    });
+    if (roles.length === 0) return [];
+
+    const links = await this.prisma.systemRolePermission.findMany({
+      where: {
+        roleId: { in: roles.map(role => role.id) },
+        permission: { status: '1' },
+      },
+      select: { permission: { select: { code: true } } },
+    });
+    return [...new Set(links.map(link => link.permission.code))];
+  }
+
+  private getRefreshSessionLifetimeMs() {
+    const configured = this.configService.get<string>(
+      'JWT_REFRESH_EXPIRES_IN',
+      '7d',
+    );
+    const match = /^(\d+)\s*([smhd])?$/.exec(configured.trim());
+    if (!match) return 7 * 24 * 60 * 60 * 1000;
+
+    const value = Number(match[1]);
+    const unit = match[2] || 's';
+    const multipliers: Record<string, number> = {
+      s: 1000,
+      m: 60 * 1000,
+      h: 60 * 60 * 1000,
+      d: 24 * 60 * 60 * 1000,
+    };
+    return value * multipliers[unit];
   }
 }

@@ -1,19 +1,23 @@
 <script setup lang="ts">
-import HeaderBanner from './modules/header-banner.vue';
-import QuickNav from './modules/quick-nav.vue';
 import ExternalNav from './modules/external-nav.vue';
 </script>
 
 <template>
-  <NSpace vertical :size="16">
-    <HeaderBanner />
-    <NCard :bordered="false" class="card-wrapper">
-      <QuickNav />
-    </NCard>
-    <NCard :bordered="false" class="card-wrapper">
+  <div class="home-page">
+    <NCard :bordered="false" class="home-section card-wrapper">
       <ExternalNav />
     </NCard>
-  </NSpace>
+  </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+.home-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.home-section {
+  overflow: hidden;
+}
+</style>

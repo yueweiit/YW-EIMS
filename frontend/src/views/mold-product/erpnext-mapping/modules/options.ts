@@ -1,13 +1,16 @@
-export const erpNextMappingTypeOptions: Array<{
+import { $t } from '@/locales';
+import { computed } from 'vue';
+
+export const erpNextMappingTypeOptions = computed<Array<{
   label: string;
   value: Api.ErpNextMapping.MappingType;
-}> = [
-  { label: '物料组', value: 'ITEM_GROUP' },
-  { label: '模具物料组', value: 'MOLD_ITEM_GROUP' },
-  { label: '产品物料组', value: 'PRODUCT_ITEM_GROUP' },
-  { label: '单位', value: 'UNIT' }
-];
+}>>(() => [
+  { label: $t('page.ui.mappingTypeMaterialGroup'), value: 'ITEM_GROUP' },
+  { label: $t('page.ui.mappingTypeMoldMaterialGroup'), value: 'MOLD_ITEM_GROUP' },
+  { label: $t('page.ui.mappingTypeProductMaterialGroup'), value: 'PRODUCT_ITEM_GROUP' },
+  { label: $t('page.ui.mappingTypeUnit'), value: 'UNIT' }
+]);
 
 export function getErpNextMappingTypeLabel(type: Api.ErpNextMapping.MappingType) {
-  return erpNextMappingTypeOptions.find(item => item.value === type)?.label || type;
+  return erpNextMappingTypeOptions.value.find(item => item.value === type)?.label || type;
 }

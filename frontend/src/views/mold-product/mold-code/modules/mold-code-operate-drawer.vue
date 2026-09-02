@@ -4,6 +4,7 @@ import type { FormRules } from 'naive-ui';
 import { NButton, NDrawer, NDrawerContent, NForm, NFormItem, NInput, NSelect, NSpace } from 'naive-ui';
 import { fetchCreateMoldCode, fetchMoldMaterialPage, fetchUpdateMoldCode } from '@/service/api';
 import { useNaiveForm } from '@/hooks/common/form';
+import { $t } from '@/locales';
 
 defineOptions({
   name: 'MoldCodeOperateDrawer'
@@ -40,7 +41,7 @@ const defaultForm: Api.MoldCode.CreateParams = {
 
 const formModel = reactive<Api.MoldCode.CreateParams>({ ...defaultForm });
 
-const title = computed(() => (props.type === 'add' ? '新增模具编码' : '编辑模具编码'));
+const title = computed(() => (props.type === 'add' ? $t('page.ui.addMoldCode') : $t('page.ui.editMoldCode')));
 
 const moldCodePreview = computed(() => {
   const prefix = formModel.moldPrefix?.trim();
@@ -55,43 +56,43 @@ const rules = computed<FormRules>(() => ({
   moldType: [
     {
       required: true,
-      message: '请输入模具类型',
+      message: $t('page.ui.selectMoldType'),
       trigger: 'blur'
     },
     {
       max: 50,
-      message: '模具类型长度不能超过50个字符',
+      message: $t('page.ui.moldTypeMax'),
       trigger: 'blur'
     }
   ],
   moldName: [
     {
       required: true,
-      message: '请输入模具名称',
+      message: $t('page.ui.enterMoldName'),
       trigger: 'blur'
     },
     {
       max: 100,
-      message: '模具名称长度不能超过100个字符',
+      message: $t('page.ui.moldNameMax'),
       trigger: 'blur'
     }
   ],
   moldPrefix: [
     {
       required: true,
-      message: '请输入模具前缀',
+      message: $t('page.ui.enterMoldPrefix'),
       trigger: 'blur'
     },
     {
       max: 50,
-      message: '模具前缀长度不能超过50个字符',
+      message: $t('page.ui.moldPrefixMax'),
       trigger: 'blur'
     }
   ],
   materialName: [
     {
       required: true,
-      message: '请选择材质名称',
+      message: $t('page.ui.selectMaterialName'),
       trigger: 'change'
     }
   ]
@@ -112,7 +113,7 @@ async function loadMaterialOptions() {
       materialTypeCodeMap.value = map;
     }
   } catch {
-    window.$message?.error('加载材质列表失败');
+    window.$message?.error($t('page.ui.loadMaterialListFailed'));
   }
 }
 
@@ -159,14 +160,14 @@ async function handleSubmit() {
     if (props.type === 'add') {
       const { error } = await fetchCreateMoldCode(body);
       if (!error) {
-        window.$message?.success('新增成功');
+        window.$message?.success($t('common.addSuccess'));
         visible.value = false;
         emit('submitted');
       }
     } else if (props.rowData) {
       const { error } = await fetchUpdateMoldCode(props.rowData.id, body);
       if (!error) {
-        window.$message?.success('更新成功');
+        window.$message?.success($t('common.updateSuccess'));
         visible.value = false;
         emit('submitted');
       }
@@ -181,37 +182,37 @@ async function handleSubmit() {
   <NDrawer v-model:show="visible" width="420px" placement="right">
     <NDrawerContent :title="title" :native-scrollbar="false">
       <NForm ref="formRef" :model="formModel" :rules="rules" label-placement="left" label-width="90px">
-        <NFormItem label="模具类型" path="moldType">
-          <NInput v-model:value="formModel.moldType" placeholder="请输入模具类型" />
+        <NFormItem :label="$t('page.ui.moldType')" path="moldType">
+          <NInput v-model:value="formModel.moldType" :placeholder="$t('page.ui.selectMoldType')" />
         </NFormItem>
 
-        <NFormItem label="模具名称" path="moldName">
-          <NInput v-model:value="formModel.moldName" placeholder="请输入模具名称" />
+        <NFormItem :label="$t('page.ui.moldName')" path="moldName">
+          <NInput v-model:value="formModel.moldName" :placeholder="$t('page.ui.enterMoldName')" />
         </NFormItem>
 
-        <NFormItem label="模具前缀" path="moldPrefix">
-          <NInput v-model:value="formModel.moldPrefix" placeholder="请输入模具前缀" />
+        <NFormItem :label="$t('page.ui.moldPrefix')" path="moldPrefix">
+          <NInput v-model:value="formModel.moldPrefix" :placeholder="$t('page.ui.enterMoldPrefix')" />
         </NFormItem>
 
-        <NFormItem label="材质名称" path="materialName">
+        <NFormItem :label="$t('page.ui.materialTypeName')" path="materialName">
           <NSelect
             v-model:value="formModel.materialName"
             :options="materialOptions"
-            placeholder="请选择材质名称"
+            :placeholder="$t('page.ui.selectMaterialName')"
             filterable
           />
         </NFormItem>
 
-        <NFormItem v-if="moldCodePreview" label="模具编码">
-          <NInput :value="moldCodePreview" placeholder="自动生成" disabled />
+        <NFormItem v-if="moldCodePreview" :label="$t('page.ui.moldCode')">
+          <NInput :value="moldCodePreview" :placeholder="$t('page.ui.autoGenerate')" disabled />
         </NFormItem>
       </NForm>
 
       <template #footer>
         <NSpace justify="end">
-          <NButton @click="visible = false">取消</NButton>
+          <NButton @click="visible = false">{{ $t('common.cancel') }}</NButton>
           <NButton type="primary" :loading="loading" @click="handleSubmit">
-            确定
+            {{ $t('common.confirm') }}
           </NButton>
         </NSpace>
       </template>

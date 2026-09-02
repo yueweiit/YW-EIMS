@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { h, reactive, ref } from 'vue';
+import { computed, h, reactive, ref } from 'vue';
 import type { DataTableColumns } from 'naive-ui';
 import { NButton, NCard, NDataTable, NPagination, NPopconfirm, NSpace, NTag } from 'naive-ui';
 import { useLoading } from '@sa/hooks';
@@ -37,16 +37,16 @@ const editRow = ref<Api.ErpNextMapping.ErpNextMappingRecord | null>(null);
 const excelColumns: ExcelColumn<Api.ErpNextMapping.ErpNextMappingRecord, Api.ErpNextMapping.CreateParams>[] = [
   {
     key: 'type',
-    label: '映射类型',
+    label: $t('page.ui.mappingType'),
     required: true,
     example: 'ITEM_GROUP',
     exportValue: row => row.type
   },
-  { key: 'sourceKey', label: '源值', required: true, example: '产品' },
-  { key: 'targetValue', label: 'ERPNext目标值', required: true, example: 'Products' }
+  { key: 'sourceKey', label: $t('page.ui.sourceValue'), required: true, example: 'Product' },
+  { key: 'targetValue', label: $t('page.ui.erpNextTargetValue'), required: true, example: 'Products' }
 ];
 
-const columns: DataTableColumns<Api.ErpNextMapping.ErpNextMappingRecord> = [
+const columns = computed<DataTableColumns<Api.ErpNextMapping.ErpNextMappingRecord>>(() => [
   {
     key: 'index',
     title: $t('common.index'),
@@ -56,7 +56,7 @@ const columns: DataTableColumns<Api.ErpNextMapping.ErpNextMappingRecord> = [
   },
   {
     key: 'type',
-    title: '映射类型',
+    title: $t('page.ui.mappingType'),
     width: 150,
     render: row =>
       h(
@@ -67,7 +67,7 @@ const columns: DataTableColumns<Api.ErpNextMapping.ErpNextMappingRecord> = [
   },
   {
     key: 'sourceKey',
-    title: '源值',
+    title: $t('page.ui.sourceValue'),
     minWidth: 180,
     ellipsis: {
       tooltip: true
@@ -75,7 +75,7 @@ const columns: DataTableColumns<Api.ErpNextMapping.ErpNextMappingRecord> = [
   },
   {
     key: 'targetValue',
-    title: 'ERPNext目标值',
+    title: $t('page.ui.erpNextTargetValue'),
     minWidth: 240,
     ellipsis: {
       tooltip: true
@@ -115,7 +115,7 @@ const columns: DataTableColumns<Api.ErpNextMapping.ErpNextMappingRecord> = [
         }
       )
   }
-];
+]);
 
 async function getData() {
   startLoading();
@@ -171,17 +171,17 @@ async function fetchExportRows() {
 }
 
 function handleDownloadTemplate() {
-  downloadCrudTemplate(excelColumns, 'ERPNext映射配置', {
+  downloadCrudTemplate(excelColumns, $t('page.ui.erpNextMapping'), {
     type: 'ITEM_GROUP',
-    sourceKey: '产品',
+    sourceKey: 'Product',
     targetValue: 'Products'
   });
 }
 
 async function handleExport() {
   const rows = await fetchExportRows();
-  exportCrudRows(rows, excelColumns, 'ERPNext映射配置');
-  window.$message?.success(`已导出 ${rows.length} 条数据`);
+  exportCrudRows(rows, excelColumns, $t('page.ui.erpNextMapping'));
+  window.$message?.success($t('page.ui.exportedCount', { count: rows.length }));
 }
 
 function triggerFileInput() {
@@ -196,23 +196,25 @@ async function handleFileChange(event: Event) {
 
   importing.value = true;
   try {
-    const result = await parseCrudExcelFile(file, excelColumns, 'ERPNext映射配置');
+    const result = await parseCrudExcelFile(file, excelColumns, $t('page.ui.erpNextMapping'));
     let success = 0;
     const errors: string[] = [];
 
     for (const [index, row] of result.rows.entries()) {
       const { error } = await fetchCreateErpNextMapping(row);
-      if (error) errors.push(`第 ${index + 2} 行导入失败`);
+      if (error) errors.push($t('page.ui.importRowFailed', { row: index + 2 }));
       else success += 1;
     }
 
     window.$message?.[errors.length ? 'warning' : 'success'](
-      errors.length ? `导入完成：成功 ${success} 条，失败 ${errors.length} 条` : `成功导入 ${success} 条`
+      errors.length
+        ? $t('page.ui.importCompleted', { success, failed: errors.length })
+        : $t('page.ui.importedCount', { count: success })
     );
     if (errors.length) window.$message?.error(errors.slice(0, 3).join('；'));
     getData();
   } catch (err) {
-    window.$message?.error(err instanceof Error ? err.message : '导入失败');
+    window.$message?.error(err instanceof Error ? err.message : $t('page.ui.importFailure'));
   } finally {
     importing.value = false;
   }
@@ -239,9 +241,9 @@ getData();
         <ErpNextMappingSearch v-model="queryParams" @search="handleSearch" @reset="handleReset" />
         <NSpace align="center" wrap>
           <input ref="fileInputRef" type="file" accept=".xlsx,.xls,.csv" style="display: none" @change="handleFileChange" />
-          <NButton type="info" ghost :loading="importing" @click="triggerFileInput">导入 Excel</NButton>
-          <NButton ghost @click="handleDownloadTemplate">下载模板</NButton>
-          <NButton type="success" ghost @click="handleExport">导出 Excel</NButton>
+          <NButton type="info" ghost :loading="importing" @click="triggerFileInput">{{ $t('page.ui.importExcel') }}</NButton>
+          <NButton ghost @click="handleDownloadTemplate">{{ $t('page.ui.downloadTemplate') }}</NButton>
+          <NButton type="success" ghost @click="handleExport">{{ $t('page.ui.exportExcel') }}</NButton>
           <NButton type="primary" @click="handleAdd">
             {{ $t('common.add') }}
           </NButton>

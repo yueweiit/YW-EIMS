@@ -1,4 +1,5 @@
 import * as XLSX from 'xlsx';
+import { $t } from '@/locales';
 
 /** Column header aliases mapped to ProductData fields */
 const HEADER_MAP: Record<keyof BoxLabel.ProductData, string[]> = {
@@ -62,7 +63,7 @@ export function parseExcelFile(file: File): Promise<ImportResult> {
         const sheetName = workbook.SheetNames[0];
 
         if (!sheetName) {
-          reject(new Error('Excel 文件中没有工作表'));
+          reject(new Error($t('page.ui.excelNoWorksheet')));
           return;
         }
 
@@ -70,7 +71,7 @@ export function parseExcelFile(file: File): Promise<ImportResult> {
         const rows = XLSX.utils.sheet_to_json<(string | number | null)[]>(sheet, { header: 1, defval: '' });
 
         if (rows.length < 2) {
-          reject(new Error('Excel 文件至少需要表头行和一行数据'));
+          reject(new Error($t('page.ui.excelNeedRows')));
           return;
         }
 
@@ -78,8 +79,15 @@ export function parseExcelFile(file: File): Promise<ImportResult> {
         const headerIndex = buildHeaderIndex(headers);
 
         if (headerIndex.size === 0) {
-          reject(new Error('未匹配到任何列，请确保表头包含以下字段之一：' +
-            Object.values(HEADER_MAP).flat().slice(0, 10).join('、') + ' 等'));
+          reject(
+            new Error(
+              $t('page.ui.excelRequiredHeaderHint', {
+                headers: Object.keys(HEADER_MAP)
+                  .map(key => $t(`page.ui.${key}`))
+                  .join($t('page.ui.listSeparator'))
+              })
+            )
+          );
           return;
         }
 
@@ -103,7 +111,7 @@ export function parseExcelFile(file: File): Promise<ImportResult> {
         }
 
         if (products.length === 0) {
-          reject(new Error('Excel 文件中没有有效数据行'));
+          reject(new Error($t('page.ui.excelNoValidRows', { module: $t('page.ui.boxLabelRecords') })));
           return;
         }
 
@@ -115,11 +123,11 @@ export function parseExcelFile(file: File): Promise<ImportResult> {
 
         resolve({ products, matchedColumns, skippedRows });
       } catch (err) {
-        reject(new Error(`解析 Excel 文件失败: ${err instanceof Error ? err.message : String(err)}`));
+        reject(new Error($t('page.ui.excelParseFailure', { message: err instanceof Error ? err.message : String(err) })));
       }
     };
 
-    reader.onerror = () => reject(new Error('读取文件失败'));
+    reader.onerror = () => reject(new Error($t('page.ui.excelReadFailure')));
     reader.readAsArrayBuffer(file);
   });
 }

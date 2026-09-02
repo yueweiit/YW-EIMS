@@ -1,6 +1,7 @@
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 import type { Content, TDocumentDefinitions, TFontDictionary } from 'pdfmake/interfaces';
+import { $t } from '@/locales';
 
 // Initialize pdfmake VFS with default Roboto fonts
 pdfMake.addVirtualFileSystem(pdfFonts);
@@ -110,7 +111,7 @@ const FIXED = {
  */
 export async function generateBoxLabelPdf(products: BoxLabel.ProductData[]): Promise<void> {
   if (!products.length) {
-    window.$message?.warning('请至少添加一个产品');
+    window.$message?.warning($t('page.ui.atLeastOneProduct'));
     return;
   }
 
@@ -189,9 +190,9 @@ export async function generateBoxLabelPdf(products: BoxLabel.ProductData[]): Pro
 
     console.log('[PDF] Creating document...');
     pdfMake.createPdf(docDefinition).download('box-labels.pdf');
-    window.$message?.success('PDF 已生成');
+    window.$message?.success($t('page.ui.pdfGenerated'));
   } catch (err) {
     console.error('[PDF] Error:', err);
-    window.$message?.error('PDF 生成失败');
+    window.$message?.error($t('page.ui.pdfGenerationFailed'));
   }
 }

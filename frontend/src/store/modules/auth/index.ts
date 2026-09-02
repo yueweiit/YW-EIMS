@@ -2,14 +2,16 @@ import { computed, reactive, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { defineStore } from 'pinia';
 import { useLoading } from '@sa/hooks';
-import { fetchDingTalkLoginToken, fetchGetUserInfo, fetchLogin } from '@/service/api';
+import { fetchDingTalkLoginToken, fetchGetUserInfo, fetchLogin, fetchLogout } from '@/service/api';
 import { useRouterPush } from '@/hooks/common/router';
 import { localStg } from '@/utils/storage';
 import { SetupStoreId } from '@/enum';
 import { $t } from '@/locales';
 import { useRouteStore } from '../route';
 import { useTabStore } from '../tab';
-import { clearAuthStorage, getToken } from './shared';
+import { clearAuthStorage } from './shared';
+
+let resetPromise: Promise<void> | null = null;
 
 export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   const route = useRoute();
@@ -20,12 +22,15 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   const { loading: loginLoading, startLoading, endLoading } = useLoading();
 
   const token = ref('');
+  let initialized = false;
+  let initializing: Promise<void> | null = null;
 
   const userInfo: Api.Auth.UserInfo = reactive({
     userId: '',
     userName: '',
     roles: [],
-    buttons: []
+    buttons: [],
+    permissions: []
   });
 
   /** is super role in static route */
@@ -40,18 +45,42 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
 
   /** Reset auth store */
   async function resetStore() {
-    recordUserId();
-
-    clearAuthStorage();
-
-    authStore.$reset();
-
-    if (!route.meta.constant) {
-      await toLogin();
+    if (resetPromise) {
+      return resetPromise;
     }
 
-    tabStore.cacheTabs();
-    routeStore.resetStore();
+    resetPromise = (async () => {
+      recordUserId();
+
+      // Wait for the server to revoke the cookie session before navigating to
+      // the login route. Otherwise its route guard can call getUserInfo with
+      // the old cookie and race with logout.
+      if (token.value || userInfo.userId) {
+        try {
+          await fetchLogout();
+        } catch {
+          // Local cleanup and redirect must still happen when the server is unavailable.
+        }
+      }
+
+      clearAuthStorage();
+      initialized = false;
+
+      authStore.$reset();
+
+      if (!route.meta.constant) {
+        await toLogin();
+      }
+
+      tabStore.cacheTabs();
+      await routeStore.resetStore();
+    })();
+
+    try {
+      await resetPromise;
+    } finally {
+      resetPromise = null;
+    }
   }
 
   /** Record the user ID of the previous login session Used to compare with the current user ID on next login */
@@ -99,10 +128,10 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   async function login(userName: string, password: string, redirect = true) {
     startLoading();
 
-    const { data: loginToken, error } = await fetchLogin(userName, password);
+    const { data: loginSession, error } = await fetchLogin(userName, password);
 
-    if (!error) {
-      const pass = await loginByToken(loginToken);
+    if (!error && loginSession?.authenticated) {
+      const pass = await loginBySession();
 
       if (pass) {
         // Check if the tab needs to be cleared
@@ -131,9 +160,9 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   async function loginWithDingTalkTicket(ticket: string, redirect = true) {
     startLoading();
 
-    const { data: loginToken, error } = await fetchDingTalkLoginToken(ticket);
-    if (!error && loginToken) {
-      const pass = await loginByToken(loginToken);
+    const { data: loginSession, error } = await fetchDingTalkLoginToken(ticket);
+    if (!error && loginSession?.authenticated) {
+      const pass = await loginBySession();
 
       if (pass) {
         const isClear = checkTabClear();
@@ -150,16 +179,13 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     endLoading();
   }
 
-  async function loginByToken(loginToken: Api.Auth.LoginToken) {
-    // 1. stored in the localStorage, the later requests need it in headers
-    localStg.set('token', loginToken.token);
-    localStg.set('refreshToken', loginToken.refreshToken);
-
-    // 2. get user info
+  async function loginBySession() {
+    clearAuthStorage();
     const pass = await getUserInfo();
 
     if (pass) {
-      token.value = loginToken.token;
+      token.value = 'cookie';
+      initialized = true;
 
       return true;
     }
@@ -181,15 +207,25 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   }
 
   async function initUserInfo() {
-    const maybeToken = getToken();
+    if (initialized) return;
+    if (initializing) return initializing;
 
-    if (maybeToken) {
-      token.value = maybeToken;
+    initializing = (async () => {
+      // Remove tokens left by older builds; current auth is cookie-only.
+      clearAuthStorage();
       const pass = await getUserInfo();
-
-      if (!pass) {
-        resetStore();
+      if (pass) {
+        token.value = 'cookie';
+        initialized = true;
+      } else {
+        token.value = '';
       }
+    })();
+
+    try {
+      await initializing;
+    } finally {
+      initializing = null;
     }
   }
 

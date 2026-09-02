@@ -4,6 +4,7 @@ import type { FormRules } from 'naive-ui';
 import { NButton, NDrawer, NDrawerContent, NForm, NFormItem, NInput, NSpace } from 'naive-ui';
 import { fetchCreatePhoneModel, fetchUpdatePhoneModel } from '@/service/api';
 import { useNaiveForm } from '@/hooks/common/form';
+import { $t } from '@/locales';
 
 defineOptions({
   name: 'PhoneModelOperateDrawer'
@@ -36,25 +37,25 @@ const defaultForm: Api.PhoneModel.CreateParams = {
 
 const formModel = reactive<Api.PhoneModel.CreateParams>({ ...defaultForm });
 
-const title = computed(() => (props.type === 'add' ? '新增手机型号' : '编辑手机型号'));
+const title = computed(() => (props.type === 'add' ? $t('page.ui.addPhoneModel') : $t('page.ui.editPhoneModel')));
 
 const rules = computed<FormRules>(() => ({
   phoneName: [
     {
       required: true,
-      message: '请输入手机名称',
+      message: $t('page.ui.enterPhoneName'),
       trigger: 'blur'
     },
     {
       max: 100,
-      message: '手机名称长度不能超过100个字符',
+      message: $t('page.ui.phoneNameMax'),
       trigger: 'blur'
     }
   ],
   phoneShortName: [
     {
       max: 50,
-      message: '手机简称长度不能超过50个字符',
+      message: $t('page.ui.phoneShortNameMax'),
       trigger: 'blur'
     }
   ]
@@ -100,14 +101,14 @@ async function handleSubmit() {
     if (props.type === 'add') {
       const { error } = await fetchCreatePhoneModel(body);
       if (!error) {
-        window.$message?.success('新增成功');
+        window.$message?.success($t('common.addSuccess'));
         visible.value = false;
         emit('submitted');
       }
     } else if (props.rowData) {
       const { error } = await fetchUpdatePhoneModel(props.rowData.id, body);
       if (!error) {
-        window.$message?.success('更新成功');
+        window.$message?.success($t('common.updateSuccess'));
         visible.value = false;
         emit('submitted');
       }
@@ -122,20 +123,20 @@ async function handleSubmit() {
   <NDrawer v-model:show="visible" width="420px" placement="right">
     <NDrawerContent :title="title" :native-scrollbar="false">
       <NForm ref="formRef" :model="formModel" :rules="rules" label-placement="left" label-width="90px">
-        <NFormItem label="手机名称" path="phoneName">
-          <NInput v-model:value="formModel.phoneName" placeholder="请输入手机名称" />
+        <NFormItem :label="$t('page.ui.phoneName')" path="phoneName">
+          <NInput v-model:value="formModel.phoneName" :placeholder="$t('page.ui.enterPhoneName')" />
         </NFormItem>
 
-        <NFormItem label="手机简称" path="phoneShortName">
-          <NInput v-model:value="formModel.phoneShortName" placeholder="请输入手机简称" />
+        <NFormItem :label="$t('page.ui.phoneShortName')" path="phoneShortName">
+          <NInput v-model:value="formModel.phoneShortName" :placeholder="$t('page.ui.enterPhoneShortName')" />
         </NFormItem>
       </NForm>
 
       <template #footer>
         <NSpace justify="end">
-          <NButton @click="visible = false">取消</NButton>
+          <NButton @click="visible = false">{{ $t('common.cancel') }}</NButton>
           <NButton type="primary" :loading="loading" @click="handleSubmit">
-            确定
+            {{ $t('common.confirm') }}
           </NButton>
         </NSpace>
       </template>

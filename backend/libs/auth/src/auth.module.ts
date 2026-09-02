@@ -5,7 +5,10 @@ import { HttpModule } from '@nestjs/axios';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { AdminGuard } from './guards/admin.guard';
 import { DingTalkOAuthService } from './dingtalk-oauth.service';
+import { CsrfGuard } from './guards/csrf.guard';
+import { RateLimitGuard } from './guards/rate-limit.guard';
 
 @Module({
   imports: [
@@ -23,7 +26,22 @@ import { DingTalkOAuthService } from './dingtalk-oauth.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtAuthGuard, DingTalkOAuthService],
-  exports: [AuthService, JwtAuthGuard, JwtModule, DingTalkOAuthService],
+  providers: [
+    AuthService,
+    JwtAuthGuard,
+    AdminGuard,
+    CsrfGuard,
+    RateLimitGuard,
+    DingTalkOAuthService,
+  ],
+  exports: [
+    AuthService,
+    JwtAuthGuard,
+    AdminGuard,
+    CsrfGuard,
+    RateLimitGuard,
+    JwtModule,
+    DingTalkOAuthService,
+  ],
 })
 export class AuthModule {}

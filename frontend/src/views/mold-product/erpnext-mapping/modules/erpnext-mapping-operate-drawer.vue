@@ -40,25 +40,25 @@ const formModel = reactive<Api.ErpNextMapping.CreateParams>({ ...defaultForm });
 
 const title = computed(() => (props.type === 'add' ? $t('common.add') : $t('common.edit')));
 
-const rules: FormRules = {
-  type: [{ required: true, message: '请选择映射类型', trigger: 'change' }],
+const rules = computed<FormRules>(() => ({
+  type: [{ required: true, message: $t('page.ui.selectMappingType'), trigger: 'change' }],
   sourceKey: [
-    { required: true, message: '请输入源值', trigger: 'blur' },
+    { required: true, message: $t('page.ui.enterSourceValue'), trigger: 'blur' },
     {
       validator: (_rule, value: string) => value.length <= 50,
-      message: '源值最多 50 个字符',
+      message: $t('page.ui.sourceValueMax'),
       trigger: 'input'
     }
   ],
   targetValue: [
-    { required: true, message: '请输入 ERPNext 目标值', trigger: 'blur' },
+    { required: true, message: $t('page.ui.enterErpNextTarget'), trigger: 'blur' },
     {
       validator: (_rule, value: string) => value.length <= 200,
-      message: 'ERPNext 目标值最多 200 个字符',
+      message: $t('page.ui.erpNextTargetMax'),
       trigger: 'input'
     }
   ]
-};
+}));
 
 function resetForm() {
   Object.assign(formModel, { ...defaultForm });
@@ -122,20 +122,20 @@ async function handleSubmit() {
   <NDrawer v-model:show="visible" width="460px" placement="right">
     <NDrawerContent :title="title" :native-scrollbar="false">
       <NForm ref="formRef" :model="formModel" :rules="rules" label-placement="left" label-width="120px">
-        <NFormItem label="映射类型" path="type">
-          <NSelect v-model:value="formModel.type" :options="erpNextMappingTypeOptions" placeholder="请选择映射类型" />
+        <NFormItem :label="$t('page.ui.mappingType')" path="type">
+          <NSelect v-model:value="formModel.type" :options="erpNextMappingTypeOptions" :placeholder="$t('page.ui.selectMappingType')" />
         </NFormItem>
 
-        <NFormItem label="源值" path="sourceKey">
-          <NInput v-model:value="formModel.sourceKey" :maxlength="50" placeholder="请输入系统内源值" />
+        <NFormItem :label="$t('page.ui.sourceValue')" path="sourceKey">
+          <NInput v-model:value="formModel.sourceKey" :maxlength="50" :placeholder="$t('page.ui.enterSystemSourceValue')" />
         </NFormItem>
 
-        <NFormItem label="ERPNext目标值" path="targetValue">
+        <NFormItem :label="$t('page.ui.erpNextTargetValue')" path="targetValue">
           <NInput
             v-model:value="formModel.targetValue"
             type="textarea"
             :maxlength="200"
-            placeholder="请输入 ERPNext 中对应的目标值"
+            :placeholder="$t('page.ui.erpNextTargetPlaceholder')"
           />
         </NFormItem>
       </NForm>

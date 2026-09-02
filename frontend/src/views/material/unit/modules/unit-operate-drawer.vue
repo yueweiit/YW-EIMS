@@ -42,24 +42,24 @@ const rules = computed<FormRules>(() => ({
   unitCode: [
     {
       required: props.type === 'add',
-      message: '请输入单位编码',
+      message: $t('page.ui.enterUnitCode'),
       trigger: 'blur'
     },
     {
       max: 3,
-      message: '单位编码最多3个字符',
+      message: $t('page.ui.unitCodeMax'),
       trigger: 'blur'
     }
   ],
   unit: [
     {
       required: true,
-      message: '请输入单位名称',
+      message: $t('page.ui.enterUnitName'),
       trigger: 'blur'
     },
     {
       max: 50,
-      message: '单位名称最多50个字符',
+      message: $t('page.ui.unitNameMax'),
       trigger: 'blur'
     }
   ]
@@ -123,20 +123,20 @@ async function handleSubmit() {
   <NDrawer v-model:show="visible" width="420px" placement="right">
     <NDrawerContent :title="title" :native-scrollbar="false">
       <NForm ref="formRef" :model="formModel" :rules="rules" label-placement="left" label-width="90px">
-        <NFormItem label="单位编码" path="unitCode">
+        <NFormItem :label="$t('page.ui.unitCode')" path="unitCode">
           <NInput
             v-model:value="formModel.unitCode"
             :disabled="props.type === 'edit'"
             :maxlength="3"
-            placeholder="请输入单位编码"
+            :placeholder="$t('page.ui.enterUnitCode')"
           />
         </NFormItem>
 
-        <NFormItem label="单位名称" path="unit">
+        <NFormItem :label="$t('page.ui.unitName')" path="unit">
           <NInput
             v-model:value="formModel.unit"
             :maxlength="50"
-            placeholder="请输入单位名称"
+            :placeholder="$t('page.ui.enterUnitName')"
           />
         </NFormItem>
       </NForm>

@@ -28,26 +28,26 @@ function reset() {
     <NInput
       v-model:value="model.moldCode"
       clearable
-      placeholder="请输入模具编码"
+      :placeholder="$t('page.ui.enterMoldCode')"
       class="w-200px"
     />
     <NInput
       v-model:value="model.moldType"
       clearable
-      placeholder="请输入模具类型"
+      :placeholder="$t('page.ui.selectMoldType')"
       class="w-200px"
     />
     <NInput
       v-model:value="model.moldName"
       clearable
-      placeholder="请输入模具名称"
+      :placeholder="$t('page.ui.enterMoldName')"
       class="w-200px"
     />
     <NButton type="primary" @click="search">
-      搜索
+      {{ $t('common.search') }}
     </NButton>
     <NButton @click="reset">
-      重置
+      {{ $t('common.reset') }}
     </NButton>
   </NSpace>
 </template>

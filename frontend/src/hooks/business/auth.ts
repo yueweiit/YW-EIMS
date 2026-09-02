@@ -8,11 +8,14 @@ export function useAuth() {
       return false;
     }
 
-    if (typeof codes === 'string') {
-      return authStore.userInfo.buttons.includes(codes);
-    }
+    const hasCode = (code: string) =>
+      authStore.userInfo.buttons.includes(code) ||
+      authStore.userInfo.permissions.includes('*') ||
+      authStore.userInfo.permissions.includes(code);
 
-    return codes.some(code => authStore.userInfo.buttons.includes(code));
+    if (typeof codes === 'string') return hasCode(codes);
+
+    return codes.some(code => hasCode(code));
   }
 
   return {

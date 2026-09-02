@@ -4,6 +4,7 @@ import type { FormRules } from 'naive-ui';
 import { NButton, NDrawer, NDrawerContent, NForm, NFormItem, NInput, NSelect, NSpace, NText } from 'naive-ui';
 import { fetchCreateMaterial, fetchUnitPage, fetchUpdateMaterial, fetchCodeRulePage } from '@/service/api';
 import { useNaiveForm } from '@/hooks/common/form';
+import { $t } from '@/locales';
 
 defineOptions({
   name: 'MaterialOperateDrawer'
@@ -38,8 +39,8 @@ const defaultForm: Api.Material.CreateParams & {
 } = {
   applicant: '',
   materialName: '',
-  codePrefix: undefined,
-  unit: undefined,
+  codePrefix: '',
+  unit: '',
   specifications: '',
   applicationDate: null,
   explainContent: null,
@@ -52,44 +53,44 @@ const formModel = reactive<Api.Material.CreateParams & {
   unitCode?: string | null;
 }>({ ...defaultForm });
 
-const title = computed(() => (props.type === 'add' ? '新增物料' : '编辑物料'));
+const title = computed(() => (props.type === 'add' ? $t('page.ui.materialAdd') : $t('page.ui.materialEdit')));
 
 const rules = computed<FormRules>(() => ({
   applicant: [
     {
       required: true,
-      message: '请输入申请人',
+      message: $t('page.ui.enterApplicant'),
       trigger: 'blur'
     },
     {
       max: 50,
-      message: '申请人长度不能超过50个字符',
+      message: $t('page.ui.applicantMax'),
       trigger: 'blur'
     }
   ],
   materialName: [
     {
       required: true,
-      message: '请输入物料名称',
+      message: $t('page.ui.enterMaterialName'),
       trigger: 'blur'
     },
     {
       max: 500,
-      message: '物料名称长度不能超过500个字符',
+      message: $t('page.ui.materialNameMax'),
       trigger: 'blur'
     }
   ],
   codePrefix: [
     {
       required: true,
-      message: '请选择编码前缀',
+      message: $t('page.ui.selectCodePrefix'),
       trigger: 'change'
     }
   ],
   specifications: [
     {
       max: 1000,
-      message: '规格型号长度不能超过1000个字符',
+      message: $t('page.ui.specificationsMax'),
       trigger: 'blur'
     }
   ]
@@ -165,14 +166,14 @@ async function handleSubmit() {
     if (props.type === 'add') {
       const { error } = await fetchCreateMaterial(body);
       if (!error) {
-        window.$message?.success('新增成功');
+        window.$message?.success($t('common.addSuccess'));
         visible.value = false;
         emit('submitted');
       }
     } else if (props.rowData) {
       const { error } = await fetchUpdateMaterial(props.rowData.id, body);
       if (!error) {
-        window.$message?.success('更新成功');
+        window.$message?.success($t('common.updateSuccess'));
         visible.value = false;
         emit('submitted');
       }
@@ -190,49 +191,49 @@ loadPrefixOptions();
   <NDrawer v-model:show="visible" width="420px" placement="right">
     <NDrawerContent :title="title" :native-scrollbar="false">
       <NForm ref="formRef" :model="formModel" :rules="rules" label-placement="left" label-width="90px">
-        <NFormItem label="申请人" path="applicant">
-          <NInput v-model:value="formModel.applicant" placeholder="请输入申请人" />
+        <NFormItem :label="$t('page.ui.applicant')" path="applicant">
+          <NInput v-model:value="formModel.applicant" :placeholder="$t('page.ui.enterApplicant')" />
         </NFormItem>
 
-        <NFormItem label="物料名称" path="materialName">
-          <NInput v-model:value="formModel.materialName" placeholder="请输入物料名称" />
+        <NFormItem :label="$t('page.ui.materialName')" path="materialName">
+          <NInput v-model:value="formModel.materialName" :placeholder="$t('page.ui.enterMaterialName')" />
         </NFormItem>
 
-        <NFormItem label="编码前缀" path="codePrefix">
+        <NFormItem :label="$t('page.ui.codePrefix')" path="codePrefix">
           <NSelect
             v-model:value="formModel.codePrefix"
             :options="prefixOptions"
-            placeholder="请选择编码前缀"
+            :placeholder="$t('page.ui.selectCodePrefix')"
           />
         </NFormItem>
 
-        <NFormItem label="单位" path="unit">
+        <NFormItem :label="$t('page.ui.unitLabel')" path="unit">
           <NSelect
             v-model:value="formModel.unit"
             clearable
             :options="unitOptions"
-            placeholder="请选择单位"
+            :placeholder="$t('page.ui.selectUnit')"
           />
         </NFormItem>
 
-        <NFormItem label="规格型号" path="specifications">
+        <NFormItem :label="$t('page.ui.specifications')" path="specifications">
           <NInput
             v-model:value="formModel.specifications"
             type="textarea"
-            placeholder="请输入规格型号"
+            :placeholder="$t('page.ui.enterSpecifications')"
           />
         </NFormItem>
 
         <template v-if="props.type === 'edit'">
-          <NFormItem label="申请日期">
+          <NFormItem :label="$t('page.ui.applicationDate')">
             <NText>{{ formModel.applicationDate || '-' }}</NText>
           </NFormItem>
 
-          <NFormItem label="前缀说明">
+          <NFormItem :label="$t('page.ui.prefixDescription')">
             <NText>{{ formModel.explainContent || '-' }}</NText>
           </NFormItem>
 
-          <NFormItem label="单位编码">
+          <NFormItem :label="$t('page.ui.unitCode')">
             <NText>{{ formModel.unitCode || '-' }}</NText>
           </NFormItem>
         </template>
@@ -240,9 +241,9 @@ loadPrefixOptions();
 
       <template #footer>
         <NSpace justify="end">
-          <NButton @click="visible = false">取消</NButton>
+          <NButton @click="visible = false">{{ $t('common.cancel') }}</NButton>
           <NButton type="primary" :loading="loading" @click="handleSubmit">
-            确定
+            {{ $t('common.confirm') }}
           </NButton>
         </NSpace>
       </template>

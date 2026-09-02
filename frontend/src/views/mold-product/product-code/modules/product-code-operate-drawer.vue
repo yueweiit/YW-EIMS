@@ -4,6 +4,7 @@ import type { FormRules } from 'naive-ui';
 import { NButton, NDrawer, NDrawerContent, NForm, NFormItem, NInput, NSpace } from 'naive-ui';
 import { fetchColorPage, fetchCreateProductCode, fetchUpdateProductCode } from '@/service/api';
 import { useNaiveForm } from '@/hooks/common/form';
+import { $t } from '@/locales';
 
 defineOptions({
   name: 'ProductCodeOperateDrawer'
@@ -40,61 +41,61 @@ const defaultForm: Api.ProductCode.CreateParams = {
 
 const formModel = reactive<Api.ProductCode.CreateParams>({ ...defaultForm });
 
-const title = computed(() => (props.type === 'add' ? '新增产品编码' : '编辑产品编码'));
+const title = computed(() => (props.type === 'add' ? $t('page.ui.addProductCode') : $t('page.ui.editProductCode')));
 
 const rules = computed<FormRules>(() => ({
   productCode: [
     {
       required: true,
-      message: '请输入产品编码',
+      message: $t('page.ui.enterProductCode'),
       trigger: 'blur'
     },
     {
       max: 50,
-      message: '产品编码长度不能超过50个字符',
+      message: $t('page.ui.productCodeMax'),
       trigger: 'blur'
     }
   ],
   productType: [
     {
       required: true,
-      message: '请输入产品类型',
+      message: $t('page.ui.enterProductType'),
       trigger: 'blur'
     },
     {
       max: 50,
-      message: '产品类型长度不能超过50个字符',
+      message: $t('page.ui.productTypeMax'),
       trigger: 'blur'
     }
   ],
   productName: [
     {
       required: true,
-      message: '请输入产品名称',
+      message: $t('page.ui.enterProductName'),
       trigger: 'blur'
     },
     {
       max: 100,
-      message: '产品名称长度不能超过100个字符',
+      message: $t('page.ui.productNameMax'),
       trigger: 'blur'
     }
   ],
   colorCode: [
     {
       required: true,
-      message: '请输入颜色编码',
+      message: $t('page.ui.enterColorCode'),
       trigger: 'blur'
     }
   ],
   colorName: [
     {
       required: true,
-      message: '请输入颜色名称',
+      message: $t('page.ui.enterColorName'),
       trigger: 'blur'
     },
     {
       max: 50,
-      message: '颜色名称长度不能超过50个字符',
+      message: $t('page.ui.colorNameShortMax'),
       trigger: 'blur'
     }
   ]
@@ -138,7 +139,7 @@ async function loadColorList() {
       colorList.value = data.records;
     }
   } catch {
-    window.$message?.error('加载颜色列表失败');
+    window.$message?.error($t('page.ui.loadColorListFailed'));
   }
 }
 
@@ -175,14 +176,14 @@ async function handleSubmit() {
     if (props.type === 'add') {
       const { error } = await fetchCreateProductCode(body);
       if (!error) {
-        window.$message?.success('新增成功');
+        window.$message?.success($t('common.addSuccess'));
         visible.value = false;
         emit('submitted');
       }
     } else if (props.rowData) {
       const { error } = await fetchUpdateProductCode(props.rowData.id, body);
       if (!error) {
-        window.$message?.success('更新成功');
+        window.$message?.success($t('common.updateSuccess'));
         visible.value = false;
         emit('submitted');
       }
@@ -197,32 +198,32 @@ async function handleSubmit() {
   <NDrawer v-model:show="visible" width="420px" placement="right">
     <NDrawerContent :title="title" :native-scrollbar="false">
       <NForm ref="formRef" :model="formModel" :rules="rules" label-placement="left" label-width="90px">
-        <NFormItem label="产品编码" path="productCode">
-          <NInput v-model:value="formModel.productCode" placeholder="请输入产品编码" />
+        <NFormItem :label="$t('page.ui.productCode')" path="productCode">
+          <NInput v-model:value="formModel.productCode" :placeholder="$t('page.ui.enterProductCode')" />
         </NFormItem>
 
-        <NFormItem label="产品类型" path="productType">
-          <NInput v-model:value="formModel.productType" placeholder="请输入产品类型" />
+        <NFormItem :label="$t('page.ui.productType')" path="productType">
+          <NInput v-model:value="formModel.productType" :placeholder="$t('page.ui.enterProductType')" />
         </NFormItem>
 
-        <NFormItem label="产品名称" path="productName">
-          <NInput v-model:value="formModel.productName" placeholder="请输入产品名称" />
+        <NFormItem :label="$t('page.ui.productName')" path="productName">
+          <NInput v-model:value="formModel.productName" :placeholder="$t('page.ui.enterProductName')" />
         </NFormItem>
 
-        <NFormItem label="颜色编码" path="colorCode">
-          <NInput v-model:value="formModel.colorCode" placeholder="输入编码自动带出名称" @blur="onColorCodeBlur" />
+        <NFormItem :label="$t('page.ui.colorCode')" path="colorCode">
+          <NInput v-model:value="formModel.colorCode" :placeholder="$t('page.ui.colorCodeAutoName')" @blur="onColorCodeBlur" />
         </NFormItem>
 
-        <NFormItem label="颜色名称" path="colorName">
-          <NInput v-model:value="formModel.colorName" placeholder="输入名称自动带出编码" @blur="onColorNameBlur" />
+        <NFormItem :label="$t('page.ui.colorName')" path="colorName">
+          <NInput v-model:value="formModel.colorName" :placeholder="$t('page.ui.colorNameAutoCode')" @blur="onColorNameBlur" />
         </NFormItem>
       </NForm>
 
       <template #footer>
         <NSpace justify="end">
-          <NButton @click="visible = false">取消</NButton>
+          <NButton @click="visible = false">{{ $t('common.cancel') }}</NButton>
           <NButton type="primary" :loading="loading" @click="handleSubmit">
-            确定
+            {{ $t('common.confirm') }}
           </NButton>
         </NSpace>
       </template>

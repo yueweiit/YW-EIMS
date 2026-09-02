@@ -20,10 +20,10 @@ const visible = defineModel<boolean>('visible', { default: false });
 const { loading, startLoading, endLoading } = useLoading(false);
 const { formRef, validate, restoreValidation } = useNaiveForm();
 
-const orgOptions: SelectOption[] = [
-  { label: '星铭', value: '星铭' },
-  { label: '星城', value: '星城' }
-];
+const orgOptions = computed<SelectOption[]>(() => [
+  { label: $t('page.ui.orgXingming'), value: '星铭' },
+  { label: $t('page.ui.orgXingcheng'), value: '星城' }
+]);
 
 const supplierOptions = ref<SelectOption[]>([]);
 const supplierLoading = ref(false);
@@ -44,11 +44,11 @@ const defaultForm = {
 
 const formModel = reactive({ ...defaultForm });
 
-const rules = {
+const rules = computed(() => ({
   org: [{ required: true, message: $t('page.oa.approval.erpSync.orgPlaceholder'), trigger: 'change' }],
   supplier: [{ required: true, message: $t('page.oa.approval.erpSync.supplierPlaceholder'), trigger: 'change' }],
   doc_date: [{ required: true, message: $t('page.oa.approval.erpSync.docDatePlaceholder'), trigger: 'change', type: 'number' as const }]
-};
+}));
 
 watch(visible, val => {
   if (val) {
@@ -93,6 +93,24 @@ function parseNumber(value: string) {
 
 const approvalStatus = computed(() => {
   return props.oaDetails?.['审批状态'] || props.oaDetails?.['瀹℃壒鐘舵€?'] || '';
+});
+
+const approvalStatusLabel = computed(() => {
+  const statusMap: Record<string, string> = {
+    COMPLETED: $t('page.ui.approvalCompleted'),
+    RUNNING: $t('page.ui.approvalRunning'),
+    TERMINATED: $t('page.ui.approvalTerminated'),
+    CANCELED: $t('page.ui.approvalCanceled'),
+    已完成: $t('page.ui.approvalCompleted'),
+    进行中: $t('page.ui.approvalRunning'),
+    已终止: $t('page.ui.approvalTerminated'),
+    已取消: $t('page.ui.approvalCanceled'),
+    撤销: $t('page.ui.approvalCanceled'),
+    已撤销: $t('page.ui.approvalCanceled'),
+    拒绝: $t('page.ui.approvalRejected'),
+    已拒绝: $t('page.ui.approvalRejected')
+  };
+  return statusMap[approvalStatus.value] || approvalStatus.value;
 });
 
 const blockedStatuses = ['CANCELLED', 'REJECTED', '撤销', '已撤销', '拒绝', '已拒绝'];
@@ -140,15 +158,15 @@ const previewRows = computed(() => {
 
 const previewTotal = computed(() => previewRows.value.reduce((sum, row) => sum + row.amount, 0));
 
-const previewColumns = [
-  { key: 'index', title: '序号', width: 60, align: 'center' as const },
-  { key: 'materialCode', title: '物料编码', minWidth: 120 },
-  { key: 'materialName', title: '物料名称', minWidth: 180 },
-  { key: 'unit', title: '单位', width: 80 },
-  { key: 'qty', title: '数量', width: 100 },
-  { key: 'price', title: '单价', width: 100 },
-  { key: 'amount', title: '金额', width: 120 }
-];
+const previewColumns = computed(() => [
+  { key: 'index', title: $t('page.ui.serialNumber'), width: 60, align: 'center' as const },
+  { key: 'materialCode', title: $t('page.ui.materialCode'), minWidth: 120 },
+  { key: 'materialName', title: $t('page.ui.materialName'), minWidth: 180 },
+  { key: 'unit', title: $t('page.ui.unitLabel'), width: 80 },
+  { key: 'qty', title: $t('page.ui.quantity'), width: 100 },
+  { key: 'price', title: $t('page.ui.unitPrice'), width: 100 },
+  { key: 'amount', title: $t('page.ui.amount'), width: 120 }
+]);
 
 async function handleSupplierSearch(query: string) {
   if (!query.trim() && supplierOptions.value.length) return;
@@ -212,17 +230,17 @@ async function handleSubmit() {
     await validate();
 
     if (!props.oaDetails) {
-      window.$message?.error('审批详情为空');
+      window.$message?.error($t('page.ui.approvalDetailsEmpty'));
       return;
     }
 
     if (!canPush.value) {
-      window.$message?.error(`审批状态为 ${approvalStatus.value}，撤销/拒绝的审批不允许推送`);
+      window.$message?.error($t('page.ui.approvalCannotPush', { status: approvalStatusLabel.value }));
       return;
     }
 
     if (!previewRows.value.length) {
-      window.$message?.error('未识别到可推送的明细行');
+      window.$message?.error($t('page.ui.noPushableRows'));
       return;
     }
 
@@ -245,7 +263,7 @@ async function handleSubmit() {
       window.$message?.success($t('page.oa.approval.erpSync.pushSuccess'));
       visible.value = false;
     } else {
-      window.$message?.error(data?.message || $t('page.oa.approval.erpSync.pushFailed'));
+      window.$message?.error($t('page.oa.approval.erpSync.pushFailed'));
     }
   } finally {
     endLoading();
@@ -279,7 +297,7 @@ async function handleSubmit() {
           />
         </NFormItem>
 
-        <NFormItem label="税率" path="tax">
+        <NFormItem :label="$t('page.ui.taxRate')" path="tax">
           <NSelect
             v-model:value="formModel.tax"
             :options="taxOptions"
@@ -287,7 +305,7 @@ async function handleSubmit() {
             filterable
             clearable
             remote
-            placeholder="请选择税率（可选）"
+            :placeholder="$t('page.ui.taxRatePlaceholder')"
             @search="handleTaxSearch"
             @update:value="handleTaxUpdate"
             @update:show="handleTaxDropdownOpen"
@@ -325,10 +343,10 @@ async function handleSubmit() {
       </NForm>
 
       <NAlert v-if="!canPush" type="warning" class="mb-12px">
-        当前审批状态为 {{ approvalStatus || '-' }}，撤销/拒绝的审批不允许推送到 ERP。
+        {{ $t('page.ui.approvalCannotPush', { status: approvalStatusLabel || '-' }) }}
       </NAlert>
 
-      <NCard size="small" :bordered="true" title="推送明细预览">
+      <NCard size="small" :bordered="true" :title="$t('page.ui.pushPreview')">
         <NDataTable
           :columns="previewColumns"
           :data="previewRows"
@@ -337,7 +355,7 @@ async function handleSubmit() {
           striped
         />
         <div class="mt-8px text-right text-14px">
-          共 {{ previewRows.length }} 行，合计金额：{{ previewTotal.toFixed(2) }}
+          {{ $t('page.ui.previewSummary', { count: previewRows.length, amount: previewTotal.toFixed(2) }) }}
         </div>
       </NCard>
 
