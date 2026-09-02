@@ -8,6 +8,7 @@ import {
   MaxLength,
   IsUrl,
   IsIn,
+  IsBoolean,
 } from 'class-validator';
 
 export class CreateClientDto {
@@ -40,4 +41,8 @@ export class CreateClientDto {
   @IsString()
   @IsIn(['1', '2'])
   status?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  pkceRequired?: boolean;
 }

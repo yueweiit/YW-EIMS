@@ -8,6 +8,7 @@ export interface OAuth2ClientRecord {
   description?: string;
   redirectUris: string[];
   scopes: string[];
+  pkceRequired: boolean;
   status: string;
   createBy?: string;
   createTime: string;
@@ -33,6 +34,7 @@ export interface CreateOAuth2ClientParams {
   description?: string;
   redirectUris: string[];
   scopes?: string[];
+  pkceRequired?: boolean;
   status?: string;
 }
 
@@ -41,6 +43,7 @@ export interface UpdateOAuth2ClientParams {
   description?: string;
   redirectUris?: string[];
   scopes?: string[];
+  pkceRequired?: boolean;
   status?: string;
 }
 

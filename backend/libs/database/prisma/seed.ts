@@ -17,6 +17,10 @@ function getExternalSystemUrl(environmentVariable: string, fallback: string) {
   return process.env[environmentVariable]?.trim() || fallback;
 }
 
+function getOptionalExternalSystemUrl(environmentVariable: string) {
+  return process.env[environmentVariable]?.trim() || null;
+}
+
 const UNITS: Array<{ unitCode: string; unit: string }> = [
   { unitCode: '01', unit: 'kg' },
   { unitCode: '02', unit: 'm²' },
@@ -102,6 +106,7 @@ const EXTERNAL_SYSTEMS = [
       'EXTERNAL_ERP_URL',
       'http://localhost:8001/',
     ),
+    ssoStartUrl: getOptionalExternalSystemUrl('EXTERNAL_ERP_SSO_START_URL'),
     authMode: 'link',
     category: '业务系统',
     sort: 20,

@@ -8,6 +8,7 @@ import {
   MinLength,
   Matches,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class AuthorizeDto {
   @IsString()
@@ -31,17 +32,19 @@ export class AuthorizeDto {
   @MaxLength(128)
   scope?: string;
 
+  @Transform(({ value }) => (value === '' ? undefined : value))
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @MinLength(43)
   @MaxLength(128)
   @Matches(/^[A-Za-z0-9_-]+$/)
-  code_challenge: string;
+  code_challenge?: string;
 
+  @Transform(({ value }) => (value === '' ? undefined : value))
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @IsIn(['S256'])
-  code_challenge_method: string;
+  code_challenge_method?: string;
 
   @IsString()
   @IsNotEmpty()
@@ -70,17 +73,19 @@ export class AuthorizeConfirmDto {
   @IsString()
   scope?: string;
 
+  @Transform(({ value }) => (value === '' ? undefined : value))
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @MinLength(43)
   @MaxLength(128)
   @Matches(/^[A-Za-z0-9_-]+$/)
-  code_challenge: string;
+  code_challenge?: string;
 
+  @Transform(({ value }) => (value === '' ? undefined : value))
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @IsIn(['S256'])
-  code_challenge_method: string;
+  code_challenge_method?: string;
 
   @IsString()
   @IsNotEmpty()

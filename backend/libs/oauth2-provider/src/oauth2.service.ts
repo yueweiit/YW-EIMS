@@ -53,16 +53,6 @@ export class OAuth2Service {
     if (nonce !== undefined && nonce.length > 255) {
       throw new BadRequestException('invalid_request: nonce is too long');
     }
-    if (
-      !codeChallenge ||
-      codeChallengeMethod !== 'S256' ||
-      !/^[A-Za-z0-9_-]{43,128}$/.test(codeChallenge)
-    ) {
-      throw new BadRequestException(
-        'invalid_request: S256 code_challenge is required',
-      );
-    }
-
     const client = await this.prisma.oauth2Client.findUnique({
       where: { clientId },
       select: {
@@ -70,6 +60,7 @@ export class OAuth2Service {
         name: true,
         redirectUris: true,
         scopes: true,
+        pkceRequired: true,
         status: true,
       },
     });
@@ -77,6 +68,28 @@ export class OAuth2Service {
     if (!client || client.status !== '1') {
       throw new BadRequestException(
         'invalid_client: client not found or disabled',
+      );
+    }
+
+    const hasCodeChallenge = Boolean(codeChallenge);
+    const hasCodeChallengeMethod = Boolean(codeChallengeMethod);
+    if (hasCodeChallenge !== hasCodeChallengeMethod) {
+      throw new BadRequestException(
+        'invalid_request: code_challenge and code_challenge_method must be provided together',
+      );
+    }
+    if (
+      hasCodeChallenge &&
+      (codeChallengeMethod !== 'S256' ||
+        !/^[A-Za-z0-9_-]{43,128}$/.test(codeChallenge || ''))
+    ) {
+      throw new BadRequestException(
+        'invalid_request: code_challenge must use S256 and be a valid base64url value',
+      );
+    }
+    if (client.pkceRequired && !hasCodeChallenge) {
+      throw new BadRequestException(
+        'invalid_request: S256 code_challenge is required for this client',
       );
     }
 
@@ -115,15 +128,16 @@ export class OAuth2Service {
   /**
    * Store the complete authorization request server-side. The browser only
    * receives the random transaction ID, so it cannot alter redirect_uri,
-   * scopes, state, or PKCE values on the consent page.
+   * scopes, state, or PKCE values on the consent page. A legacy confidential
+   * client may omit PKCE when its client policy explicitly allows it.
    */
   async createAuthorizationRequest(
     clientId: string,
     redirectUri: string,
     scopes: string[],
     state: string,
-    codeChallenge: string,
-    codeChallengeMethod: string,
+    codeChallenge: string | undefined,
+    codeChallengeMethod: string | undefined,
     browserNonceHash: string,
     nonce?: string,
   ): Promise<string> {
@@ -208,8 +222,8 @@ export class OAuth2Service {
       user.id,
       request.redirectUri,
       request.scopes,
-      request.codeChallenge,
-      request.codeChallengeMethod,
+      request.codeChallenge || undefined,
+      request.codeChallengeMethod || undefined,
       request.nonce || undefined,
     );
     callbackUrl.searchParams.set('code', code);
@@ -225,8 +239,8 @@ export class OAuth2Service {
     userId: number,
     redirectUri: string,
     scopes: string[],
-    codeChallenge: string,
-    codeChallengeMethod: string,
+    codeChallenge?: string,
+    codeChallengeMethod?: string,
     nonce?: string,
   ): Promise<string> {
     this.assertProviderEnabled();
@@ -318,23 +332,28 @@ export class OAuth2Service {
       );
     }
 
-    if (
-      !authCode.codeChallenge ||
-      authCode.codeChallengeMethod !== 'S256' ||
-      !codeVerifier ||
-      !/^[A-Za-z0-9._~-]{43,128}$/.test(codeVerifier)
-    ) {
-      throw new UnauthorizedException(
-        'invalid_grant: code_verifier is required',
-      );
-    }
-    const verifierHash = createHash('sha256')
-      .update(codeVerifier)
-      .digest('base64url');
-    if (verifierHash !== authCode.codeChallenge) {
-      throw new UnauthorizedException(
-        'invalid_grant: code_verifier is invalid',
-      );
+    // PKCE is mandatory for clients created with the default policy. A
+    // migrated legacy client may have issued a code without PKCE; that code
+    // is still protected by the required client_secret authentication above.
+    if (authCode.codeChallenge || authCode.codeChallengeMethod) {
+      if (
+        !authCode.codeChallenge ||
+        authCode.codeChallengeMethod !== 'S256' ||
+        !codeVerifier ||
+        !/^[A-Za-z0-9._~-]{43,128}$/.test(codeVerifier)
+      ) {
+        throw new UnauthorizedException(
+          'invalid_grant: code_verifier is required',
+        );
+      }
+      const verifierHash = createHash('sha256')
+        .update(codeVerifier)
+        .digest('base64url');
+      if (verifierHash !== authCode.codeChallenge) {
+        throw new UnauthorizedException(
+          'invalid_grant: code_verifier is invalid',
+        );
+      }
     }
 
     // Atomically consume the code

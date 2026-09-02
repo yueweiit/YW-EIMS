@@ -39,6 +39,7 @@ export interface OpenIdConfiguration {
   id_token_signing_alg_values_supported: string[];
   scopes_supported: string[];
   token_endpoint_auth_methods_supported: string[];
+  code_challenge_methods_supported?: string[];
   claims_supported: string[];
 }
 

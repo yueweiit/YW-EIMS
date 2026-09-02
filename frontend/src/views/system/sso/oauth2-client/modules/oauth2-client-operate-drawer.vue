@@ -40,6 +40,7 @@ const defaultForm: CreateOAuth2ClientParams = {
   description: "",
   redirectUris: [""],
   scopes: ["openid", "profile", "email"],
+  pkceRequired: true,
   status: "1",
 };
 
@@ -60,6 +61,7 @@ watch(
           description: props.rowData.description || "",
           redirectUris: [...props.rowData.redirectUris],
           scopes: [...props.rowData.scopes],
+          pkceRequired: props.rowData.pkceRequired !== false,
           status: props.rowData.status,
         };
       } else {
@@ -123,6 +125,7 @@ async function handleSubmit() {
         description: submitData.description,
         redirectUris: submitData.redirectUris,
         scopes: submitData.scopes,
+        pkceRequired: submitData.pkceRequired,
         status: submitData.status,
       };
       const { error } = await fetchUpdateOAuth2Client(
@@ -205,6 +208,15 @@ const scopeOptions = computed(() => [
             multiple
             :placeholder="$t('page.ui.selectScopes')"
           />
+        </NFormItem>
+
+        <NFormItem>
+          <NCheckbox v-model:checked="form.pkceRequired">
+            {{ $t('page.ui.oauthPkceRequired') }}
+          </NCheckbox>
+          <div class="mt-4px text-12px text-gray-500">
+            {{ $t('page.ui.oauthPkceRequiredHint') }}
+          </div>
         </NFormItem>
 
         <NFormItem :label="$t('page.ui.status')">

@@ -98,6 +98,8 @@ GET {EIMS_ISSUER}/oauth/authorize
 - `redirect_uri` 必须与 EIMS 注册值完全一致，包括协议、域名、端口、路径和末尾斜杠。
 - 不允许在前端代码、浏览器地址以外的页面脚本或移动端包中放置 `client_secret`。
 
+说明：新建 OAuth2 应用默认强制 PKCE。只有已经上线、且能够在服务端安全保存 `client_secret` 的旧客户端，才可以由管理员在“OAuth2 应用管理”中关闭“强制使用 PKCE”以兼容旧协议；新接入的 ERP、CRM、MES 仍必须使用 PKCE。
+
 ### 3.2 增加 OAuth 回调接口
 
 外部系统需要提供一个后端回调地址，例如：

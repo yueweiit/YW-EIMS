@@ -90,7 +90,7 @@ docker compose up -d --build
 
 `frontend/public/config/external-systems.json` 仅保留作旧版本运行时配置参考，不再承担权限控制，也不应放入 `client_secret`。新系统应先在 EIMS 的 OAuth2 应用管理中注册客户端，再在外部系统目录中选择 OAuth2 应用，并在 OAuth2 账号绑定中维护用户对应的业务账号。ERP 的 `clientId`、`clientSecret`、EIMS 地址和回调地址仍只配置在 ERP 后端。
 
-`EXTERNAL_BUDGET_URL`、`EXTERNAL_ERP_URL`、`EXTERNAL_MES_URL`、`EXTERNAL_CRM_URL` 和 `EXTERNAL_LEMOS_URL` 是后端运行时的入口覆盖配置，优先级高于数据库中的 `entryUrl`；对应的 `EXTERNAL_*_SSO_START_URL` 是 OAuth2 系统的 SSO 启动地址覆盖配置，优先级高于目录中的 `ssoStartUrl`。它们仅对对应的预置系统编码生效；其他自定义系统仍使用数据库配置。修改这些变量后需要重启 backend 容器，seed 不会覆盖已有目录记录。生产环境这些地址必须使用 HTTPS；本地测试请将 `NODE_ENV` 设为 `development`。
+`EXTERNAL_BUDGET_URL`、`EXTERNAL_ERP_URL`、`EXTERNAL_MES_URL`、`EXTERNAL_CRM_URL` 和 `EXTERNAL_LEMOS_URL` 是后端运行时的入口覆盖配置，优先级高于数据库中的 `entryUrl`；对应的 `EXTERNAL_*_SSO_START_URL` 是 OAuth2 系统的 SSO 启动地址覆盖配置，优先级高于目录中的 `ssoStartUrl`。它们仅对对应的预置系统编码生效；其他自定义系统仍使用数据库配置。修改这些变量后需要重启 backend 容器，seed 不会覆盖已有目录记录。DeepLinkERP 的启动地址应填写 `https://deeplinkerp.com/api/method/custom_filters.overrides.oauth.login_via_eims`，不能填写 ERP 首页，也不能把 OAuth 回调地址当作启动地址。生产环境这些地址必须使用 HTTPS；本地测试请将 `NODE_ENV` 设为 `development`。
 
 访问策略选择“按角色授权”时，允许角色留空表示拒绝访问；只有明确选择“所有已登录用户”才会对所有已登录用户开放。选择“OAuth2 绑定”后，只有完成对应业务账号绑定的用户可以从门户进入。业务系统内部的菜单和接口权限仍必须由业务系统后端自行校验。
 

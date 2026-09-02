@@ -112,6 +112,8 @@ GET https://eims.example.com/oauth/authorize
 
 EIMS 会先校验上述参数，并将完整请求保存在短期服务端事务中。浏览器授权页只接收随机 `transaction_id`，不能通过修改地址栏替换 `redirect_uri`、scope、state 或 PKCE 参数。
 
+新建的 OAuth2 应用默认强制使用 PKCE。为兼容已经上线且只能在服务端保存 `client_secret` 的旧 ERP 客户端，管理员可以在“OAuth2 应用管理”中关闭该应用的“强制使用 PKCE”；这只允许该客户端省略 PKCE，不会放宽已提交 PKCE 请求的校验。新系统仍应按上面的标准流程实现 PKCE。
+
 #### 步骤 2：处理回调
 
 用户在 EIMS 登录并授权后，EIMS 会将浏览器重定向回你的回调地址：
@@ -248,7 +250,7 @@ token={要撤销的refresh_token}
 
 1. **`client_secret` 只在服务端使用**，绝对不能暴露到前端
 2. **`state` 参数必须验证**，防止 CSRF 攻击
-3. **必须使用 PKCE S256**，并在 token 请求中提交原始 `code_verifier`
+3. **标准客户端必须使用 PKCE S256**，并在 token 请求中提交原始 `code_verifier`；只有管理员明确设置为旧版兼容的服务端客户端才可省略
 4. **`code` 只能使用一次**，用完即失效（默认 10 分钟过期）
 5. **`redirect_uri` 必须精确匹配**，EIMS 会严格校验
 6. **生产环境 EIMS、客户端和回调地址必须使用 HTTPS**

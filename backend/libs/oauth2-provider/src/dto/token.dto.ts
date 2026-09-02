@@ -6,6 +6,7 @@ import {
   MinLength,
   Matches,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class TokenDto {
   @IsString()
@@ -24,6 +25,7 @@ export class TokenDto {
   redirect_uri?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsString()
   @IsNotEmpty()
   @MinLength(43)

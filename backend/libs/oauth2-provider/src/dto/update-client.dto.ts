@@ -7,6 +7,7 @@ import {
   MaxLength,
   IsUrl,
   IsIn,
+  IsBoolean,
 } from 'class-validator';
 
 export class UpdateClientDto {
@@ -40,4 +41,8 @@ export class UpdateClientDto {
   @IsString()
   @IsIn(['1', '2'])
   status?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  pkceRequired?: boolean;
 }

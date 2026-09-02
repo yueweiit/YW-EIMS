@@ -172,6 +172,7 @@ export class OpenIdService implements OnModuleInit {
         'client_secret_basic',
         'client_secret_post',
       ],
+      code_challenge_methods_supported: ['S256'],
       claims_supported: [
         'sub',
         'name',

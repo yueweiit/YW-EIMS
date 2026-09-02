@@ -123,6 +123,26 @@ const columns = computed<DataTableColumns<OAuth2ClientRecord>>(() => [
       ),
   },
   {
+    key: "pkceRequired",
+    title: "PKCE",
+    width: 90,
+    align: "center",
+    render: row =>
+      h(
+        NTag,
+        {
+          type: row.pkceRequired ? "success" : "warning",
+          size: "small",
+        },
+        {
+          default: () =>
+            row.pkceRequired
+              ? $t('page.ui.enabled')
+              : $t('page.ui.legacyCompatibility'),
+        },
+      ),
+  },
+  {
     key: "status",
     title: $t('page.ui.status'),
     width: 80,
