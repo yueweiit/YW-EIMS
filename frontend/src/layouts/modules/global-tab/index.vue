@@ -185,7 +185,7 @@ init();
 </script>
 
 <template>
-  <DarkModeContainer class="size-full flex-y-center px-16px shadow-tab">
+  <DarkModeContainer class="global-tab-shell size-full flex-y-center px-16px shadow-tab">
     <div ref="bsWrapper" class="h-full flex-1-hidden">
       <BetterScroll ref="bsScroll" :options="{ scrollX: true, scrollY: false, click: !isPCFlag }" @click="removeFocus">
         <div
@@ -203,6 +203,11 @@ init();
             :dark-mode="themeStore.darkMode"
             :active="tab.id === tabStore.activeTabId"
             :active-color="themeStore.themeColor"
+            class="global-page-tab"
+            :class="{ 'global-page-tab--active': tab.id === tabStore.activeTabId }"
+            button-class="global-page-tab--button"
+            chrome-class="global-page-tab--chrome"
+            slider-class="global-page-tab--slider"
             :closable="!tabStore.isTabRetain(tab.id)"
             @pointerdown="switchTab($event, tab)"
             @mousedown="handleMousedown($event, tab)"

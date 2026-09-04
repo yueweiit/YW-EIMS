@@ -271,6 +271,9 @@ const local: App.I18n.Schema = {
         loginSuccess: '登录成功',
         welcomeBack: '欢迎回来，{userName} ！'
       },
+      shell: {
+        authorization: '授权确认',
+      },
       pwdLogin: {
         title: '密码登录',
         rememberMe: '记住我',
@@ -331,8 +334,14 @@ const local: App.I18n.Schema = {
         desc5: 'Soybean 刚才把工作台页面随便写了一些，凑合能看了！'
       },
       creativity: '创意',
-      externalSystemsTitle: '系统',
-      externalSystemsDesc: '统一访问外部业务平台',
+      externalSystemsTitle: '业务系统入口',
+      statusLive: '实时权限状态',
+      launchSystem: '进入系统',
+      checkAccess: '查看访问状态',
+      openingSystem: '正在打开',
+      accessMapLabel: '入口地图',
+      accessNoteTitle: '进入前检查',
+      accessNoteDescription: '登录后即可进入已授权的业务系统；无法进入时请联系管理员。',
       openInNewWindow: '新窗口打开',
       externalSystems: {
         budget: '预算系统',
@@ -391,6 +400,7 @@ const local: App.I18n.Schema = {
       oauthRequestLogin: '请求使用您的 EIMS 账号登录',
       oauthPermissionList: '该应用将获得以下权限：',
       oauthDeny: '拒绝',
+      oauthLoading: '正在读取授权请求',
       oauthAfterAuthorize: '授权后，该应用将能够访问您上述权限范围内的信息',
       enabled: '启用',
       disabled: '禁用',

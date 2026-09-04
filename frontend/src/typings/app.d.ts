@@ -496,6 +496,9 @@ declare namespace App {
             loginSuccess: string;
             welcomeBack: string;
           };
+          shell: {
+            authorization: string;
+          };
           pwdLogin: {
             title: string;
             rememberMe: string;
@@ -556,7 +559,13 @@ declare namespace App {
           };
           creativity: string;
           externalSystemsTitle: string;
-          externalSystemsDesc: string;
+          statusLive: string;
+          launchSystem: string;
+          checkAccess: string;
+          openingSystem: string;
+          accessMapLabel: string;
+          accessNoteTitle: string;
+          accessNoteDescription: string;
           openInNewWindow: string;
           externalSystems: {
             budget: string;

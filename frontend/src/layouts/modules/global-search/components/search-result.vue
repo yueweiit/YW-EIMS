@@ -34,7 +34,7 @@ function handleTo() {
     <div class="pb-12px">
       <template v-for="item in options" :key="item.routePath">
         <div
-          class="mt-8px h-56px flex-y-center cursor-pointer justify-between rounded-4px bg-#e5e7eb px-14px dark:bg-dark"
+          class="search-result-item mt-8px h-56px flex-y-center cursor-pointer justify-between rounded-8px px-14px"
           :style="{
             background: item.routePath === active ? theme.themeColor : '',
             color: item.routePath === active ? '#fff' : ''
@@ -53,4 +53,24 @@ function handleTo() {
   </NScrollbar>
 </template>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.search-result-item {
+  border: 1px solid var(--eims-line);
+  color: var(--eims-ink-soft);
+  background: var(--eims-surface);
+  transition:
+    color 180ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease;
+}
+
+.search-result-item:hover {
+  border-color: var(--eims-primary);
+  background: var(--eims-primary-soft);
+  color: var(--eims-ink);
+}
+
+.search-result-item :deep(.icon) {
+  color: currentcolor;
+}
+</style>

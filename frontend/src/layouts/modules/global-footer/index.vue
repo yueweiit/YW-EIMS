@@ -7,10 +7,8 @@ defineOptions({
 </script>
 
 <template>
-  <DarkModeContainer class="h-full flex-center">
-    <a href="#" target="_blank" rel="noopener noreferrer">
-      Copyright © 2026 {{ $t('system.title') }}
-    </a>
+  <DarkModeContainer class="global-footer-shell h-full flex-center">
+    <a href="#" target="_blank" rel="noopener noreferrer">Copyright © 2026 {{ $t('system.title') }}</a>
   </DarkModeContainer>
 </template>
 

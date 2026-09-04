@@ -1,17 +1,13 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
-import { useRoute } from "vue-router";
-import { useRouter } from "vue-router";
-import {
-  fetchOAuth2AuthorizeConfirm,
-  fetchOAuth2AuthorizeRequest,
-} from "@/service/api";
-import { useAuthStore } from "@/store/modules/auth";
-import type { OAuth2AuthorizeRequest } from "@/service/api/oauth2-binding";
+import { computed, onMounted, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { fetchOAuth2AuthorizeConfirm, fetchOAuth2AuthorizeRequest } from '@/service/api';
+import type { OAuth2AuthorizeRequest } from '@/service/api/oauth2-binding';
 import { $t } from '@/locales';
+import { useAuthStore } from '@/store/modules/auth';
 
 defineOptions({
-  name: "OAuthConsent",
+  name: 'OAuthConsent'
 });
 
 const route = useRoute();
@@ -21,19 +17,15 @@ const loading = ref(true);
 const submitting = ref(false);
 const consentRequest = ref<OAuth2AuthorizeRequest | null>(null);
 
-const transactionId = computed(
-  () => (route.query.transaction_id as string) || "",
-);
-const clientName = computed(
-  () => consentRequest.value?.clientName || $t('page.ui.thirdPartyApp'),
-);
+const transactionId = computed(() => (route.query.transaction_id as string) || '');
+const clientName = computed(() => consentRequest.value?.clientName || $t('page.ui.thirdPartyApp'));
 
 onMounted(async () => {
   if (!authStore.isLogin) {
     await router.replace({
-      name: "login",
-      params: { module: "pwd-login" },
-      query: { redirect: route.fullPath },
+      name: 'login',
+      params: { module: 'pwd-login' },
+      query: { redirect: route.fullPath }
     });
     return;
   }
@@ -44,9 +36,7 @@ onMounted(async () => {
     return;
   }
 
-  const { data, error } = await fetchOAuth2AuthorizeRequest(
-    transactionId.value,
-  );
+  const { data, error } = await fetchOAuth2AuthorizeRequest(transactionId.value);
   if (error || !data) {
     window.$message?.error($t('page.ui.oauthInvalidRequest'));
     loading.value = false;
@@ -61,15 +51,15 @@ const requestedScopes = computed(() => {
   const scopeLabels: Record<string, string> = {
     openid: $t('page.ui.oauthScopeOpenid'),
     profile: $t('page.ui.oauthScopeProfile'),
-    email: $t('page.ui.oauthScopeEmail'),
+    email: $t('page.ui.oauthScopeEmail')
   };
-  return scopeList.map((s) => ({
+  return scopeList.map(s => ({
     key: s,
-    label: scopeLabels[s] || s,
+    label: scopeLabels[s] || s
   }));
 });
 
-async function handleConsent(consent: "true" | "false") {
+async function handleConsent(consent: 'true' | 'false') {
   if (!authStore.isLogin) {
     window.$message?.error($t('page.ui.oauthLoginRequired'));
     return;
@@ -80,7 +70,7 @@ async function handleConsent(consent: "true" | "false") {
   try {
     const { data, error } = await fetchOAuth2AuthorizeConfirm({
       transaction_id: transactionId.value,
-      consent,
+      consent
     });
     if (!error && data?.redirectUrl) {
       window.location.assign(data.redirectUrl);
@@ -90,83 +80,216 @@ async function handleConsent(consent: "true" | "false") {
   }
 }
 
-const handleAuthorize = () => handleConsent("true");
-const handleDeny = () => handleConsent("false");
+const handleAuthorize = () => handleConsent('true');
+const handleDeny = () => handleConsent('false');
 </script>
 
 <template>
   <div class="oauth-consent">
-    <div class="mb-16px text-center">
-      <NIcon size="48" class="mb-8px text-primary">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="currentColor"
-        >
-          <path
-            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"
-          />
-        </svg>
-      </NIcon>
-      <h3 class="text-18px font-medium">{{ $t('page.ui.oauthAuthorize') }}</h3>
+    <div class="consent-heading">
+      <div class="consent-icon" aria-hidden="true">
+        <SvgIcon icon="mdi:shield-key-outline" />
+      </div>
+      <div>
+        <span class="consent-kicker">{{ $t('page.login.shell.authorization') }}</span>
+        <h2>{{ $t('page.ui.oauthAuthorize') }}</h2>
+      </div>
     </div>
 
-    <NAlert v-if="!loading" type="info" class="mb-16px">
-      <strong>{{ clientName }}</strong> {{ $t('page.ui.oauthRequestLogin') }}
-    </NAlert>
+    <div v-if="!loading" class="consent-request">
+      <div class="consent-client">
+        <span class="consent-client-label">{{ $t('page.ui.thirdPartyApp') }}</span>
+        <strong>{{ clientName }}</strong>
+        <span>{{ $t('page.ui.oauthRequestLogin') }}</span>
+      </div>
 
-    <div v-if="!loading" class="mb-24px">
-      <p class="mb-8px text-14px text-gray-500">{{ $t('page.ui.oauthPermissionList') }}</p>
-      <NList bordered size="small">
-        <NListItem v-for="item in requestedScopes" :key="item.key">
-          <NIcon class="mr-8px text-green-500">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-            >
-              <path
-                d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"
-              />
-            </svg>
-          </NIcon>
-          {{ item.label }}
-        </NListItem>
-      </NList>
+      <div class="consent-permissions">
+        <div class="consent-permission-heading">{{ $t('page.ui.oauthPermissionList') }}</div>
+        <ul class="consent-permission-list">
+          <li v-for="item in requestedScopes" :key="item.key">
+            <span class="permission-icon" aria-hidden="true">
+              <SvgIcon icon="mdi:check" />
+            </span>
+            <span>{{ item.label }}</span>
+          </li>
+        </ul>
+      </div>
     </div>
 
-    <NSpin v-if="loading" class="mb-24px" />
+    <div v-if="loading" class="consent-loading">
+      <NSpin size="small" />
+      <span>{{ $t('page.ui.oauthLoading') }}</span>
+    </div>
 
-    <NSpace v-else vertical :size="16">
-      <NButton
-        type="primary"
-        size="large"
-        round
-        block
-        :loading="submitting"
-        @click="handleAuthorize"
-      >
+    <div v-else class="consent-actions">
+      <NButton type="primary" size="large" block :loading="submitting" @click="handleAuthorize">
+        <template #icon>
+          <SvgIcon icon="mdi:shield-check-outline" />
+        </template>
         {{ $t('page.ui.oauthAuthorize') }}
       </NButton>
-      <NButton
-        size="large"
-        round
-        block
-        :loading="submitting"
-        @click="handleDeny"
-      >
+      <NButton size="large" block :loading="submitting" @click="handleDeny">
         {{ $t('page.ui.oauthDeny') }}
       </NButton>
-    </NSpace>
+    </div>
 
-    <p class="mt-16px text-center text-12px text-gray-400">
-      {{ $t('page.ui.oauthAfterAuthorize') }}
-    </p>
+    <p class="consent-footnote">{{ $t('page.ui.oauthAfterAuthorize') }}</p>
   </div>
 </template>
 
 <style scoped>
 .oauth-consent {
-  padding: 8px 0;
+  color: var(--login-ink, #16323d);
+}
+
+.consent-heading {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.consent-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  border: 1px solid rgb(43 141 125 / 26%);
+  border-radius: 11px;
+  color: var(--login-teal, #2b8d7d);
+  background: rgb(43 141 125 / 10%);
+  font-size: 21px;
+}
+
+.consent-kicker {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--login-teal, #2b8d7d);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.consent-heading h2 {
+  margin: 0;
+  color: var(--login-ink, #16323d);
+  font-family: 'Aptos Display', 'Bahnschrift', 'Noto Sans SC', 'PingFang SC', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  line-height: 1.1;
+}
+
+.consent-request {
+  display: grid;
+  gap: 22px;
+}
+
+.consent-client,
+.consent-permissions {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.consent-client {
+  display: grid;
+  gap: 6px;
+  padding: 0 0 18px;
+  border-bottom: 1px solid var(--login-line, #dce7df);
+}
+
+.consent-client-label,
+.consent-permission-heading {
+  color: var(--login-ink-soft, #6d8385);
+  font-size: 11px;
+}
+
+.consent-client strong {
+  color: var(--login-ink, #16323d);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.consent-client > span:last-child {
+  color: var(--login-ink-soft, #6d8385);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.consent-permissions {
+  padding: 0;
+}
+
+.consent-permission-heading {
+  margin-bottom: 8px;
+}
+
+.consent-permission-list {
+  padding: 0;
+  margin: 0;
+  border-top: 1px solid var(--login-line, #dce7df);
+  list-style: none;
+}
+
+.consent-permission-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  border-bottom: 1px solid var(--login-line, #dce7df);
+  color: var(--login-ink, #16323d);
+  font-size: 13px;
+}
+
+.consent-permission-list li:last-child {
+  border-bottom: 0;
+}
+
+.permission-icon {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  color: var(--login-teal, #2b8d7d);
+  background: rgb(43 141 125 / 12%);
+  font-size: 13px;
+}
+
+.consent-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 142px;
+  color: var(--login-ink-soft, #6d8385);
+  font-size: 12px;
+}
+
+.consent-actions {
+  display: grid;
+  gap: 11px;
+  margin-top: 24px;
+}
+
+.consent-actions :deep(.n-button) {
+  min-height: 48px;
+  border-radius: 11px !important;
+  font-weight: 600;
+}
+
+.consent-footnote {
+  margin: 17px 0 0;
+  color: var(--login-ink-soft, #6d8385);
+  font-size: 11px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+@media (max-width: 560px) {
+  .consent-heading h2 {
+    font-size: 25px;
+  }
 }
 </style>

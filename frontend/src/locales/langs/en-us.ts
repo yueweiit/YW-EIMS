@@ -275,6 +275,9 @@ const local: App.I18n.Schema = {
         loginSuccess: 'Login successfully',
         welcomeBack: 'Welcome back, {userName} !'
       },
+      shell: {
+        authorization: 'Authorization',
+      },
       pwdLogin: {
         title: 'Password Login',
         rememberMe: 'Remember me',
@@ -335,8 +338,14 @@ const local: App.I18n.Schema = {
         desc5: 'Soybean just wrote some of the workbench pages casually, and it was enough to see!'
       },
       creativity: 'Creativity',
-      externalSystemsTitle: 'External Systems',
-      externalSystemsDesc: 'Access connected business platforms',
+      externalSystemsTitle: 'Business systems',
+      statusLive: 'Live access status',
+      launchSystem: 'Enter system',
+      checkAccess: 'Review access',
+      openingSystem: 'Opening',
+      accessMapLabel: 'Access map',
+      accessNoteTitle: 'Before you enter',
+      accessNoteDescription: 'After signing in, open any business system you are authorized to use. Contact an administrator if access is unavailable.',
       openInNewWindow: 'Open in new window',
       externalSystems: {
         budget: 'Budget System',
@@ -395,6 +404,7 @@ const local: App.I18n.Schema = {
       oauthRequestLogin: 'requests to sign in with your EIMS account',
       oauthPermissionList: 'The application will receive the following permissions:',
       oauthDeny: 'Deny',
+      oauthLoading: 'Reading authorization request',
       oauthAfterAuthorize: 'After authorization, the application can access information within the permissions listed above.',
       enabled: 'Enabled',
       disabled: 'Disabled',

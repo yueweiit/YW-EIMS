@@ -270,6 +270,9 @@ const local: App.I18n.Schema = {
         loginSuccess: 'Sesión iniciada correctamente',
         welcomeBack: '¡Bienvenido de nuevo, {userName}!'
       },
+      shell: {
+        authorization: 'Autorización',
+      },
       pwdLogin: {
         title: 'Iniciar con contraseña',
         rememberMe: 'Recordarme',
@@ -329,8 +332,14 @@ const local: App.I18n.Schema = {
         desc5: 'El panel de trabajo está listo para usarse.'
       },
       creativity: 'Creatividad',
-      externalSystemsTitle: 'Sistemas',
-      externalSystemsDesc: 'Acceso a plataformas empresariales conectadas',
+      externalSystemsTitle: 'Sistemas empresariales',
+      statusLive: 'Estado de acceso en tiempo real',
+      launchSystem: 'Entrar al sistema',
+      checkAccess: 'Revisar acceso',
+      openingSystem: 'Abriendo',
+      accessMapLabel: 'Mapa de acceso',
+      accessNoteTitle: 'Antes de entrar',
+      accessNoteDescription: 'Después de iniciar sesión, abre cualquier sistema autorizado para ti. Contacta con un administrador si no puedes acceder.',
       openInNewWindow: 'Abrir en una ventana nueva',
       externalSystems: {
         budget: 'Sistema presupuestario',
@@ -389,6 +398,7 @@ const local: App.I18n.Schema = {
       oauthRequestLogin: 'solicita iniciar sesión con tu cuenta de EIMS',
       oauthPermissionList: 'La aplicación obtendrá los siguientes permisos:',
       oauthDeny: 'Rechazar',
+      oauthLoading: 'Leyendo la solicitud de autorización',
       oauthAfterAuthorize: 'Después de autorizar, la aplicación podrá acceder a la información incluida en los permisos anteriores.',
       enabled: 'Habilitado',
       disabled: 'Deshabilitado',

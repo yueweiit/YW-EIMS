@@ -4,13 +4,13 @@ export const themeSettings: App.Theme.ThemeSetting = {
   grayscale: false,
   colourWeakness: false,
   recommendColor: false,
-  themeColor: '#646cff',
-  themeRadius: 6,
+  themeColor: '#2b8d7d',
+  themeRadius: 8,
   otherColor: {
-    info: '#2080f0',
-    success: '#52c41a',
-    warning: '#faad14',
-    error: '#f5222d'
+    info: '#2b8d7d',
+    success: '#77b98b',
+    warning: '#d28a55',
+    error: '#c96968'
   },
   isInfoFollowPrimary: true,
   layout: {
@@ -38,7 +38,7 @@ export const themeSettings: App.Theme.ThemeSetting = {
     visible: true,
     cache: true,
     height: 44,
-    mode: 'chrome',
+    mode: 'slider',
     closeTabByMiddleClick: false
   },
   fixedHeaderAndTab: true,
@@ -67,22 +67,22 @@ export const themeSettings: App.Theme.ThemeSetting = {
   tokens: {
     light: {
       colors: {
-        container: 'rgb(255, 255, 255)',
-        layout: 'rgb(247, 250, 252)',
-        inverted: 'rgb(0, 20, 40)',
-        'base-text': 'rgb(31, 31, 31)'
+        container: 'rgb(255, 253, 249)',
+        layout: 'rgb(241, 244, 239)',
+        inverted: 'rgb(20, 56, 67)',
+        'base-text': 'rgb(22, 50, 61)'
       },
       boxShadow: {
-        header: '0 1px 2px rgb(0, 21, 41, 0.08)',
-        sider: '2px 0 8px 0 rgb(29, 35, 41, 0.05)',
-        tab: '0 1px 2px rgb(0, 21, 41, 0.08)'
+        header: '0 1px 0 rgb(220 231 223 / 100%)',
+        sider: '1px 0 0 rgb(220 231 223 / 100%)',
+        tab: '0 1px 0 rgb(220 231 223 / 100%)'
       }
     },
     dark: {
       colors: {
-        container: 'rgb(28, 28, 28)',
-        layout: 'rgb(18, 18, 18)',
-        'base-text': 'rgb(224, 224, 224)'
+        container: 'rgb(20, 40, 49)',
+        layout: 'rgb(13, 27, 36)',
+        'base-text': 'rgb(237, 245, 237)'
       }
     }
   }
@@ -93,4 +93,39 @@ export const themeSettings: App.Theme.ThemeSetting = {
  *
  * If publish new version, use `overrideThemeSettings` to override certain theme settings
  */
-export const overrideThemeSettings: Partial<App.Theme.ThemeSetting> = {};
+export const overrideThemeSettings: Partial<App.Theme.ThemeSetting> = {
+  themeColor: '#2b8d7d',
+  themeRadius: 8,
+  otherColor: {
+    info: '#2b8d7d',
+    success: '#77b98b',
+    warning: '#d28a55',
+    error: '#c96968'
+  },
+  tab: {
+    ...themeSettings.tab,
+    mode: 'slider'
+  },
+  tokens: {
+    light: {
+      colors: {
+        container: 'rgb(255, 253, 249)',
+        layout: 'rgb(241, 244, 239)',
+        inverted: 'rgb(20, 56, 67)',
+        'base-text': 'rgb(22, 50, 61)'
+      },
+      boxShadow: {
+        header: '0 1px 0 rgb(220 231 223 / 100%)',
+        sider: '1px 0 0 rgb(220 231 223 / 100%)',
+        tab: '0 1px 0 rgb(220 231 223 / 100%)'
+      }
+    },
+    dark: {
+      colors: {
+        container: 'rgb(20, 40, 49)',
+        layout: 'rgb(13, 27, 36)',
+        'base-text': 'rgb(237, 245, 237)'
+      }
+    }
+  }
+};
