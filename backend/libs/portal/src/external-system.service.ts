@@ -435,15 +435,17 @@ export class ExternalSystemService {
     system: Pick<PortalSystem, 'code' | 'entryUrl' | 'ssoStartUrl' | 'authMode'>,
   ) {
     if (system.authMode === 'oauth2') {
+      if (system.ssoStartUrl?.trim()) {
+        return this.normalizeHttpUrl(system.ssoStartUrl, 'SSO启动地址');
+      }
+
+      // 页面未配置 SSO 启动地址时，保留环境变量作为部署级备用配置。
       const environmentVariable = EXTERNAL_SYSTEM_SSO_START_URL_ENV[system.code];
       const configuredUrl = environmentVariable
         ? this.configService.get<string>(environmentVariable)?.trim()
         : undefined;
       if (configuredUrl) {
         return this.normalizeHttpUrl(configuredUrl, 'SSO启动地址');
-      }
-      if (system.ssoStartUrl?.trim()) {
-        return this.normalizeHttpUrl(system.ssoStartUrl, 'SSO启动地址');
       }
     }
     return this.getEffectiveEntryUrl(system.code, system.entryUrl);
