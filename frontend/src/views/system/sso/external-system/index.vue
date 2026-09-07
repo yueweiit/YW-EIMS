@@ -57,6 +57,20 @@ const defaultForm: CreateExternalSystemParams = {
   status: '1'
 };
 const formModel = reactive<CreateExternalSystemParams>({ ...defaultForm });
+const codeValidationRequested = ref(false);
+const systemCodeError = computed(() => {
+  if (drawerType.value !== 'add' || !codeValidationRequested.value) return '';
+  if (!formModel.code) return $t('page.ui.fillSystemCode');
+  return /^[a-z0-9][a-z0-9_-]{1,49}$/.test(formModel.code)
+    ? ''
+    : $t('page.ui.systemCodeInvalid');
+});
+
+function normalizeSystemCode() {
+  if (drawerType.value !== 'add') return;
+  formModel.code = formModel.code.trim().toLowerCase();
+  codeValidationRequested.value = true;
+}
 
 const statusTextMap = computed<Record<string, string>>(() => ({
   '1': $t('page.ui.enabled'),
@@ -194,6 +208,7 @@ async function loadRoleOptions() {
 
 function resetForm() {
   Object.assign(formModel, { ...defaultForm, allowedRoles: [] });
+  codeValidationRequested.value = false;
 }
 
 function handleAdd() {
@@ -253,12 +268,14 @@ async function handleDelete(row: ExternalSystemRecord) {
 }
 
 async function handleSubmit() {
-  if (!formModel.name?.trim() || !formModel.entryUrl?.trim()) {
-    window.$message?.error($t('page.ui.fillSystemNameEntry'));
+  if (loading.value) return;
+  normalizeSystemCode();
+  if (systemCodeError.value) {
+    window.$message?.error(systemCodeError.value);
     return;
   }
-  if (drawerType.value === 'add' && !formModel.code?.trim()) {
-    window.$message?.error($t('page.ui.fillSystemCode'));
+  if (!formModel.name?.trim() || !formModel.entryUrl?.trim()) {
+    window.$message?.error($t('page.ui.fillSystemNameEntry'));
     return;
   }
   if (formModel.authMode === 'oauth2' && !formModel.oauthClientId) {
@@ -266,11 +283,13 @@ async function handleSubmit() {
     return;
   }
 
+  const allowedRoles = formModel.accessMode === 'roles' ? [...(formModel.allowedRoles || [])] : [];
   startLoading();
   try {
     if (drawerType.value === 'add') {
       const { error } = await fetchCreateExternalSystem({
         ...formModel,
+        allowedRoles,
         code: formModel.code.trim(),
         name: formModel.name.trim(),
         entryUrl: formModel.entryUrl.trim(),
@@ -291,7 +310,7 @@ async function handleSubmit() {
         ssoStartUrl: formModel.ssoStartUrl?.trim() || null,
         authMode: formModel.authMode,
         accessMode: formModel.accessMode,
-        allowedRoles: formModel.allowedRoles,
+        allowedRoles,
         category: formModel.category,
         helpUrl: formModel.helpUrl,
         feedbackUrl: formModel.feedbackUrl,
@@ -381,8 +400,18 @@ void getData();
           {{ $t('page.ui.accessPolicyNotice') }}
         </NAlert>
         <NForm label-placement="left" label-width="100">
-          <NFormItem :label="$t('page.ui.systemCode')" required>
-            <NInput v-model:value="formModel.code" :disabled="drawerType === 'edit'" :placeholder="$t('page.ui.systemCodePlaceholder')" />
+          <NFormItem
+            :label="$t('page.ui.systemCode')"
+            :validation-status="systemCodeError ? 'error' : undefined"
+            :feedback="systemCodeError || (drawerType === 'add' ? $t('page.ui.systemCodeHint') : undefined)"
+            required
+          >
+            <NInput
+              v-model:value="formModel.code"
+              :disabled="drawerType === 'edit'"
+              :placeholder="$t('page.ui.systemCodePlaceholder')"
+              @blur="normalizeSystemCode"
+            />
           </NFormItem>
           <NFormItem :label="$t('page.ui.systemName')" required>
             <NInput v-model:value="formModel.name" :placeholder="$t('page.ui.externalSystemNamePlaceholder')" />
@@ -408,6 +437,9 @@ void getData();
           <NFormItem :label="$t('page.ui.accessPolicy')">
             <NSelect v-model:value="formModel.accessMode" :options="accessModeOptions" />
           </NFormItem>
+          <NAlert v-if="formModel.accessMode === 'all'" type="warning" :bordered="false" class="mb-16px">
+            {{ $t('page.ui.allUsersAccessNotice') }}
+          </NAlert>
           <NFormItem v-if="formModel.authMode === 'oauth2'" :label="$t('page.ui.oauthClient')" required>
             <NSelect
               v-model:value="formModel.oauthClientId"
@@ -417,13 +449,12 @@ void getData();
               :placeholder="$t('page.ui.oauthAppSelect')"
             />
           </NFormItem>
-          <NFormItem :label="$t('page.ui.allowedRoles')">
+          <NFormItem v-if="formModel.accessMode === 'roles'" :label="$t('page.ui.allowedRoles')">
             <NSelect
               v-model:value="formModel.allowedRoles"
               :options="roleOptions"
               multiple
               filterable
-              tag
               :placeholder="$t('page.ui.allowedRolesPlaceholder')"
             />
           </NFormItem>

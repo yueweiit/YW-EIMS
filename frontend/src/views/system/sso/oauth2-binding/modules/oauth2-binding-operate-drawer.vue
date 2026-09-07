@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue';
 import { useLoading } from '@sa/hooks';
 import {
   fetchCreateOAuth2Binding,
+  fetchOAuth2BindingPage,
   fetchOAuth2ClientPage,
   fetchUpdateOAuth2Binding,
   fetchUserPage
@@ -37,13 +38,19 @@ const form = ref<CreateOAuth2BindingParams>({
 
 const userOptions = ref<{ label: string; value: number }[]>([]);
 const clientOptions = ref<{ label: string; value: string }[]>([]);
+const editingBinding = ref<OAuth2BindingRecord | null>(null);
+const existingBinding = ref<OAuth2BindingRecord | null>(null);
+const conflictMessage = ref('');
 
-const drawerTitle = computed(() => (props.rowData ? $t('page.ui.editBinding') : $t('page.ui.newBindingTitle')));
+const drawerTitle = computed(() => (editingBinding.value ? $t('page.ui.editBinding') : $t('page.ui.newBindingTitle')));
 
 watch(
   () => props.visible,
   val => {
     if (val) {
+      editingBinding.value = props.rowData || null;
+      existingBinding.value = null;
+      conflictMessage.value = '';
       if (props.rowData) {
         form.value = {
           ssoUserId: props.rowData.ssoUserId,
@@ -63,6 +70,28 @@ watch(
     }
   }
 );
+
+watch(
+  () => [form.value.ssoUserId, form.value.clientId, form.value.appUserId],
+  () => {
+    existingBinding.value = null;
+    conflictMessage.value = '';
+  }
+);
+
+function editExistingBinding() {
+  if (!existingBinding.value) return;
+  const binding = existingBinding.value;
+  editingBinding.value = binding;
+  form.value = {
+    ssoUserId: binding.ssoUserId,
+    clientId: binding.clientId,
+    appUserId: binding.appUserId,
+    appUsername: binding.appUsername || ''
+  };
+  existingBinding.value = null;
+  conflictMessage.value = '';
+}
 
 async function loadOptions() {
   // Load users
@@ -89,6 +118,7 @@ function handleClose() {
 }
 
 async function handleSubmit() {
+  if (loading.value) return;
   if (!form.value.ssoUserId) {
     window.$message?.error($t('page.ui.selectSsoUser'));
     return;
@@ -103,17 +133,42 @@ async function handleSubmit() {
     return;
   }
 
+  const submittedForm = form.value;
+  const bindingId = editingBinding.value?.id;
   startLoading();
+  conflictMessage.value = '';
+  existingBinding.value = null;
   try {
-    const result = props.rowData
-      ? await fetchUpdateOAuth2Binding(props.rowData.id, {
+    if (!editingBinding.value) {
+      const { data, error } = await fetchOAuth2BindingPage({
+        current: 1,
+        size: 1,
+        ssoUserId: form.value.ssoUserId,
+        clientId: form.value.clientId
+      });
+      if (!props.visible || form.value !== submittedForm) return;
+      if (error || !data) return;
+      if (data.records.length) {
+        existingBinding.value = data.records[0];
+        return;
+      }
+    }
+
+    const result = editingBinding.value
+      ? await fetchUpdateOAuth2Binding(editingBinding.value.id, {
           appUserId,
           appUsername: form.value.appUsername
         })
       : await fetchCreateOAuth2Binding({ ...form.value, appUserId });
     const { error } = result;
+    if (!props.visible || form.value !== submittedForm) return;
+    if (error?.response?.status === 409) {
+      const message: unknown = error.response.data?.msg;
+      conflictMessage.value = typeof message === 'string' ? message : $t('page.ui.bindingConflictNotice');
+      return;
+    }
     if (!error) {
-      window.$message?.success(props.rowData ? $t('page.ui.saveSuccess') : $t('page.ui.bindingSuccess'));
+      window.$message?.success(bindingId ? $t('page.ui.saveSuccess') : $t('page.ui.bindingSuccess'));
       handleClose();
       emit('submitted');
     }
@@ -129,14 +184,23 @@ async function handleSubmit() {
       <NAlert type="info" :bordered="false" class="mb-16px">
         {{ $t('page.ui.erpBindingNotice') }}
       </NAlert>
-      <NForm label-placement="left" label-width="120">
+      <NAlert v-if="existingBinding" type="warning" :bordered="false" class="mb-16px">
+        <p>{{ $t('page.ui.bindingAlreadyExists', { appUserId: existingBinding.appUserId }) }}</p>
+        <NButton class="mt-8px" size="small" @click="editExistingBinding">
+          {{ $t('page.ui.editExistingBinding') }}
+        </NButton>
+      </NAlert>
+      <NAlert v-if="conflictMessage" type="warning" :bordered="false" class="mb-16px">
+        {{ conflictMessage }}
+      </NAlert>
+      <NForm label-placement="left" label-width="120" :disabled="loading">
         <NFormItem :label="$t('page.ui.ssoUser')" required>
           <NSelect
             v-model:value="form.ssoUserId"
             :options="userOptions"
             :placeholder="$t('page.ui.selectEimsUser')"
             filterable
-            :disabled="Boolean(props.rowData)"
+            :disabled="loading || Boolean(editingBinding)"
           />
         </NFormItem>
 
@@ -146,7 +210,7 @@ async function handleSubmit() {
             :options="clientOptions"
             :placeholder="$t('page.ui.selectTargetApp')"
             filterable
-            :disabled="Boolean(props.rowData)"
+            :disabled="loading || Boolean(editingBinding)"
           />
         </NFormItem>
 
@@ -173,7 +237,7 @@ async function handleSubmit() {
         <NSpace>
           <NButton @click="handleClose">{{ $t('common.cancel') }}</NButton>
           <NButton type="primary" :loading="loading" @click="handleSubmit">
-            {{ props.rowData ? $t('page.ui.save') : $t('page.ui.bind') }}
+            {{ editingBinding ? $t('page.ui.save') : $t('page.ui.bind') }}
           </NButton>
         </NSpace>
       </template>

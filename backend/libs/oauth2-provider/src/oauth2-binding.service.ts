@@ -6,8 +6,14 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '@eims/database';
+import { Prisma } from '@prisma/client';
 import { CreateBindingDto } from './dto/create-binding.dto';
 import { UpdateBindingDto } from './dto/update-binding.dto';
+
+const EXISTING_BINDING_MESSAGE =
+  '该用户已绑定此应用，请在账号绑定列表中编辑已有绑定';
+const ACCOUNT_IN_USE_MESSAGE =
+  '该业务系统用户ID已被其他SSO用户绑定，请核对账号或更换业务系统用户ID；如需重新分配，请先确认并解除原绑定';
 
 @Injectable()
 export class OAuth2BindingService {
@@ -97,7 +103,7 @@ export class OAuth2BindingService {
       },
     });
     if (existing) {
-      throw new ConflictException('该用户已绑定此应用');
+      throw new ConflictException(EXISTING_BINDING_MESSAGE);
     }
 
     // 检查业务系统用户ID是否已被其他 SSO 用户绑定
@@ -110,25 +116,27 @@ export class OAuth2BindingService {
       },
     });
     if (conflictBinding) {
-      throw new ConflictException('该业务系统用户已被其他 SSO 用户绑定');
+      throw new ConflictException(ACCOUNT_IN_USE_MESSAGE);
     }
 
-    const binding = await this.prisma.oauth2UserBinding.create({
-      data: {
-        ssoUserId: dto.ssoUserId,
-        clientId: dto.clientId,
-        appUserId,
-        appUsername: dto.appUsername,
-      },
-      select: {
-        id: true,
-        ssoUserId: true,
-        clientId: true,
-        appUserId: true,
-        appUsername: true,
-        createdAt: true,
-      },
-    });
+    const binding = await this.prisma.oauth2UserBinding
+      .create({
+        data: {
+          ssoUserId: dto.ssoUserId,
+          clientId: dto.clientId,
+          appUserId,
+          appUsername: dto.appUsername,
+        },
+        select: {
+          id: true,
+          ssoUserId: true,
+          clientId: true,
+          appUserId: true,
+          appUsername: true,
+          createdAt: true,
+        },
+      })
+      .catch((error: unknown) => this.throwBindingConflict(error));
 
     this.logger.log(
       `Created binding: SSO user ${dto.ssoUserId} → ${dto.clientId} → app user ${appUserId}`,
@@ -173,25 +181,47 @@ export class OAuth2BindingService {
         select: { id: true },
       });
       if (conflictBinding && conflictBinding.id !== id) {
-        throw new ConflictException('该业务系统用户已被其他 SSO 用户绑定');
+        throw new ConflictException(ACCOUNT_IN_USE_MESSAGE);
       }
     }
 
-    return this.prisma.oauth2UserBinding.update({
-      where: { id },
-      data: {
-        appUserId,
-        appUsername: dto.appUsername?.trim() || null,
-      },
-      select: {
-        id: true,
-        ssoUserId: true,
-        clientId: true,
-        appUserId: true,
-        appUsername: true,
-        updatedAt: true,
-      },
-    });
+    return this.prisma.oauth2UserBinding
+      .update({
+        where: { id },
+        data: {
+          appUserId,
+          appUsername: dto.appUsername?.trim() || null,
+        },
+        select: {
+          id: true,
+          ssoUserId: true,
+          clientId: true,
+          appUserId: true,
+          appUsername: true,
+          updatedAt: true,
+        },
+      })
+      .catch((error: unknown) => this.throwBindingConflict(error));
+  }
+
+  private throwBindingConflict(error: unknown): never {
+    // Another request may create a binding after the pre-checks have passed.
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2002'
+    ) {
+      const target = error.meta?.target;
+      if (Array.isArray(target) && target.includes('sso_user_id')) {
+        throw new ConflictException(EXISTING_BINDING_MESSAGE);
+      }
+      if (Array.isArray(target) && target.includes('app_user_id')) {
+        throw new ConflictException(ACCOUNT_IN_USE_MESSAGE);
+      }
+      throw new ConflictException(
+        '账号绑定已存在或业务系统用户ID已被占用，请刷新绑定列表后核对',
+      );
+    }
+    throw error;
   }
 
   /**

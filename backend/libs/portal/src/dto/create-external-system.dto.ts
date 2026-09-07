@@ -1,3 +1,4 @@
+import { Transform } from 'class-transformer';
 import {
   ArrayMaxSize,
   IsArray,
@@ -12,8 +13,14 @@ import {
 } from 'class-validator';
 
 export class CreateExternalSystemDto {
-  @IsString()
-  @Matches(/^[a-z0-9][a-z0-9_-]{1,49}$/)
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim().toLowerCase() : value,
+  )
+  @IsString({ message: '系统编码必须是字符串' })
+  @Matches(/^[a-z0-9][a-z0-9_-]{1,49}$/, {
+    message:
+      '系统编码须为2～50位，只能包含小写字母、数字、下划线和短横线，并以字母或数字开头',
+  })
   code!: string;
 
   @IsString()
