@@ -48,11 +48,11 @@ export class JwtAuthGuard implements CanActivate {
           where: {
             accessTokenHash: createHash('sha256').update(token).digest('hex'),
           },
-          select: { revokedAt: true, expiresAt: true },
+          select: { revokedAt: true, expiresAt: true, sessionVersion: true },
         }),
         this.prisma.user.findUnique({
           where: { id: payload.sub },
-          select: { status: true },
+          select: { status: true, sessionVersion: true },
         }),
       ]);
       if (
@@ -60,7 +60,9 @@ export class JwtAuthGuard implements CanActivate {
         session.revokedAt ||
         session.expiresAt <= new Date() ||
         !user ||
-        user.status !== '1'
+        user.status !== '1' ||
+        session.sessionVersion !== user.sessionVersion ||
+        payload.sessionVersion !== user.sessionVersion
       ) {
         throw new UnauthorizedException('用户不存在或已被禁用');
       }

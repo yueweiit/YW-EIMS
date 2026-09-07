@@ -183,11 +183,18 @@ describe('AuthService OAuth login tickets', () => {
       user: {
         findUnique: jest.fn(),
         findMany: jest.fn(),
+        update: jest.fn().mockResolvedValue({ sessionVersion: 2 }),
       },
       authRefreshSession: {
         create: jest.fn().mockResolvedValue({}),
+        updateMany: jest.fn().mockResolvedValue({ count: 0 }),
       },
+      $transaction: jest.fn(),
     } as unknown as PrismaService;
+    (prisma.$transaction as jest.Mock).mockImplementation(
+      async (callback: (transaction: PrismaService) => unknown) =>
+        callback(prisma),
+    );
 
     return {
       service: new AuthService(jwtService, configService, prisma),
@@ -256,9 +263,18 @@ describe('AuthService OAuth login tickets', () => {
     expect(tokens.refreshToken).toEqual(expect.any(String));
     expect(prisma.authRefreshSession.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ userId: 7 }),
+        data: expect.objectContaining({ userId: 7, sessionVersion: 2 }),
       }),
     );
+    expect(prisma.user.update).toHaveBeenCalledWith({
+      where: { id: 7 },
+      data: { sessionVersion: { increment: 1 } },
+      select: { sessionVersion: true },
+    });
+    expect(prisma.authRefreshSession.updateMany).toHaveBeenCalledWith({
+      where: { userId: 7, revokedAt: null },
+      data: { revokedAt: expect.any(Date) },
+    });
     expect(updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({ id: 1, consumedAt: null }),

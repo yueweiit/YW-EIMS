@@ -36,7 +36,7 @@ export class AuthService {
       throw new UnauthorizedException('用户名或密码错误');
     }
 
-    return this.generateTokens(user.id, user.userName);
+    return this.startSingleSession(user.id, user.userName);
   }
 
   async getUserInfo(userId: number) {
@@ -76,9 +76,17 @@ export class AuthService {
         select: {
           id: true,
           familyId: true,
+          sessionVersion: true,
           expiresAt: true,
           revokedAt: true,
-          user: { select: { id: true, userName: true, status: true } },
+          user: {
+            select: {
+              id: true,
+              userName: true,
+              status: true,
+              sessionVersion: true,
+            },
+          },
         },
       });
       if (!session || session.expiresAt <= now) {
@@ -89,6 +97,10 @@ export class AuthService {
         throw new UnauthorizedException('refresh token already used');
       }
       if (session.user.status !== '1') {
+        await this.revokeSessionFamily(session.user.id, session.familyId);
+        throw new UnauthorizedException('refresh token expired or invalid');
+      }
+      if (session.sessionVersion !== session.user.sessionVersion) {
         await this.revokeSessionFamily(session.user.id, session.familyId);
         throw new UnauthorizedException('refresh token expired or invalid');
       }
@@ -112,6 +124,7 @@ export class AuthService {
       return this.generateTokens(
         session.user.id,
         session.user.userName,
+        session.user.sessionVersion,
         session.familyId || undefined,
       );
     } catch {
@@ -144,10 +157,8 @@ export class AuthService {
 
   /** Revoke every EIMS browser session for a user (used by single logout). */
   async revokeAllSessions(userId: number) {
-    return this.prisma.authRefreshSession.updateMany({
-      where: { userId, revokedAt: null },
-      data: { revokedAt: new Date() },
-    });
+    const result = await this.advanceSessionVersion(userId);
+    return result.revoked;
   }
 
   private async revokeSessionFamily(userId: number, familyId?: string | null) {
@@ -243,15 +254,36 @@ export class AuthService {
       throw new UnauthorizedException('用户不存在或已被禁用');
     }
 
-    return this.generateTokens(user.id, user.userName);
+    return this.startSingleSession(user.id, user.userName);
+  }
+
+  private async startSingleSession(userId: number, userName: string) {
+    const { sessionVersion } = await this.advanceSessionVersion(userId);
+    return this.generateTokens(userId, userName, sessionVersion);
+  }
+
+  private async advanceSessionVersion(userId: number) {
+    return this.prisma.$transaction(async transaction => {
+      const user = await transaction.user.update({
+        where: { id: userId },
+        data: { sessionVersion: { increment: 1 } },
+        select: { sessionVersion: true },
+      });
+      const revoked = await transaction.authRefreshSession.updateMany({
+        where: { userId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+      return { sessionVersion: user.sessionVersion, revoked };
+    });
   }
 
   private async generateTokens(
     userId: number,
     userName: string,
+    sessionVersion: number,
     familyId = randomBytes(32).toString('base64url'),
   ) {
-    const payload = { sub: userId, userName };
+    const payload = { sub: userId, userName, sessionVersion };
     const token = await this.jwtService.signAsync(payload, {
       secret: this.configService.get<string>('JWT_SECRET'),
       expiresIn: this.configService.get('JWT_EXPIRES_IN'),
@@ -263,6 +295,7 @@ export class AuthService {
         accessTokenHash: this.hashAccessToken(token),
         familyId,
         userId,
+        sessionVersion,
         expiresAt: new Date(Date.now() + this.getRefreshSessionLifetimeMs()),
       },
     });
