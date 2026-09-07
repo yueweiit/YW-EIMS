@@ -175,26 +175,28 @@ onMounted(() => {
                 </div>
 
                 <div class="system-card-actions">
-                  <button
-                    type="button"
-                    class="launch-button"
-                    :class="{ 'launch-button-muted': !item.canLaunch }"
-                    @click.stop="openSystem(item)"
-                  >
-                    <span>{{ launchingCode === item.code ? $t('page.home.openingSystem') : launchLabel(item) }}</span>
-                    <SvgIcon
-                      :icon="launchingCode === item.code ? 'mdi:loading' : 'mdi:arrow-up-right'"
-                      :class="{ 'is-spinning': launchingCode === item.code }"
-                    />
-                  </button>
+                  <div class="primary-actions">
+                    <button
+                      type="button"
+                      class="launch-button"
+                      :class="{ 'launch-button-muted': !item.canLaunch }"
+                      @click.stop="openSystem(item)"
+                    >
+                      <span>{{ launchingCode === item.code ? $t('page.home.openingSystem') : launchLabel(item) }}</span>
+                      <SvgIcon
+                        :icon="launchingCode === item.code ? 'mdi:loading' : 'mdi:arrow-up-right'"
+                        :class="{ 'is-spinning': launchingCode === item.code }"
+                      />
+                    </button>
+                    <button type="button" class="feedback-button" @click.stop="showFeedback(item)">
+                      <SvgIcon icon="mdi:message-alert-outline" />
+                      <span>{{ $t('page.ui.problemFeedback') }}</span>
+                    </button>
+                  </div>
                   <div class="utility-actions">
                     <button type="button" class="utility-button" :disabled="!item.helpUrl" @click.stop="openHelp(item)">
                       <SvgIcon icon="mdi:book-open-page-variant-outline" />
                       <span>{{ $t('page.ui.usageGuide') }}</span>
-                    </button>
-                    <button type="button" class="utility-button" @click.stop="showFeedback(item)">
-                      <SvgIcon icon="mdi:message-alert-outline" />
-                      <span>{{ $t('page.ui.problemFeedback') }}</span>
                     </button>
                   </div>
                 </div>
@@ -402,6 +404,7 @@ onMounted(() => {
 
 .hero-refresh:focus-visible,
 .launch-button:focus-visible,
+.feedback-button:focus-visible,
 .utility-button:focus-visible {
   outline: 2px solid #d5f19d;
   outline-offset: 3px;
@@ -828,9 +831,17 @@ onMounted(() => {
 }
 
 .launch-button,
+.feedback-button,
 .utility-button {
   border: 0;
   font: inherit;
+}
+
+.primary-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: stretch;
 }
 
 .launch-button {
@@ -872,19 +883,50 @@ onMounted(() => {
   background: #e6ece4;
 }
 
+.feedback-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 88px;
+  min-height: 39px;
+  padding: 0 10px;
+  border: 1px solid var(--portal-line);
+  border-radius: 9px;
+  color: var(--portal-teal);
+  background: transparent;
+  font-size: 11px;
+  white-space: nowrap;
+  transition:
+    color 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease,
+    transform 180ms ease;
+}
+
+.feedback-button:hover {
+  border-color: color-mix(in srgb, var(--portal-teal) 45%, var(--portal-line));
+  background: color-mix(in srgb, var(--portal-teal) 8%, transparent);
+  transform: translateY(-1px);
+}
+
+.feedback-button :deep(svg) {
+  font-size: 14px;
+}
+
 .utility-actions {
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 8px;
-  padding-top: 9px;
+  padding-top: 8px;
 }
 
 .utility-button {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   min-width: 0;
   color: var(--portal-ink-soft);
   background: transparent;
@@ -1080,6 +1122,14 @@ onMounted(() => {
 }
 
 @media (max-width: 460px) {
+  .primary-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .feedback-button {
+    width: 100%;
+  }
+
   .hero-actions {
     align-items: flex-start;
     flex-direction: column;
