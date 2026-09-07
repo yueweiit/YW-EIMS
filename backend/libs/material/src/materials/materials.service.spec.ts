@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@eims/database';
+import { ErpNextService } from '@eims/oa';
 import { MaterialsService } from './materials.service';
 
 describe('MaterialsService', () => {
@@ -25,11 +26,19 @@ describe('MaterialsService', () => {
     },
   };
 
+  const mockErpNextService = {
+    syncMaterial: jest.fn().mockResolvedValue({ success: true }),
+    syncMaterials: jest.fn().mockResolvedValue([]),
+    getItem: jest.fn(),
+    listItems: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         MaterialsService,
         { provide: PrismaService, useValue: mockPrisma },
+        { provide: ErpNextService, useValue: mockErpNextService },
       ],
     }).compile();
 
@@ -104,13 +113,13 @@ describe('MaterialsService', () => {
   // ---------------------------------------------------------------------------
   describe('create', () => {
     const baseDto = {
-      code: 'MT001',
+      codePrefix: 'MT',
       unit: '个',
       applicant: '张三',
       materialName: '测试物料',
     };
 
-    it('should compute codePrefix from leading letters of code and resolve explainContent', async () => {
+    it('should use the selected code prefix and resolve explainContent', async () => {
       const mockRule = { codePrefix: 'MT', explainContent: '模具' };
       mockPrisma.materialCodeRule.findUnique.mockResolvedValue(mockRule);
       mockPrisma.unit.findFirst.mockResolvedValue({
@@ -171,7 +180,7 @@ describe('MaterialsService', () => {
 
       const result = await service.create({
         ...baseDto,
-        code: 'yl000001',
+        codePrefix: 'yl',
         unit: 'kg',
       });
 
@@ -181,28 +190,14 @@ describe('MaterialsService', () => {
       expect(result.codePrefix).toBe('YL');
     });
 
-    it('should default explainContent to 未定义前缀说明 when no matching rule exists', async () => {
+    it('should reject an unknown code prefix', async () => {
       mockPrisma.materialCodeRule.findUnique.mockResolvedValue(null);
-      mockPrisma.unit.findFirst.mockResolvedValue({
-        unitCode: '01',
-        unit: '个',
-      });
-      mockPrisma.material.create.mockResolvedValue({
-        id: 2,
-        codePrefix: 'XX',
-        explainContent: '未定义前缀说明',
-        unitCode: '01',
-      });
 
-      const dto = { ...baseDto, code: 'XX001' };
-      const result = await service.create(dto);
+      await expect(
+        service.create({ ...baseDto, codePrefix: 'XX' }),
+      ).rejects.toThrow(NotFoundException);
 
-      expect(mockPrisma.material.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({ explainContent: '未定义前缀说明' }),
-        }),
-      );
-      expect(result.explainContent).toBe('未定义前缀说明');
+      expect(mockPrisma.material.create).not.toHaveBeenCalled();
     });
   });
 
@@ -223,7 +218,7 @@ describe('MaterialsService', () => {
         explainContent: '新类别',
       });
 
-      const result = await service.update(1, { code: 'AB001' });
+      const result = await service.update(1, { codePrefix: 'AB' });
 
       expect(mockPrisma.materialCodeRule.findUnique).toHaveBeenCalledWith({
         where: { codePrefix: 'AB' },
