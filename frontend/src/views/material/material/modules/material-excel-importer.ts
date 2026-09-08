@@ -1,5 +1,9 @@
-import * as XLSX from 'xlsx';
 import { $t } from '@/locales';
+import {
+  downloadExcelFile,
+  readExcelRows,
+  type ExcelSheetDefinition
+} from '@/utils/excel-workbook';
 
 export interface MaterialImportRow {
   applicant: string;
@@ -45,19 +49,13 @@ export function parseExcelFile(file: File): Promise<ImportResult> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
-    reader.onload = e => {
+    reader.onload = async () => {
       try {
-        const data = new Uint8Array(e.target!.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheetName = workbook.SheetNames[0];
-
-        if (!sheetName) {
+        const rows = await readExcelRows(file);
+        if (!rows.length) {
           reject(new Error($t('page.ui.excelNoWorksheet')));
           return;
         }
-
-        const sheet = workbook.Sheets[sheetName];
-        const rows = XLSX.utils.sheet_to_json<(string | number | null)[]>(sheet, { header: 1, defval: '' });
 
         if (rows.length < 2) {
           reject(new Error($t('page.ui.excelNeedRows')));
@@ -163,15 +161,17 @@ export function exportMaterials(data: { applicant: string; applicationDate: stri
     r.unitCode || ''
   ]);
 
-  const ws = XLSX.utils.aoa_to_sheet([EXPORT_HEADERS, ...rows]);
-  ws['!cols'] = EXPORT_HEADERS.map((h, i) => {
-    const maxLen = rows.reduce((max, row) => Math.max(max, String(row[i] || '').length), h.length);
-    return { wch: maxLen + 4 };
+  const columnWidths = EXPORT_HEADERS.map((header, index) => {
+    const maxLen = rows.reduce(
+      (max, row) => Math.max(max, String(row[index] || '').length),
+      header.length
+    );
+    return maxLen + 4;
   });
 
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, '物料数据');
-  XLSX.writeFile(wb, `物料数据_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  return downloadExcelFile(`物料数据_${new Date().toISOString().slice(0, 10)}.xlsx`, [
+    { name: '物料数据', rows: [EXPORT_HEADERS, ...rows], columnWidths }
+  ]);
 }
 
 const TEMPLATE_HEADERS = ['申请人', '物料名称', '编码前缀', '单位', '规格型号'];
@@ -183,44 +183,37 @@ export interface TemplateRefData {
 }
 
 export function downloadTemplate(refData?: TemplateRefData) {
-  const ws = XLSX.utils.aoa_to_sheet([TEMPLATE_HEADERS, TEMPLATE_SAMPLE]);
-
-  ws['!cols'] = TEMPLATE_HEADERS.map((h, i) => {
-    const sampleLen = String(TEMPLATE_SAMPLE[i] || '').length;
-    return { wch: Math.max(h.length * 2, sampleLen) + 4 };
-  });
-
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, '物料导入');
-
+  const sheets: ExcelSheetDefinition[] = [
+    {
+      name: '物料导入',
+      rows: [TEMPLATE_HEADERS, TEMPLATE_SAMPLE],
+      columnWidths: TEMPLATE_HEADERS.map((header, index) => {
+        const sampleLen = String(TEMPLATE_SAMPLE[index] || '').length;
+        return Math.max(header.length * 2, sampleLen) + 4;
+      })
+    }
+  ];
   if (refData) {
     const prefixRows = refData.codeRules.map(r => {
       const effectivePrefix = r.prefixLength ? r.codePrefix.substring(0, r.prefixLength) : r.codePrefix;
       return [r.codePrefix, r.prefixLength ?? '', effectivePrefix, r.explainContent];
     });
-    const prefixSheet = XLSX.utils.aoa_to_sheet([
-      ['编码前缀', '编码位数', '实际生成前缀', '前缀说明'],
-      ...prefixRows
-    ]);
-    prefixSheet['!cols'] = [
-      { wch: 12 },
-      { wch: 10 },
-      { wch: 14 },
-      { wch: 30 }
-    ];
-    XLSX.utils.book_append_sheet(wb, prefixSheet, '前缀说明');
+    sheets.push({
+      name: '前缀说明',
+      rows: [
+        ['编码前缀', '编码位数', '实际生成前缀', '前缀说明'],
+        ...prefixRows
+      ],
+      columnWidths: [12, 10, 14, 30]
+    });
 
     const unitRows = refData.units.map(u => [u.unitCode, u.unit]);
-    const unitSheet = XLSX.utils.aoa_to_sheet([
-      ['单位编码', '单位名称'],
-      ...unitRows
-    ]);
-    unitSheet['!cols'] = [
-      { wch: 10 },
-      { wch: 16 }
-    ];
-    XLSX.utils.book_append_sheet(wb, unitSheet, '单位列表');
+    sheets.push({
+      name: '单位列表',
+      rows: [['单位编码', '单位名称'], ...unitRows],
+      columnWidths: [10, 16]
+    });
   }
 
-  XLSX.writeFile(wb, '物料导入模板.xlsx');
+  return downloadExcelFile('物料导入模板.xlsx', sheets);
 }

@@ -40,17 +40,6 @@ describe('DingTalkOAuthService', () => {
             data: { accessToken: 'app-access-token', expireIn: 7200 },
           });
         }
-        if (
-          url.startsWith('https://oapi.dingtalk.com/topapi/user/getbyunionid')
-        ) {
-          return of({
-            data: {
-              errcode: 0,
-              errmsg: 'ok',
-              result: { userid: 'ding-user-id' },
-            },
-          });
-        }
         throw new Error(`Unexpected DingTalk URL: ${url}`);
       }),
       get: jest.fn().mockReturnValue(
@@ -126,18 +115,8 @@ describe('DingTalkOAuthService', () => {
         headers: { 'x-acs-dingtalk-access-token': 'user-access-token' },
       }),
     );
-    expect(httpService.post).toHaveBeenCalledWith(
-      'https://api.dingtalk.com/v1.0/oauth2/accessToken',
-      { appKey: 'client-id', appSecret: 'client-secret' },
-    );
-    expect(httpService.post).toHaveBeenCalledWith(
-      expect.stringContaining(
-        'https://oapi.dingtalk.com/topapi/user/getbyunionid',
-      ),
-      { unionid: 'ding-union-id' },
-    );
     expect(authService.findEnabledUserByDingTalkSubjects).toHaveBeenCalledWith([
-      'ding-user-id',
+      undefined,
       'ding-union-id',
       'ding-open-id',
       'ding-union-id',

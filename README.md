@@ -68,6 +68,8 @@ copy .env.example .env       # Windows
 
 至少需要修改 PostgreSQL、`DATABASE_URL`、`JWT_SECRET` 和 `JWT_REFRESH_SECRET`。钉钉 OAuth、ERPNext、OAuth2/OIDC SSO 等功能还需要补充对应的环境变量。
 
+首次执行 seed 前必须设置 `EIMS_SEED_ADMIN_PASSWORD`（至少 12 个字符），该值只用于初始化或自动替换历史默认密码，seed 不会把它写入日志。
+
 `DATABASE_URL` 在容器内必须使用 PostgreSQL 服务名 `postgres`，例如：
 
 ```env
@@ -120,9 +122,9 @@ docker compose down -v       # 删除数据库数据卷，请谨慎执行
 
 | 用户名 | 密码 |
 | --- | --- |
-| `superadmin` | `123456` |
+| `superadmin` | 使用 `EIMS_SEED_ADMIN_PASSWORD` 配置的密码 |
 
-首次运行种子脚本后使用该账号登录。生产环境请立即修改密码和 JWT 密钥。
+首次运行种子脚本后使用该账号登录。生产环境请使用随机高强度密码，并定期轮换 JWT 密钥。
 
 ## 本地开发辅助
 

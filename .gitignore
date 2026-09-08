@@ -1,4 +1,5 @@
 .omo
 sql/reference
+.pnpm-store/
 .env
 .gitignore

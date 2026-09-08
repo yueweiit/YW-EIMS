@@ -22,20 +22,6 @@ interface DingTalkUserAccessTokenResponse {
   access_token?: string;
 }
 
-interface DingTalkAppAccessTokenResponse {
-  accessToken?: string;
-  expireIn?: number;
-}
-
-interface DingTalkUserByUnionIdResponse {
-  errcode?: number;
-  errmsg?: string;
-  result?: {
-    userid?: string;
-    userId?: string;
-  };
-}
-
 interface DingTalkCurrentUserResponse {
   unionId?: string;
   openId?: string;
@@ -47,7 +33,6 @@ interface DingTalkCurrentUserResponse {
 export class DingTalkOAuthService {
   private readonly logger = new Logger(DingTalkOAuthService.name);
   private readonly stateSecret: string;
-  private appAccessTokenCache?: { token: string; expiresAt: number };
 
   constructor(
     private readonly httpService: HttpService,
@@ -195,11 +180,7 @@ export class DingTalkOAuthService {
       );
 
       const returnedUserId = userData.userId || userData.userid;
-      const userId =
-        returnedUserId ||
-        (userData.unionId
-          ? await this.fetchDingTalkUserId(userData.unionId)
-          : undefined);
+      const userId = returnedUserId;
       const subject = userData.unionId || userData.openId || userId;
       if (!subject) {
         throw new UnprocessableEntityException('钉钉未返回用户标识');
@@ -222,60 +203,6 @@ export class DingTalkOAuthService {
       );
       throw new UnauthorizedException('钉钉授权失败');
     }
-  }
-
-  private async fetchDingTalkUserId(unionId: string): Promise<string> {
-    const appAccessToken = await this.getDingTalkAppAccessToken();
-    const url = new URL('https://oapi.dingtalk.com/topapi/user/getbyunionid');
-    url.searchParams.set('access_token', appAccessToken);
-
-    const { data } = await firstValueFrom(
-      this.httpService.post<DingTalkUserByUnionIdResponse>(url.toString(), {
-        unionid: unionId,
-      }),
-    );
-    const userId = data.result?.userid || data.result?.userId;
-    if (data.errcode !== undefined && data.errcode !== 0) {
-      this.logger.warn(
-        `DingTalk unionId lookup failed: errcode=${data.errcode}, errmsg=${data.errmsg || '-'}`,
-      );
-      throw new UnprocessableEntityException(
-        '钉钉无法根据 unionId 获取 userId',
-      );
-    }
-    if (!userId) {
-      throw new UnprocessableEntityException('钉钉未返回 userId');
-    }
-    return userId;
-  }
-
-  private async getDingTalkAppAccessToken(): Promise<string> {
-    if (
-      this.appAccessTokenCache &&
-      this.appAccessTokenCache.expiresAt > Date.now()
-    ) {
-      return this.appAccessTokenCache.token;
-    }
-
-    const { data } = await firstValueFrom(
-      this.httpService.post<DingTalkAppAccessTokenResponse>(
-        'https://api.dingtalk.com/v1.0/oauth2/accessToken',
-        {
-          appKey: this.getClientId(),
-          appSecret: this.getClientSecret(),
-        },
-      ),
-    );
-    if (!data.accessToken) {
-      throw new UnprocessableEntityException('钉钉未返回应用访问凭证');
-    }
-
-    const cacheSeconds = Math.max((data.expireIn ?? 7200) - 300, 0);
-    this.appAccessTokenCache = {
-      token: data.accessToken,
-      expiresAt: Date.now() + cacheSeconds * 1000,
-    };
-    return data.accessToken;
   }
 
   private assertConfigured() {

@@ -277,7 +277,7 @@ getData();
       <NSpace justify="space-between" align="center" wrap>
         <PhoneModelSearch v-model:model-value="queryParams" @search="handleSearch" @reset="handleReset" />
         <NSpace align="center" wrap>
-          <input ref="fileInputRef" type="file" accept=".xlsx,.xls,.csv" style="display: none" @change="handleFileChange" />
+          <input ref="fileInputRef" type="file" accept=".xlsx,.csv" style="display: none" @change="handleFileChange" />
           <NButton type="info" ghost :loading="importing" @click="triggerFileInput">{{ $t('page.ui.importExcel') }}</NButton>
           <NButton ghost @click="handleDownloadTemplate">{{ $t('page.ui.downloadTemplate') }}</NButton>
           <NButton type="success" ghost @click="handleExport">{{ $t('page.ui.exportExcel') }}</NButton>

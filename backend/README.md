@@ -114,7 +114,7 @@ Schema 定义见 `libs/database/prisma/schema.prisma`。
 - 32 个常用单位（`01` ~ `32`）
 - 19 条编码前缀规则
 
-运行容器内的 seed 命令多次不会重复插入数据。
+运行容器内的 seed 命令多次不会重复插入数据。首次创建管理员或检测到历史 `123456` 密码时，必须通过环境变量 `EIMS_SEED_ADMIN_PASSWORD` 提供至少 12 个字符的新密码；seed 不会输出该密码，历史密码替换后会同时撤销该账号的现有会话。
 
 ---
 
@@ -191,7 +191,7 @@ Authorization: Bearer <token>
 
 | 账号 | 密码 | 角色 |
 |------|------|------|
-| superadmin | 123456 | R_SUPER（超级管理员） |
+| superadmin | `EIMS_SEED_ADMIN_PASSWORD` | R_SUPER（超级管理员） |
 
 ---
 
@@ -203,7 +203,7 @@ Authorization: Bearer <token>
 # 1. 登录获取 token
 $login = curl -s -X POST http://localhost:8003/api/auth/login `
   -H "Content-Type: application/json" `
-  -d '{"userName":"superadmin","password":"123456"}'
+  -d '{"userName":"superadmin","password":"<EIMS_SEED_ADMIN_PASSWORD>"}'
 $token = ($login | ConvertFrom-Json).data.token
 
 # 2. 查询用户信息（S3 回归）

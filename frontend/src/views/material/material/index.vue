@@ -320,7 +320,7 @@ getData();
           <input
             ref="fileInputRef"
             type="file"
-            accept=".xlsx,.xls,.csv"
+            accept=".xlsx,.csv"
             style="display: none"
             @change="handleFileChange"
           />

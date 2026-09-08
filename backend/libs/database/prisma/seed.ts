@@ -21,6 +21,59 @@ function getOptionalExternalSystemUrl(environmentVariable: string) {
   return process.env[environmentVariable]?.trim() || null;
 }
 
+const BOOTSTRAP_ADMIN_USERNAME = 'superadmin';
+const BOOTSTRAP_ADMIN_LEGACY_PASSWORD = '123456';
+const BOOTSTRAP_ADMIN_MIN_PASSWORD_LENGTH = 12;
+
+function getBootstrapAdminPassword() {
+  const password = process.env.EIMS_SEED_ADMIN_PASSWORD;
+  if (
+    !password ||
+    password.trim().length < BOOTSTRAP_ADMIN_MIN_PASSWORD_LENGTH ||
+    password === BOOTSTRAP_ADMIN_LEGACY_PASSWORD
+  ) {
+    throw new Error(
+      `EIMS_SEED_ADMIN_PASSWORD must be set, must contain at least ${BOOTSTRAP_ADMIN_MIN_PASSWORD_LENGTH} characters, and must not use the legacy default password.`,
+    );
+  }
+  return password;
+}
+
+async function ensureBootstrapAdmin() {
+  const existing = await prisma.user.findUnique({
+    where: { userName: BOOTSTRAP_ADMIN_USERNAME },
+    select: { id: true, password: true },
+  });
+
+  if (!existing) {
+    await prisma.user.create({
+      data: {
+        userName: BOOTSTRAP_ADMIN_USERNAME,
+        password: await bcrypt.hash(getBootstrapAdminPassword(), 12),
+        realName: '超级管理员',
+        roles: ['R_SUPER'],
+        buttons: [],
+        status: '1',
+        createBy: 'system',
+      },
+    });
+    return 'superadmin created with the configured bootstrap password';
+  }
+
+  if (await bcrypt.compare(BOOTSTRAP_ADMIN_LEGACY_PASSWORD, existing.password)) {
+    await prisma.user.update({
+      where: { id: existing.id },
+      data: {
+        password: await bcrypt.hash(getBootstrapAdminPassword(), 12),
+        sessionVersion: { increment: 1 },
+      },
+    });
+    return 'legacy superadmin password replaced and existing sessions revoked';
+  }
+
+  return 'existing superadmin preserved';
+}
+
 const UNITS: Array<{ unitCode: string; unit: string }> = [
   { unitCode: '01', unit: 'kg' },
   { unitCode: '02', unit: 'm²' },
@@ -302,23 +355,7 @@ const ALL_PERMISSION_CODES = [
 ];
 
 async function main() {
-  const hashedPassword = await bcrypt.hash('123456', 10);
-
-  await prisma.user.upsert({
-    where: { userName: 'superadmin' },
-    update: {},
-    create: {
-      userName: 'superadmin',
-      password: hashedPassword,
-      realName: '超级管理员',
-      roles: ['R_SUPER'],
-      buttons: [],
-      status: '1',
-      createBy: 'system',
-    },
-  });
-
-  console.log('Seed completed: superadmin created');
+  console.log(`Seed completed: ${await ensureBootstrapAdmin()}`);
 
   for (const system of EXTERNAL_SYSTEMS) {
     await prisma.externalSystem.upsert({

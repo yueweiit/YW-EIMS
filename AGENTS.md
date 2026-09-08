@@ -78,7 +78,7 @@ pnpm build             # production build
 - Auth header: `Authorization: Bearer <token>`
 - Token expired code: `9999`
 - Force logout code: `8888`
-- Default admin: `superadmin` / `123456`
+- Default admin: `superadmin` / the password configured by `EIMS_SEED_ADMIN_PASSWORD`
 
 ## Style
 

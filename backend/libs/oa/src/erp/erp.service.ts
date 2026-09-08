@@ -48,10 +48,20 @@ export class ErpService {
       .update(waitEncryptStr)
       .digest('base64');
 
-    const url = `https://c4.yonyoucloud.com/iuap-api-auth/open-auth/selfAppAuth/getAccessToken?appKey=${this.appKey}&timestamp=${timestamp}&signature=${encodeURIComponent(sign)}`;
+    const url =
+      'https://c4.yonyoucloud.com/iuap-api-auth/open-auth/selfAppAuth/getAccessToken';
 
     try {
-      const { data } = await firstValueFrom(this.httpService.get<ErpTokenResponse>(url));
+      const { data } = await firstValueFrom(
+        this.httpService.get<ErpTokenResponse>(url, {
+          params: {
+            appKey: this.appKey,
+            timestamp,
+            signature: sign,
+          },
+          headers: { 'Cache-Control': 'no-store' },
+        }),
+      );
 
       if (data.code === '00000' && data.data?.access_token) {
         this.tokenCache = {
@@ -64,7 +74,7 @@ export class ErpService {
       this.logger.error(`Failed to get ERP token: ${data.message}`);
       return null;
     } catch (error) {
-      this.logger.error(`ERP token request failed: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(`ERP token request failed: ${this.getSafeErrorMessage(error)}`);
       return null;
     }
   }
@@ -75,11 +85,16 @@ export class ErpService {
       return { code: 'error', message: '获取 ERP Token 失败，请检查秘钥。' };
     }
 
-    const url = `https://c4.yonyoucloud.com/iuap-api-gateway/yonbip/scm/purchaseorder/singleSave_v1?access_token=${token}`;
+    const url =
+      'https://c4.yonyoucloud.com/iuap-api-gateway/yonbip/scm/purchaseorder/singleSave_v1';
 
     try {
       const { data } = await firstValueFrom(
-        this.httpService.post<ErpPushResponse>(url, payload),
+        this.httpService.post<ErpPushResponse>(
+          url,
+          payload,
+          this.getTokenRequestConfig(token),
+        ),
       );
 
       if (String(data.code) === '200') {
@@ -103,7 +118,7 @@ export class ErpService {
 
       return { code: 'error', message: friendlyMessage, data };
     } catch (error) {
-      return { code: 'error', message: `网络异常: ${error instanceof Error ? error.message : String(error)}` };
+      return { code: 'error', message: `网络异常: ${this.getSafeErrorMessage(error)}` };
     }
   }
 
@@ -111,11 +126,16 @@ export class ErpService {
     const token = await this.getAccessToken();
     if (!token) return [];
 
-    const url = `https://c4.yonyoucloud.com/iuap-api-gateway/yonbip/digitalModel/vendor/listV3?access_token=${token}`;
+    const url =
+      'https://c4.yonyoucloud.com/iuap-api-gateway/yonbip/digitalModel/vendor/listV3';
 
     try {
       const { data } = await firstValueFrom(
-        this.httpService.post<ErpListResponse<ErpSupplierRecord>>(url, { pageIndex, pageSize }),
+        this.httpService.post<ErpListResponse<ErpSupplierRecord>>(
+          url,
+          { pageIndex, pageSize },
+          this.getTokenRequestConfig(token),
+        ),
       );
 
       if (data.code === '00000' || String(data.code) === '200') {
@@ -125,7 +145,7 @@ export class ErpService {
       this.logger.error(`Fetch suppliers failed: ${data.message}`);
       return [];
     } catch (error) {
-      this.logger.error(`Fetch suppliers request failed: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(`Fetch suppliers request failed: ${this.getSafeErrorMessage(error)}`);
       return [];
     }
   }
@@ -134,11 +154,16 @@ export class ErpService {
     const token = await this.getAccessToken();
     if (!token) return [];
 
-    const url = `https://c4.yonyoucloud.com/iuap-api-gateway/yonbip/digitalModel/product/listproductbycondition?access_token=${token}`;
+    const url =
+      'https://c4.yonyoucloud.com/iuap-api-gateway/yonbip/digitalModel/product/listproductbycondition';
 
     try {
       const { data } = await firstValueFrom(
-        this.httpService.post<ErpListResponse<ErpMaterialRecord>>(url, { pageIndex, pageSize }),
+        this.httpService.post<ErpListResponse<ErpMaterialRecord>>(
+          url,
+          { pageIndex, pageSize },
+          this.getTokenRequestConfig(token),
+        ),
       );
 
       if (data.code === '00000' || String(data.code) === '200') {
@@ -148,7 +173,7 @@ export class ErpService {
       this.logger.error(`Fetch materials failed: ${data.message}`);
       return [];
     } catch (error) {
-      this.logger.error(`Fetch materials request failed: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(`Fetch materials request failed: ${this.getSafeErrorMessage(error)}`);
       return [];
     }
   }
@@ -157,11 +182,16 @@ export class ErpService {
     const token = await this.getAccessToken();
     if (!token) return [];
 
-    const url = `https://c4.yonyoucloud.com/iuap-api-gateway/yonbip/digitalModel/unit/newlist?access_token=${token}`;
+    const url =
+      'https://c4.yonyoucloud.com/iuap-api-gateway/yonbip/digitalModel/unit/newlist';
 
     try {
       const { data } = await firstValueFrom(
-        this.httpService.post<ErpListResponse<ErpUnitRecord>>(url, { pageIndex, pageSize }),
+        this.httpService.post<ErpListResponse<ErpUnitRecord>>(
+          url,
+          { pageIndex, pageSize },
+          this.getTokenRequestConfig(token),
+        ),
       );
 
       if (data.code === '00000' || String(data.code) === '200') {
@@ -171,7 +201,7 @@ export class ErpService {
       this.logger.error(`Fetch units failed: ${data.message}`);
       return [];
     } catch (error) {
-      this.logger.error(`Fetch units request failed: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(`Fetch units request failed: ${this.getSafeErrorMessage(error)}`);
       return [];
     }
   }
@@ -180,11 +210,16 @@ export class ErpService {
     const token = await this.getAccessToken();
     if (!token) return [];
 
-    const url = `https://c4.yonyoucloud.com/iuap-api-gateway/yonbip/tax/yonbip-fi-taxpubdoc/openapi/taxRate/findListWithPage?access_token=${token}`;
+    const url =
+      'https://c4.yonyoucloud.com/iuap-api-gateway/yonbip/tax/yonbip-fi-taxpubdoc/openapi/taxRate/findListWithPage';
 
     try {
       const { data } = await firstValueFrom(
-        this.httpService.post<ErpListResponse<ErpTaxRateRecord>>(url, { pageIndex, pageSize }),
+        this.httpService.post<ErpListResponse<ErpTaxRateRecord>>(
+          url,
+          { pageIndex, pageSize },
+          this.getTokenRequestConfig(token),
+        ),
       );
 
       if (data.code === '00000' || String(data.code) === '200') {
@@ -194,8 +229,26 @@ export class ErpService {
       this.logger.error(`Fetch tax rates failed: ${data.message}`);
       return [];
     } catch (error) {
-      this.logger.error(`Fetch tax rates request failed: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(`Fetch tax rates request failed: ${this.getSafeErrorMessage(error)}`);
       return [];
     }
+  }
+
+  private getTokenRequestConfig(token: string) {
+    // YonBIP's legacy gateway requires access_token as a query parameter.
+    // Keep it in Axios params (rather than interpolating it into a URL) and
+    // prevent intermediary caches from storing authenticated responses.
+    return {
+      params: { access_token: token },
+      headers: { 'Cache-Control': 'no-store' },
+    };
+  }
+
+  private getSafeErrorMessage(error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    return message.replace(
+      /([?&](?:access_token|appKey|appSecret|appsecret|signature)=)[^&\s]*/gi,
+      '$1[redacted]',
+    );
   }
 }

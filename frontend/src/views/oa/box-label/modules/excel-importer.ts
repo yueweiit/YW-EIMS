@@ -1,5 +1,5 @@
-import * as XLSX from 'xlsx';
 import { $t } from '@/locales';
+import { downloadExcelFile, readExcelRows } from '@/utils/excel-workbook';
 
 /** Column header aliases mapped to ProductData fields */
 const HEADER_MAP: Record<keyof BoxLabel.ProductData, string[]> = {
@@ -50,25 +50,19 @@ export interface ImportResult {
 
 /**
  * Parse an Excel file and extract product data.
- * Expects the first row to be headers. Supports .xlsx, .xls, .csv.
+ * Expects the first row to be headers. Supports .xlsx and .csv.
  */
 export function parseExcelFile(file: File): Promise<ImportResult> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
-    reader.onload = e => {
+    reader.onload = async () => {
       try {
-        const data = new Uint8Array(e.target!.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheetName = workbook.SheetNames[0];
-
-        if (!sheetName) {
+        const rows = await readExcelRows(file);
+        if (!rows.length) {
           reject(new Error($t('page.ui.excelNoWorksheet')));
           return;
         }
-
-        const sheet = workbook.Sheets[sheetName];
-        const rows = XLSX.utils.sheet_to_json<(string | number | null)[]>(sheet, { header: 1, defval: '' });
 
         if (rows.length < 2) {
           reject(new Error($t('page.ui.excelNeedRows')));
@@ -156,15 +150,14 @@ const TEMPLATE_SAMPLE = [
  * Generate and download an Excel template file with headers and one sample row.
  */
 export function downloadTemplate() {
-  const ws = XLSX.utils.aoa_to_sheet([TEMPLATE_HEADERS, TEMPLATE_SAMPLE]);
-
-  // Auto-fit column widths
-  ws['!cols'] = TEMPLATE_HEADERS.map((h, i) => {
-    const sampleLen = String(TEMPLATE_SAMPLE[i] || '').length;
-    return { wch: Math.max(h.length * 2, sampleLen) + 4 };
-  });
-
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, '外箱标签');
-  XLSX.writeFile(wb, '外箱标签导入模板.xlsx');
+  return downloadExcelFile('外箱标签导入模板.xlsx', [
+    {
+      name: '外箱标签',
+      rows: [TEMPLATE_HEADERS, TEMPLATE_SAMPLE],
+      columnWidths: TEMPLATE_HEADERS.map((header, index) => {
+        const sampleLen = String(TEMPLATE_SAMPLE[index] || '').length;
+        return Math.max(header.length * 2, sampleLen) + 4;
+      })
+    }
+  ]);
 }

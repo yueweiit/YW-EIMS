@@ -1,5 +1,5 @@
-import * as XLSX from 'xlsx';
 import { $t } from '@/locales';
+import { downloadExcelFile, readExcelRows } from './excel-workbook';
 
 type CellValue = string | number | null | undefined;
 
@@ -42,93 +42,71 @@ function buildHeaderMap<TRecord, TImport>(headers: unknown[], columns: ExcelColu
   return map;
 }
 
-export function parseCrudExcelFile<TRecord, TImport extends Record<string, any>>(
+export async function parseCrudExcelFile<TRecord, TImport extends Record<string, any>>(
   file: File,
   columns: ExcelColumn<TRecord, TImport>[],
   moduleName: string
 ): Promise<ExcelParseResult<TImport>> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
+  try {
+    const rows = await readExcelRows(file);
+    if (rows.length < 2) {
+      throw new Error($t('page.ui.excelNeedRows'));
+    }
 
-    reader.onload = e => {
-      try {
-        const data = e.target?.result;
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheetName = workbook.SheetNames[0];
+    const headerMap = buildHeaderMap(rows[0], columns);
+    const importColumns = columns.filter(column => column.importable !== false);
+    const requiredColumns = importColumns.filter(column => column.required);
+    const missingHeaders = requiredColumns.filter(column => !headerMap.has(column.key));
 
-        if (!sheetName) {
-          reject(new Error($t('page.ui.excelNoWorksheet')));
-          return;
-        }
+    if (missingHeaders.length) {
+      throw new Error(
+        $t('page.ui.excelMissingRequiredColumns', {
+          columns: missingHeaders.map(column => column.label).join($t('page.ui.listSeparator'))
+        })
+      );
+    }
 
-        const worksheet = workbook.Sheets[sheetName];
-        const rows = XLSX.utils.sheet_to_json<unknown[]>(worksheet, { header: 1, defval: '' });
+    const parsedRows: TImport[] = [];
+    rows.slice(1).forEach((row, rowIndex) => {
+      const item: Record<string, unknown> = {};
 
-        if (rows.length < 2) {
-          reject(new Error($t('page.ui.excelNeedRows')));
-          return;
-        }
+      importColumns.forEach(column => {
+        const index = headerMap.get(column.key);
+        if (index === undefined) return;
 
-        const headerMap = buildHeaderMap(rows[0], columns);
-        const importColumns = columns.filter(column => column.importable !== false);
-        const requiredColumns = importColumns.filter(column => column.required);
-        const missingHeaders = requiredColumns.filter(column => !headerMap.has(column.key));
+        const rawValue = getCellText(row[index]);
+        if (!rawValue) return;
 
-        if (missingHeaders.length) {
-          reject(
-            new Error(
-              $t('page.ui.excelMissingRequiredColumns', {
-                columns: missingHeaders.map(column => column.label).join($t('page.ui.listSeparator'))
-              })
-            )
-          );
-          return;
-        }
+        item[column.key] = column.parseValue ? column.parseValue(rawValue) : rawValue;
+      });
 
-        const parsedRows: TImport[] = [];
+      const missingValues = requiredColumns.filter(column => !getCellText(item[column.key]));
+      if (!Object.keys(item).length) return;
 
-        rows.slice(1).forEach((row, rowIndex) => {
-          const item: Record<string, unknown> = {};
-
-          importColumns.forEach(column => {
-            const index = headerMap.get(column.key);
-            if (index === undefined) return;
-
-            const rawValue = getCellText(row[index]);
-            if (!rawValue) return;
-
-            item[column.key] = column.parseValue ? column.parseValue(rawValue) : rawValue;
-          });
-
-          const missingValues = requiredColumns.filter(column => !getCellText(item[column.key]));
-          if (!Object.keys(item).length) return;
-
-          if (missingValues.length) {
-            throw new Error(
-              $t('page.ui.excelMissingRowValues', {
-                row: rowIndex + 2,
-                fields: missingValues.map(column => column.label).join($t('page.ui.listSeparator'))
-              })
-            );
-          }
-
-          parsedRows.push(item as TImport);
-        });
-
-        if (!parsedRows.length) {
-          reject(new Error($t('page.ui.excelNoValidRows', { module: moduleName })));
-          return;
-        }
-
-        resolve({ rows: parsedRows });
-      } catch (err) {
-        reject(new Error($t('page.ui.excelParseFailure', { message: err instanceof Error ? err.message : String(err) })));
+      if (missingValues.length) {
+        throw new Error(
+          $t('page.ui.excelMissingRowValues', {
+            row: rowIndex + 2,
+            fields: missingValues.map(column => column.label).join($t('page.ui.listSeparator'))
+          })
+        );
       }
-    };
 
-    reader.onerror = () => reject(new Error($t('page.ui.excelReadFailure')));
-    reader.readAsArrayBuffer(file);
-  });
+      parsedRows.push(item as TImport);
+    });
+
+    if (!parsedRows.length) {
+      throw new Error($t('page.ui.excelNoValidRows', { module: moduleName }));
+    }
+
+    return { rows: parsedRows };
+  } catch (err) {
+    throw new Error(
+      $t('page.ui.excelParseFailure', {
+        message: err instanceof Error ? err.message : String(err)
+      })
+    );
+  }
 }
 
 export function downloadCrudTemplate<TRecord, TImport>(
@@ -144,12 +122,13 @@ export function downloadCrudTemplate<TRecord, TImport>(
   });
   const tip = importColumns.map(column => (column.required ? $t('page.ui.requiredField') : $t('page.ui.optionalField')));
 
-  const worksheet = XLSX.utils.aoa_to_sheet([header, example, tip]);
-  worksheet['!cols'] = importColumns.map(column => ({ wch: Math.max(column.label.length * 2, 14) }));
-
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, `${moduleName}${$t('page.ui.importSheetSuffix')}`);
-  XLSX.writeFile(workbook, `${moduleName}${$t('page.ui.templateFileSuffix')}.xlsx`);
+  return downloadExcelFile(`${moduleName}${$t('page.ui.templateFileSuffix')}.xlsx`, [
+    {
+      name: `${moduleName}${$t('page.ui.importSheetSuffix')}`,
+      rows: [header, example, tip],
+      columnWidths: importColumns.map(column => Math.max(column.label.length * 2, 14))
+    }
+  ]);
 }
 
 export function exportCrudRows<TRecord, TImport>(
@@ -158,20 +137,20 @@ export function exportCrudRows<TRecord, TImport>(
   moduleName: string
 ) {
   const exportColumns = columns.filter(column => column.exportable !== false);
-  const data = rows.map(row => {
-    const item: Record<string, CellValue> = {};
+  const data = rows.map(row =>
+    exportColumns.map(column =>
+      column.exportValue ? column.exportValue(row) : (row as Record<string, CellValue>)[column.key]
+    )
+  );
 
-    exportColumns.forEach(column => {
-      item[column.label] = column.exportValue ? column.exportValue(row) : (row as Record<string, CellValue>)[column.key];
-    });
-
-    return item;
-  });
-
-  const worksheet = XLSX.utils.json_to_sheet(data, { header: exportColumns.map(column => column.label) });
-  worksheet['!cols'] = exportColumns.map(column => ({ wch: Math.max(column.label.length * 2, 14) }));
-
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, moduleName);
-  XLSX.writeFile(workbook, `${moduleName}${$t('page.ui.dataFileSuffix')}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  return downloadExcelFile(
+    `${moduleName}${$t('page.ui.dataFileSuffix')}_${new Date().toISOString().slice(0, 10)}.xlsx`,
+    [
+      {
+        name: moduleName,
+        rows: [exportColumns.map(column => column.label), ...data],
+        columnWidths: exportColumns.map(column => Math.max(column.label.length * 2, 14))
+      }
+    ]
+  );
 }

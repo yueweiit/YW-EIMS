@@ -2,13 +2,63 @@ import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
-import type {
-  DingTalkTokenResponse,
-  DingTalkInstanceListResponse,
-  DingTalkInstanceDetailResponse,
-  DingTalkProcessInstance,
-  DingTalkFileUrlResponse,
-} from './dingtalk.interface';
+import type { DingTalkProcessInstance } from './dingtalk.interface';
+
+interface DingTalkAppAccessTokenResponse {
+  accessToken?: string;
+  expireIn?: number;
+  code?: string;
+  message?: string;
+}
+
+interface DingTalkInstanceIdsResponse {
+  success?: boolean;
+  result?: {
+    list?: string[];
+    nextToken?: number | string;
+  };
+}
+
+interface DingTalkWorkflowInstanceResponse {
+  success?: boolean;
+  result?: {
+    title?: string;
+    status?: string;
+    businessId?: string;
+    originatorUserId?: string;
+    originatorDeptId?: string;
+    createTime?: string;
+    finishTime?: string;
+    url?: string;
+    ccUserIds?: string[];
+    operationRecords?: Array<{
+      userId?: string;
+      type?: string;
+      result?: string;
+      remark?: string;
+      date?: string;
+      attachments?: unknown[];
+      images?: string[];
+    }>;
+    formComponentValues?: Array<{
+      name?: string;
+      value?: string;
+      extValue?: string;
+    }>;
+    tasks?: Array<{
+      userId?: string;
+      status?: string;
+      result?: string;
+    }>;
+  };
+}
+
+interface DingTalkFileUrlResponseV1 {
+  success?: boolean;
+  result?: {
+    downloadUri?: string;
+  };
+}
 
 @Injectable()
 export class DingTalkService {
@@ -37,21 +87,33 @@ export class DingTalkService {
     }
 
     try {
-      const url = `https://oapi.dingtalk.com/gettoken?appkey=${this.appKey}&appsecret=${this.appSecret}`;
-      const { data } = await firstValueFrom(this.httpService.get<DingTalkTokenResponse>(url));
+      const { data } = await firstValueFrom(
+        this.httpService.post<DingTalkAppAccessTokenResponse>(
+          'https://api.dingtalk.com/v1.0/oauth2/accessToken',
+          {
+            appKey: this.appKey,
+            appSecret: this.appSecret,
+          },
+        ),
+      );
 
-      if (data.errcode === 0) {
+      if (data.accessToken) {
+        const cacheSeconds = Math.max((data.expireIn ?? 7200) - 300, 60);
         this.tokenCache = {
-          token: data.access_token,
-          expiresAt: now + 7000 * 1000,
+          token: data.accessToken,
+          expiresAt: now + cacheSeconds * 1000,
         };
-        return data.access_token;
+        return data.accessToken;
       }
 
-      this.logger.error(`Failed to get DingTalk token: ${data.errmsg}`);
+      this.logger.error(
+        `Failed to get DingTalk token: ${data.message || data.code || 'unknown error'}`,
+      );
       return null;
     } catch (error) {
-      this.logger.error(`DingTalk token request failed: ${error.message}`);
+      this.logger.error(
+        `DingTalk token request failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
       return null;
     }
   }
@@ -64,30 +126,41 @@ export class DingTalkService {
     const token = await this.getAccessToken();
     if (!token) return [];
 
-    const url = `https://oapi.dingtalk.com/topapi/processinstance/listids?access_token=${token}`;
+    const url = 'https://api.dingtalk.com/v1.0/workflow/processes/instanceIds/query';
     const allIds: string[] = [];
-    let cursor = 0;
+    let nextToken: number | string = 0;
 
     while (true) {
       try {
         const { data } = await firstValueFrom(
-          this.httpService.post<DingTalkInstanceListResponse>(url, {
-            process_code: processCode,
-            start_time: startTime,
-            end_time: endTime,
-            size: 20,
-            cursor,
-          }),
+          this.httpService.post<DingTalkInstanceIdsResponse>(
+            url,
+            {
+              processCode,
+              startTime,
+              endTime,
+              maxResults: 20,
+              nextToken,
+            },
+            { headers: this.getTokenHeaders(token) },
+          ),
         );
 
-        if (data.errcode !== 0) break;
+        if (data.success === false || !data.result) break;
 
-        const ids = data.result?.list || [];
+        const ids = data.result.list || [];
         allIds.push(...ids);
 
-        const nextCursor = data.result?.next_cursor;
-        if (!nextCursor) break;
-        cursor = nextCursor;
+        const returnedNextToken = data.result.nextToken;
+        if (
+          returnedNextToken === undefined ||
+          returnedNextToken === null ||
+          String(returnedNextToken) === '0' ||
+          String(returnedNextToken) === String(nextToken)
+        ) {
+          break;
+        }
+        nextToken = returnedNextToken;
       } catch {
         break;
       }
@@ -100,23 +173,27 @@ export class DingTalkService {
     const token = await this.getAccessToken();
     if (!token) return null;
 
-    const url = `https://oapi.dingtalk.com/topapi/processinstance/get?access_token=${token}`;
-
     try {
       const { data } = await firstValueFrom(
-        this.httpService.post<DingTalkInstanceDetailResponse>(url, {
-          process_instance_id: instanceId,
-        }),
+        this.httpService.get<DingTalkWorkflowInstanceResponse>(
+          'https://api.dingtalk.com/v1.0/workflow/processInstances',
+          {
+            params: { processInstanceId: instanceId },
+            headers: this.getTokenHeaders(token),
+          },
+        ),
       );
 
-      if (data.errcode === 0) {
-        return data.process_instance;
+      if (data.success === false || !data.result) {
+        this.logger.error('Failed to get DingTalk instance detail');
+        return null;
       }
 
-      this.logger.error(`Failed to get instance detail: ${data.errmsg}`);
-      return null;
+      return this.mapInstanceDetail(data.result);
     } catch (error) {
-      this.logger.error(`Instance detail request failed: ${error.message}`);
+      this.logger.error(
+        `Instance detail request failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
       return null;
     }
   }
@@ -125,25 +202,81 @@ export class DingTalkService {
     const token = await this.getAccessToken();
     if (!token) return null;
 
-    const url = `https://oapi.dingtalk.com/topapi/processinstance/file/url/get?access_token=${token}`;
-
     try {
       const { data } = await firstValueFrom(
-        this.httpService.post<DingTalkFileUrlResponse>(url, {
-          request: {
-            process_instance_id: instanceId,
-            file_id: fileId,
+        this.httpService.post<DingTalkFileUrlResponseV1>(
+          'https://api.dingtalk.com/v1.0/workflow/processInstances/spaces/files/urls/download',
+          {
+            processInstanceId: instanceId,
+            fileId,
           },
-        }),
+          { headers: this.getTokenHeaders(token) },
+        ),
       );
 
-      if (data.errcode === 0) {
-        return data.result?.download_uri || null;
-      }
-
-      return null;
+      return data.success === false ? null : data.result?.downloadUri || null;
     } catch {
       return null;
     }
+  }
+
+  private getTokenHeaders(token: string) {
+    return {
+      'x-acs-dingtalk-access-token': token,
+      'Cache-Control': 'no-store',
+    };
+  }
+
+  private mapInstanceDetail(
+    detail: NonNullable<DingTalkWorkflowInstanceResponse['result']>,
+  ): DingTalkProcessInstance {
+    return {
+      title: detail.title || '',
+      status: detail.status || '',
+      business_id: detail.businessId || '',
+      originator_userid: detail.originatorUserId || '',
+      originator_dept_id: detail.originatorDeptId || '',
+      create_time: detail.createTime || detail.finishTime || '',
+      url: detail.url || '',
+      cc_userids: detail.ccUserIds || [],
+      operation_records: (detail.operationRecords || []).map(record => ({
+        userid: record.userId || '',
+        operation_type: record.type || '',
+        operation_result: record.result,
+        remark: record.remark,
+        date: record.date || '',
+        attachments: this.mapAttachments(record.attachments),
+        images: record.images,
+      })),
+      form_component_values: (detail.formComponentValues || []).map(item => ({
+        name: item.name || '',
+        value: item.value || '',
+        ext: item.extValue,
+      })),
+      tasks: (detail.tasks || []).map(task => ({
+        userid: task.userId || '',
+        task_status: task.status || '',
+        task_result: task.result,
+      })),
+    };
+  }
+
+  private mapAttachments(attachments?: unknown[]) {
+    if (!attachments) return [];
+    return attachments.map(attachment => {
+      if (typeof attachment !== 'object' || attachment === null) return {};
+      const record = attachment as Record<string, unknown>;
+      return {
+        url: this.getString(record.url),
+        file_url: this.getString(record.fileUrl),
+        download_url: this.getString(record.downloadUrl),
+        file_name: this.getString(record.fileName),
+        fileName: this.getString(record.fileName),
+      };
+    });
+  }
+
+  private getString(value: unknown) {
+    return typeof value === 'string' ? value : undefined;
   }
 }

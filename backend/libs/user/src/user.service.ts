@@ -1,6 +1,7 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
+import { AuthService } from '@eims/auth';
 import { PrismaService } from '@eims/database';
 import { RoleService } from '@eims/roles';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -26,6 +27,7 @@ const USER_SELECT = {
 export class UserService {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly authService: AuthService,
     private readonly roleService: RoleService,
   ) {}
 
@@ -122,11 +124,17 @@ export class UserService {
     }
     if (roles !== undefined) data.roles = roles;
 
-    return this.prisma.user.update({
+    const updatedUser = await this.prisma.user.update({
       where: { id },
       data,
       select: USER_SELECT,
     });
+
+    if (password) {
+      await this.authService.revokeAllSessions(id);
+    }
+
+    return updatedUser;
   }
 
   async remove(id: number, currentUserRoles: string[] = []) {
