@@ -61,7 +61,11 @@ describe('MaterialsService', () => {
       const result = await service.findPage({ current: 1, size: 10 });
 
       expect(mockPrisma.material.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ skip: 0, take: 10 }),
+        expect.objectContaining({
+          skip: 0,
+          take: 10,
+          orderBy: { id: 'desc' },
+        }),
       );
       expect(mockPrisma.material.count).toHaveBeenCalled();
       expect(result).toEqual({ records, total: 1, current: 1, size: 10 });
@@ -80,6 +84,7 @@ describe('MaterialsService', () => {
           }),
           skip: 0,
           take: 20,
+          orderBy: { id: 'desc' },
         }),
       );
     });

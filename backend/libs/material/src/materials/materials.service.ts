@@ -57,6 +57,7 @@ export class MaterialsService {
         where,
         skip: (current - 1) * size,
         take: size,
+        orderBy: { id: 'desc' },
       }),
       this.prisma.material.count({ where }),
     ]);
