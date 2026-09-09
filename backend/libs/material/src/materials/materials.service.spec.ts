@@ -20,10 +20,13 @@ describe('MaterialsService', () => {
     },
     unit: {
       findFirst: jest.fn(),
+      findMany: jest.fn(),
     },
     materialCodeRule: {
       findUnique: jest.fn(),
+      findMany: jest.fn(),
     },
+    $transaction: jest.fn(),
   };
 
   const mockErpNextService = {
@@ -300,6 +303,72 @@ describe('MaterialsService', () => {
       const result = await service.generateCode('MT');
 
       expect(result).toBe('MT000043');
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // batchCreate
+  // ---------------------------------------------------------------------------
+  describe('batchCreate', () => {
+    it('should generate unique sequential codes for rows sharing a prefix', async () => {
+      mockPrisma.materialCodeRule.findMany.mockResolvedValue([
+        { codePrefix: 'FL', explainContent: '辅料', prefixLength: null },
+      ]);
+      mockPrisma.unit.findMany.mockResolvedValue([]);
+      mockPrisma.material.findFirst.mockResolvedValue({ code: 'FL000010' });
+      mockPrisma.material.create
+        .mockImplementationOnce(data => data)
+        .mockImplementationOnce(data => data);
+      mockPrisma.$transaction.mockResolvedValue([]);
+
+      const result = await service.batchCreate([
+        {
+          applicant: '张三',
+          materialName: '物料一',
+          codePrefix: 'FL',
+        },
+        {
+          applicant: '张三',
+          materialName: '物料二',
+          codePrefix: 'FL',
+        },
+      ]);
+
+      expect(result).toEqual({ success: 2, failed: 0, errors: [] });
+      expect(mockPrisma.material.create).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({
+          data: expect.objectContaining({ code: 'FL000011' }),
+        }),
+      );
+      expect(mockPrisma.material.create).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          data: expect.objectContaining({ code: 'FL000012' }),
+        }),
+      );
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // previewCodes
+  // ---------------------------------------------------------------------------
+  describe('previewCodes', () => {
+    it('should preview sequential codes in the same order as the requested prefixes', async () => {
+      mockPrisma.materialCodeRule.findMany.mockResolvedValue([
+        { codePrefix: 'FL', prefixLength: null },
+        { codePrefix: 'SB', prefixLength: null },
+      ]);
+      mockPrisma.material.findFirst.mockImplementation(({ where }) => {
+        if (where.codePrefix === 'FL') return { code: 'FL000010' };
+        return { code: 'SB000003' };
+      });
+
+      const result = await service.previewCodes(['FL', 'FL', '', 'SB']);
+
+      expect(result).toEqual({
+        codes: ['FL000011', 'FL000012', null, 'SB000004'],
+      });
     });
   });
 

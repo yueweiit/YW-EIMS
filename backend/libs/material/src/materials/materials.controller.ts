@@ -16,6 +16,7 @@ import { CreateMaterialDto } from './dto/create-material.dto';
 import { UpdateMaterialDto } from './dto/update-material.dto';
 import { QueryMaterialDto } from './dto/query-material.dto';
 import { ImportMaterialDto } from './dto/import-material.dto';
+import { PreviewMaterialCodesDto } from './dto/preview-material-codes.dto';
 import type { ImportExistingMaterialRow } from './materials.service';
 
 @Controller('material')
@@ -27,6 +28,11 @@ export class MaterialsController {
   @Get('page')
   async findPage(@Query() query: QueryMaterialDto) {
     return this.materialsService.findPage(query);
+  }
+
+  @Post('preview-codes')
+  async previewCodes(@Body() dto: PreviewMaterialCodesDto) {
+    return this.materialsService.previewCodes(dto.prefixes);
   }
 
   /** 按物料编码查詢（本地优先 → ERP 兜底） */

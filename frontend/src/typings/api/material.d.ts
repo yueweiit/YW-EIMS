@@ -80,6 +80,11 @@ declare namespace Api {
       errors: string[];
     }
 
+    /** preview auto-generated material codes */
+    interface PreviewCodesResult {
+      codes: Array<string | null>;
+    }
+
     /** ERP 物料查询结果 */
     interface ErpItemData {
       item_code: string;

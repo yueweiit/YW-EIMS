@@ -159,6 +159,48 @@ export class MaterialsService {
     return `${prefix}${String(nextNum).padStart(6, '0')}`;
   }
 
+  private async generateBatchCode(
+    prefix: string,
+    nextNumbers: Map<string, number>,
+  ) {
+    let nextNumber = nextNumbers.get(prefix);
+    if (nextNumber === undefined) {
+      const nextCode = await this.generateCode(prefix);
+      nextNumber = Number.parseInt(nextCode.slice(prefix.length), 10);
+    }
+
+    nextNumbers.set(prefix, nextNumber + 1);
+    return `${prefix}${String(nextNumber).padStart(6, '0')}`;
+  }
+
+  async previewCodes(prefixes: string[]) {
+    const normalizedPrefixes = prefixes.map(prefix => prefix.trim().toUpperCase());
+    const uniquePrefixes = [...new Set(normalizedPrefixes.filter(Boolean))];
+    if (!uniquePrefixes.length) return { codes: normalizedPrefixes.map(() => null) };
+
+    const rules = await this.prisma.materialCodeRule.findMany({
+      where: { codePrefix: { in: uniquePrefixes } },
+    });
+    const ruleMap = new Map(rules.map(rule => [rule.codePrefix, rule]));
+    const nextNumbers = new Map<string, number>();
+    const codes: Array<string | null> = [];
+
+    for (const prefix of normalizedPrefixes) {
+      const rule = ruleMap.get(prefix);
+      if (!rule) {
+        codes.push(null);
+        continue;
+      }
+
+      const codeKey = rule.prefixLength
+        ? prefix.substring(0, rule.prefixLength)
+        : prefix;
+      codes.push(await this.generateBatchCode(codeKey, nextNumbers));
+    }
+
+    return { codes };
+  }
+
   async batchCreate(rows: ImportMaterialRowDto[]) {
     if (!rows.length) throw new BadRequestException('导入数据不能为空');
 
@@ -169,6 +211,7 @@ export class MaterialsService {
     const unitMap = new Map(units.map(u => [u.unit, u]));
 
     const errors: string[] = [];
+    const nextNumbers = new Map<string, number>();
     const toCreate: {
       applicant: string;
       materialName: string;
@@ -194,7 +237,7 @@ export class MaterialsService {
       const codeKey = rule.prefixLength
         ? prefix.substring(0, rule.prefixLength)
         : prefix;
-      const code = await this.generateCode(codeKey);
+      const code = await this.generateBatchCode(codeKey, nextNumbers);
 
       const unitRecord = row.unit ? unitMap.get(row.unit) : null;
       if (row.unit && !unitRecord) {

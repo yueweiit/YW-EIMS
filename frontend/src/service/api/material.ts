@@ -9,6 +9,15 @@ export function fetchMaterialPage(params: Api.Material.QueryParams) {
   });
 }
 
+/** preview auto-generated material codes */
+export function fetchPreviewMaterialCodes(prefixes: string[]) {
+  return request<Api.Material.PreviewCodesResult>({
+    url: '/material/preview-codes',
+    method: 'post',
+    data: { prefixes }
+  });
+}
+
 /** create material */
 export function fetchCreateMaterial(data: Api.Material.CreateParams) {
   return request<Api.Material.MaterialRecord>({
@@ -44,11 +53,11 @@ export function fetchGetMaterial(id: number) {
 }
 
 /** import materials from excel */
-export function fetchImportMaterials(data: Api.Material.CreateParams[]) {
+export function fetchImportMaterials(rows: Api.Material.CreateParams[]) {
   return request<Api.Material.ImportResult>({
     url: '/material/import',
     method: 'post',
-    data
+    data: { rows }
   });
 }
 
