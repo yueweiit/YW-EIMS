@@ -24,7 +24,7 @@ onMounted(async () => {
   if (!authStore.isLogin) {
     await router.replace({
       name: 'login',
-      params: { module: 'pwd-login' },
+      params: { module: 'dingtalk-login' },
       query: { redirect: route.fullPath }
     });
     return;

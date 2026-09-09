@@ -7,6 +7,7 @@ import { useAppStore } from '@/store/modules/app';
 import { useThemeStore } from '@/store/modules/theme';
 import { $t } from '@/locales';
 import { useAuthStore } from '@/store/modules/auth';
+import DingTalkLogin from './modules/dingtalk-login.vue';
 import PwdLogin from './modules/pwd-login.vue';
 import CodeLogin from './modules/code-login.vue';
 import Register from './modules/register.vue';
@@ -33,6 +34,10 @@ interface LoginModule {
 }
 
 const moduleMap: Record<UnionKey.LoginModule, LoginModule> = {
+  'dingtalk-login': {
+    label: loginModuleRecord['dingtalk-login'],
+    component: DingTalkLogin,
+  },
   'pwd-login': { label: loginModuleRecord['pwd-login'], component: PwdLogin },
   'code-login': {
     label: loginModuleRecord['code-login'],
@@ -50,7 +55,7 @@ const moduleMap: Record<UnionKey.LoginModule, LoginModule> = {
   }
 };
 
-const activeModule = computed(() => moduleMap[props.module || 'pwd-login']);
+const activeModule = computed(() => moduleMap[props.module || 'dingtalk-login']);
 const isConsent = computed(() => props.module === 'oauth-consent');
 
 function getQueryString(value: unknown) {

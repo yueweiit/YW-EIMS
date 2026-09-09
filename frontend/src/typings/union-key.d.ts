@@ -3,13 +3,14 @@ declare namespace UnionKey {
   /**
    * The login module
    *
+   * - dingtalk-login: DingTalk login
    * - pwd-login: password login
    * - code-login: phone code login
    * - register: register
    * - reset-pwd: reset password
    * - bind-wechat: bind wechat
    */
-  type LoginModule = 'pwd-login' | 'code-login' | 'register' | 'reset-pwd' | 'bind-wechat' | 'oauth-consent';
+  type LoginModule = 'dingtalk-login' | 'pwd-login' | 'code-login' | 'register' | 'reset-pwd' | 'bind-wechat' | 'oauth-consent';
 
   /** Theme scheme */
   type ThemeScheme = 'light' | 'dark' | 'auto';

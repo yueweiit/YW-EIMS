@@ -81,6 +81,7 @@ export function setupElegantRouter() {
 
       if (key === "login") {
         const modules: UnionKey.LoginModule[] = [
+          "dingtalk-login",
           "pwd-login",
           "code-login",
           "register",

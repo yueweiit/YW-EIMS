@@ -168,7 +168,7 @@ const routeMap: RouteMap = {
   "500": "/500",
   "home": "/home",
   "iframe-page": "/iframe-page/:url",
-  "login": "/login/:module(pwd-login|code-login|register|reset-pwd|bind-wechat|oauth-consent)?",
+  "login": "/login/:module(dingtalk-login|pwd-login|code-login|register|reset-pwd|bind-wechat|oauth-consent)?",
   "material": "/material",
   "material_code-rule": "/material/code-rule",
   "material_material": "/material/material",

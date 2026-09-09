@@ -65,7 +65,7 @@ export const generatedRoutes: GeneratedRoute[] = [
   },
   {
     name: 'login',
-    path: '/login/:module(pwd-login|code-login|register|reset-pwd|bind-wechat|oauth-consent)?',
+    path: '/login/:module(dingtalk-login|pwd-login|code-login|register|reset-pwd|bind-wechat|oauth-consent)?',
     component: 'layout.blank$view.login',
     props: true,
     meta: {
