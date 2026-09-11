@@ -282,7 +282,7 @@ describe('MaterialsService', () => {
 
       expect(mockPrisma.material.findFirst).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { codePrefix: 'MT' },
+          where: { code: { startsWith: 'MT' } },
           orderBy: { code: 'desc' },
         }),
       );
@@ -295,6 +295,18 @@ describe('MaterialsService', () => {
       const result = await service.generateCode('MT');
 
       expect(result).toBe('MT000006');
+    });
+
+    it('should include legacy codes whose codePrefix is not populated', async () => {
+      mockPrisma.material.findFirst.mockResolvedValue({ code: 'FL007887' });
+
+      const result = await service.generateCode('FL');
+
+      expect(result).toBe('FL007888');
+      expect(mockPrisma.material.findFirst).toHaveBeenCalledWith({
+        where: { code: { startsWith: 'FL' } },
+        orderBy: { code: 'desc' },
+      });
     });
 
     it('should handle codes with larger numeric suffix correctly', async () => {
@@ -360,7 +372,7 @@ describe('MaterialsService', () => {
         { codePrefix: 'SB', prefixLength: null },
       ]);
       mockPrisma.material.findFirst.mockImplementation(({ where }) => {
-        if (where.codePrefix === 'FL') return { code: 'FL000010' };
+        if (where.code?.startsWith === 'FL') return { code: 'FL000010' };
         return { code: 'SB000003' };
       });
 

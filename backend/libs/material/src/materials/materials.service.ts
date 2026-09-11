@@ -146,7 +146,7 @@ export class MaterialsService {
 
   async generateCode(prefix: string) {
     const latest = await this.prisma.material.findFirst({
-      where: { codePrefix: prefix },
+      where: { code: { startsWith: prefix } },
       orderBy: { code: 'desc' },
     });
 
