@@ -7,6 +7,10 @@ export class QueryUserDto extends PaginationDto {
   userName?: string;
 
   @IsString()
+  @IsOptional()
+  realName?: string;
+
+  @IsString()
   @IsIn(['1', '2'])
   @IsOptional()
   status?: string;

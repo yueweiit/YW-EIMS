@@ -38,7 +38,6 @@ const defaultForm: Api.User.CreateParams = {
   dingTalkSubject: '',
   dingTalkUserId: '',
   roles: ['R_USER'],
-  buttons: [],
   status: '1'
 };
 
@@ -115,7 +114,6 @@ function setFormFromRow(row: Api.User.UserRecord) {
     dingTalkSubject: row.dingTalkSubject || '',
     dingTalkUserId: row.dingTalkUserId || '',
     roles: row.roles,
-    buttons: row.buttons,
     status: row.status || '1'
   });
   nextTick(() => {
@@ -216,17 +214,6 @@ async function handleSubmit() {
             multiple
             :options="roleOptions"
             :placeholder="$t('page.ui.selectRole')"
-          />
-        </NFormItem>
-
-        <NFormItem :label="$t('page.ui.buttonPermissions')" path="buttons">
-          <NSelect
-            v-model:value="formModel.buttons"
-            multiple
-            filterable
-            tag
-            :options="[]"
-            :placeholder="$t('page.ui.buttonPermissionPlaceholder')"
           />
         </NFormItem>
 

@@ -26,6 +26,8 @@ declare namespace Api {
     interface QueryParams extends Common.CommonSearchParams {
       /** user name */
       userName?: string;
+      /** real name */
+      realName?: string;
       /** enable status */
       status?: Common.EnableStatus;
     }
@@ -46,8 +48,6 @@ declare namespace Api {
       dingTalkUserId?: string;
       /** role codes */
       roles?: string[];
-      /** button codes */
-      buttons?: string[];
       /** enable status */
       status?: Common.EnableStatus;
     }
@@ -68,8 +68,6 @@ declare namespace Api {
       dingTalkUserId?: string;
       /** role codes */
       roles?: string[];
-      /** button codes */
-      buttons?: string[];
       /** enable status */
       status?: Common.EnableStatus;
     }

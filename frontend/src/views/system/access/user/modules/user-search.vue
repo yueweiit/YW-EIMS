@@ -38,6 +38,12 @@ function reset() {
       :placeholder="$t('page.login.common.userNamePlaceholder')"
       class="w-200px"
     />
+    <NInput
+      v-model:value="model.realName"
+      clearable
+      :placeholder="$t('page.ui.enterRealName')"
+      class="w-160px"
+    />
     <NSelect
       v-model:value="model.status"
       clearable

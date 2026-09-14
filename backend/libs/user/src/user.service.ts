@@ -33,9 +33,10 @@ export class UserService {
   ) {}
 
   async findPage(query: QueryUserDto) {
-    const { current = 1, size = 10, userName, status } = query;
+    const { current = 1, size = 10, userName, realName, status } = query;
     const where: Prisma.UserWhereInput = {};
     if (userName) where.userName = { contains: userName };
+    if (realName?.trim()) where.realName = { contains: realName.trim() };
     if (status) where.status = status;
 
     const [records, total] = await Promise.all([

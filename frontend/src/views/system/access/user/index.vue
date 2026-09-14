@@ -56,15 +56,6 @@ const columns = computed<DataTableColumns<Api.User.UserRecord>>(() => [
     render: row => row.realName || '-'
   },
   {
-    key: 'email',
-    title: $t('page.ui.email'),
-    minWidth: 180,
-    ellipsis: {
-      tooltip: true
-    },
-    render: row => row.email || '-'
-  },
-  {
     key: 'dingTalkSubject',
     title: $t('page.ui.dingTalkBinding'),
     minWidth: 140,
@@ -168,6 +159,7 @@ function handleSearch() {
 
 function handleReset() {
   queryParams.userName = undefined;
+  queryParams.realName = undefined;
   queryParams.status = undefined;
   queryParams.current = 1;
   getData();
