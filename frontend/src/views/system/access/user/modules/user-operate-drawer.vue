@@ -36,6 +36,7 @@ const defaultForm: Api.User.CreateParams = {
   realName: '',
   email: '',
   dingTalkSubject: '',
+  dingTalkUserId: '',
   roles: ['R_USER'],
   buttons: [],
   status: '1'
@@ -112,6 +113,7 @@ function setFormFromRow(row: Api.User.UserRecord) {
     realName: row.realName || '',
     email: row.email || '',
     dingTalkSubject: row.dingTalkSubject || '',
+    dingTalkUserId: row.dingTalkUserId || '',
     roles: row.roles,
     buttons: row.buttons,
     status: row.status || '1'
@@ -198,6 +200,13 @@ async function handleSubmit() {
           <NInput
             v-model:value="formModel.dingTalkSubject"
             :placeholder="$t('page.ui.dingTalkSubjectPlaceholder')"
+          />
+        </NFormItem>
+
+        <NFormItem :label="$t('page.ui.dingTalkUserId')" path="dingTalkUserId">
+          <NInput
+            v-model:value="formModel.dingTalkUserId"
+            :placeholder="$t('page.ui.dingTalkUserIdPlaceholder')"
           />
         </NFormItem>
 

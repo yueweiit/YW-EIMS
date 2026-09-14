@@ -14,6 +14,8 @@ declare namespace Api {
       email: string | null;
       /** DingTalk OAuth subject bound to this user */
       dingTalkSubject: string | null;
+      /** DingTalk userId stored as an auxiliary identifier */
+      dingTalkUserId: string | null;
       /** role codes */
       roles: string[];
       /** button codes */
@@ -40,6 +42,8 @@ declare namespace Api {
       email?: string;
       /** DingTalk OAuth subject bound to this user */
       dingTalkSubject?: string;
+      /** DingTalk userId stored as an auxiliary identifier */
+      dingTalkUserId?: string;
       /** role codes */
       roles?: string[];
       /** button codes */
@@ -60,6 +64,8 @@ declare namespace Api {
       email?: string;
       /** DingTalk OAuth subject bound to this user */
       dingTalkSubject?: string;
+      /** DingTalk userId stored as an auxiliary identifier */
+      dingTalkUserId?: string;
       /** role codes */
       roles?: string[];
       /** button codes */

@@ -74,6 +74,15 @@ const columns = computed<DataTableColumns<Api.User.UserRecord>>(() => [
     render: row => row.dingTalkSubject || '-'
   },
   {
+    key: 'dingTalkUserId',
+    title: $t('page.ui.dingTalkUserId'),
+    minWidth: 140,
+    ellipsis: {
+      tooltip: true
+    },
+    render: row => row.dingTalkUserId || '-'
+  },
+  {
     key: 'roles',
     title: $t('page.ui.roles'),
     minWidth: 180,
