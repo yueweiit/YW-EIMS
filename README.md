@@ -47,6 +47,7 @@ YW-EIMS/
 - ERPNext 映射配置管理及 Item 同步
 - ERPNext 同步日志查询与失败重试
 - OA 审批查询、审批状态校验和推单相关能力
+- 钉钉 OAuth 登录及员工快照自动创建 EIMS 用户
 - 统一 API 响应格式及全局异常处理
 
 ## 环境要求
@@ -67,6 +68,12 @@ copy .env.example .env       # Windows
 ```
 
 至少需要修改 PostgreSQL、`DATABASE_URL`、`JWT_SECRET` 和 `JWT_REFRESH_SECRET`。钉钉 OAuth、ERPNext、OAuth2/OIDC SSO 等功能还需要补充对应的环境变量。
+
+配置钉钉员工快照自动建号时，确认 `DINGTALK_OA_DB_URL` 指向员工快照数据库，并保持以下配置启用：
+
+```env
+DINGTALK_AUTO_PROVISION_USERS=true
+```
 
 首次执行 seed 前必须设置 `EIMS_SEED_ADMIN_PASSWORD`（至少 12 个字符），该值只用于初始化或自动替换历史默认密码，seed 不会把它写入日志。
 
@@ -107,6 +114,35 @@ docker compose run --rm backend npx ts-node libs/database/prisma/seed.ts
 
 Prisma Schema 位于 `backend/libs/database/prisma/schema.prisma`。生产环境只执行 `migrate deploy`，不要使用 `prisma db push`。
 
+升级已有环境时，建议先构建包含最新迁移文件的镜像，再执行迁移，最后重建应用容器：
+
+```bash
+docker compose build backend frontend
+docker compose run --rm backend npx prisma migrate deploy --schema libs/database/prisma/schema.prisma
+docker compose up -d --force-recreate backend frontend
+```
+
+### 钉钉自动建号与登录
+
+EIMS 从 `DINGTALK_OA_DB_URL` 配置的钉钉员工快照中同步当前员工。`dingtalk-oa` 返回的员工数据必须包含以下字段：
+
+| 字段 | 用途 |
+| --- | --- |
+| `unionId`（或 `union_id`） | EIMS 钉钉登录的唯一标识，保存到 `system_user.ding_talk_subject` |
+| `userId`（或 `user_id`） | 钉钉员工辅助标识，保存到 `system_user.ding_talk_user_id` |
+
+登录时只使用 `unionId` 匹配 EIMS 用户，`userId` 和 `openId` 不作为登录回退标识。员工同步任务在应用启动时执行一次，之后每 30 分钟执行一次：
+
+- 新员工自动创建用户名为 `ding_<userId>` 的 EIMS 用户。
+- 自动账号默认启用并分配 `R_USER` 角色。
+- 自动生成随机密码并以 bcrypt 哈希保存，不在日志或接口中暴露。
+- 已存在账号只补充或更新钉钉标识，不覆盖已有密码、角色和权限。
+- 旧账号如果把 `userId` 保存为钉钉绑定值，会自动迁移为 `unionId`，并将原值保存到辅助字段。
+- 缺少 `unionId` 的员工会跳过自动建号；发生重复绑定时会记录冲突，不会自动覆盖账号。
+- 员工从快照中消失时不会自动禁用 EIMS 账号，需要管理员确认后处理。
+
+自动建号由 `DINGTALK_AUTO_PROVISION_USERS` 控制。设置为 `false` 可以暂时关闭自动建号，但不会影响已有的 unionId 登录账号。数据库升级必须包含 `system_user.ding_talk_user_id` 字段及唯一索引；部署后可通过 backend 日志中的 `EIMS user provisioning` 汇总确认同步结果。
+
 ### 4. 常用 Docker 命令
 
 ```bash
@@ -125,6 +161,8 @@ docker compose down -v       # 删除数据库数据卷，请谨慎执行
 | `superadmin` | 使用 `EIMS_SEED_ADMIN_PASSWORD` 配置的密码 |
 
 首次运行种子脚本后使用该账号登录。生产环境请使用随机高强度密码，并定期轮换 JWT 密钥。
+
+自动创建的钉钉账号不使用统一的默认密码，正常登录入口为钉钉 OAuth 登录。
 
 ## 本地开发辅助
 
