@@ -15,6 +15,7 @@ interface ApprovalInstanceRow {
 
 interface UserSnapshotRow {
   user_id: string;
+  union_id: string | null;
   name: string | null;
   dept_id_list: any;
   title: string | null;
@@ -54,7 +55,7 @@ export class DingtalkOaDbService implements OnModuleDestroy {
   async fetchCurrentUsers(): Promise<UserSnapshotRow[]> {
     const pool = this.getPool();
     const result = await pool.query<UserSnapshotRow>(`
-      SELECT user_id, name, dept_id_list, title
+      SELECT user_id, union_id, name, dept_id_list, title
       FROM ding_user_snapshot
       WHERE is_current = true AND fetch_status = 'success'
     `);
