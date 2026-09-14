@@ -112,10 +112,7 @@ export class DingTalkOAuthService {
     }
 
     const userId = await this.authService.findEnabledUserByDingTalkSubjects([
-      identity.userId,
       identity.unionId,
-      identity.openId,
-      identity.subject,
     ]);
     const rawTicket = randomBytes(32).toString('base64url');
     const ticketHash = this.hashTicket(rawTicket);
@@ -180,16 +177,15 @@ export class DingTalkOAuthService {
       );
 
       const returnedUserId = userData.userId || userData.userid;
-      const userId = returnedUserId;
-      const subject = userData.unionId || userData.openId || userId;
-      if (!subject) {
-        throw new UnprocessableEntityException('钉钉未返回用户标识');
+      const unionId = userData.unionId?.trim();
+      if (!unionId) {
+        throw new UnprocessableEntityException('钉钉未返回 unionId');
       }
       return {
-        subject,
-        unionId: userData.unionId,
+        subject: unionId,
+        unionId,
         openId: userData.openId,
-        userId,
+        userId: returnedUserId,
       };
     } catch (error) {
       if (

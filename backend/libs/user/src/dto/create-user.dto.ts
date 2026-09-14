@@ -29,6 +29,10 @@ export class CreateUserDto {
   @IsOptional()
   dingTalkSubject?: string;
 
+  @IsString()
+  @IsOptional()
+  dingTalkUserId?: string;
+
   @IsString({ each: true })
   @IsOptional()
   roles?: string[];

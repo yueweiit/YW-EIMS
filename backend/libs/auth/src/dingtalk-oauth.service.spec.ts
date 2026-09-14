@@ -116,9 +116,6 @@ describe('DingTalkOAuthService', () => {
       }),
     );
     expect(authService.findEnabledUserByDingTalkSubjects).toHaveBeenCalledWith([
-      undefined,
-      'ding-union-id',
-      'ding-open-id',
       'ding-union-id',
     ]);
     expect(prisma.authLoginTicket.create).toHaveBeenCalledWith(

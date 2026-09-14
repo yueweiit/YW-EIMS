@@ -16,6 +16,7 @@ const USER_SELECT = {
   roles: true,
   buttons: true,
   dingTalkSubject: true,
+  dingTalkUserId: true,
   status: true,
   createBy: true,
   createTime: true,
@@ -79,6 +80,7 @@ export class UserService {
         roles,
         buttons: dto.buttons ?? [],
         dingTalkSubject: dto.dingTalkSubject?.trim() || null,
+        dingTalkUserId: dto.dingTalkUserId?.trim() || null,
         status: dto.status ?? '1',
         createBy: currentUserName,
       },
@@ -108,13 +110,16 @@ export class UserService {
       throw new ForbiddenException('普通管理员不能操作超级管理员或授予超级管理员角色');
     }
 
-    const { password, dingTalkSubject, email, ...rest } = dto;
+    const { password, dingTalkSubject, dingTalkUserId, email, ...rest } = dto;
     const data: Prisma.UserUpdateInput = {
       ...rest,
       updateBy: currentUserName,
     };
     if (dingTalkSubject !== undefined) {
       data.dingTalkSubject = dingTalkSubject.trim() || null;
+    }
+    if (dingTalkUserId !== undefined) {
+      data.dingTalkUserId = dingTalkUserId.trim() || null;
     }
     if (email !== undefined) {
       data.email = this.normalizeEmail(email);

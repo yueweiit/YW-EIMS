@@ -16,6 +16,7 @@ model User {
   realName   String?  @map("real_name")
   email      String?  @unique @db.VarChar(200)
   dingTalkSubject String? @unique @map("ding_talk_subject") @db.VarChar(200)
+  dingTalkUserId  String? @unique @map("ding_talk_user_id") @db.VarChar(200)
   roles      String[] @default([])
   buttons    String[] @default([])
   status     String   @default("1")
