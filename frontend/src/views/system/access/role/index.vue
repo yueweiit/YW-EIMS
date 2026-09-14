@@ -59,9 +59,43 @@ const statusTextMap = computed<Record<string, string>>(() => ({
 
 const activeSystems = computed(() => accessCatalog.value.systems.filter(system => system.status === '1'));
 const activePermissions = computed(() => accessCatalog.value.permissions.filter(permission => permission.status === '1'));
-const menuPermissions = computed(() => activePermissions.value.filter(permission => permission.type === 'menu'));
-const buttonPermissions = computed(() => activePermissions.value.filter(permission => permission.type === 'button'));
-const apiPermissions = computed(() => activePermissions.value.filter(permission => permission.type === 'api'));
+
+const permissionModuleDefinitions = [
+  { key: 'material', prefix: 'eims:material:', labelKey: 'page.ui.permissionModuleMaterial' },
+  { key: 'mold', prefix: 'eims:mold:', labelKey: 'page.ui.permissionModuleMold' },
+  { key: 'oa', prefix: 'eims:oa:', labelKey: 'page.ui.permissionModuleOa' },
+  { key: 'system', prefix: 'eims:system:', labelKey: 'page.ui.permissionModuleSystem' }
+] as const;
+
+function buildPermissionGroup(key: string, label: string, permissions: PermissionRecord[]) {
+  return {
+    key,
+    label,
+    permissions,
+    menu: permissions.filter(permission => permission.type === 'menu'),
+    button: permissions.filter(permission => permission.type === 'button'),
+    api: permissions.filter(permission => permission.type === 'api')
+  };
+}
+
+const permissionGroups = computed(() => {
+  const assignedCodes = new Set<string>();
+  const groups = permissionModuleDefinitions
+    .map(definition => {
+      const permissions = activePermissions.value.filter(permission => permission.code.startsWith(definition.prefix));
+      permissions.forEach(permission => assignedCodes.add(permission.code));
+
+      return buildPermissionGroup(definition.key, $t(definition.labelKey), permissions);
+    })
+    .filter(group => group.permissions.length > 0);
+
+  const otherPermissions = activePermissions.value.filter(permission => !assignedCodes.has(permission.code));
+  if (otherPermissions.length) {
+    groups.push(buildPermissionGroup('other', $t('page.ui.permissionModuleOther'), otherPermissions));
+  }
+
+  return groups;
+});
 
 const defaultForm = () => ({
   code: '',
@@ -371,35 +405,65 @@ void getData();
               <div v-else class="mt-8px text-12px text-gray-500">{{ $t('page.ui.allOpenNotice') }}</div>
             </NFormItem>
 
-            <NFormItem :label="$t('page.ui.menuPermissions')">
-              <NGrid :cols="2" :x-gap="16" :y-gap="8">
-                <NGi v-for="permission in menuPermissions" :key="permission.code">
-                  <NCheckbox :checked="permissionChecked(permission.code)" @update:checked="value => togglePermission(permission.code, value)">
-                    {{ permission.name }}
-                  </NCheckbox>
-                </NGi>
-              </NGrid>
-            </NFormItem>
+            <div v-if="permissionGroups.length" class="permission-module-list">
+              <div class="permission-list-heading">
+                <div>
+                  <div class="permission-list-title">{{ $t('page.ui.functionPermissions') }}</div>
+                  <div class="permission-list-description">{{ $t('page.ui.permissionModuleNotice') }}</div>
+                </div>
+                <NTag size="small" type="info" :bordered="false">
+                  {{ activePermissions.length }}
+                </NTag>
+              </div>
 
-            <NFormItem v-if="buttonPermissions.length" :label="$t('page.ui.buttonPermissions')">
-              <NGrid :cols="2" :x-gap="16" :y-gap="8">
-                <NGi v-for="permission in buttonPermissions" :key="permission.code">
-                  <NCheckbox :checked="permissionChecked(permission.code)" @update:checked="value => togglePermission(permission.code, value)">
-                    {{ permission.name }}
-                  </NCheckbox>
-                </NGi>
-              </NGrid>
-            </NFormItem>
+              <NCard
+                v-for="group in permissionGroups"
+                :key="group.key"
+                size="small"
+                :bordered="true"
+                class="permission-module-card"
+              >
+                <template #header>
+                  <div class="permission-module-heading">
+                    <span>{{ group.label }}</span>
+                    <NTag size="small" :bordered="false">{{ group.permissions.length }}</NTag>
+                  </div>
+                </template>
 
-            <NFormItem v-if="apiPermissions.length" :label="$t('page.ui.apiPermissions')">
-              <NGrid :cols="2" :x-gap="16" :y-gap="8">
-                <NGi v-for="permission in apiPermissions" :key="permission.code">
-                  <NCheckbox :checked="permissionChecked(permission.code)" @update:checked="value => togglePermission(permission.code, value)">
-                    {{ permission.name }}
-                  </NCheckbox>
-                </NGi>
-              </NGrid>
-            </NFormItem>
+                <div v-if="group.menu.length" class="permission-category">
+                  <div class="permission-category-title">{{ $t('page.ui.menuPermissions') }}</div>
+                  <NGrid :cols="2" :x-gap="16" :y-gap="8">
+                    <NGi v-for="permission in group.menu" :key="permission.code">
+                      <NCheckbox :checked="permissionChecked(permission.code)" @update:checked="value => togglePermission(permission.code, value)">
+                        {{ permission.name }}
+                      </NCheckbox>
+                    </NGi>
+                  </NGrid>
+                </div>
+
+                <div v-if="group.button.length" class="permission-category">
+                  <div class="permission-category-title">{{ $t('page.ui.buttonPermissions') }}</div>
+                  <NGrid :cols="2" :x-gap="16" :y-gap="8">
+                    <NGi v-for="permission in group.button" :key="permission.code">
+                      <NCheckbox :checked="permissionChecked(permission.code)" @update:checked="value => togglePermission(permission.code, value)">
+                        {{ permission.name }}
+                      </NCheckbox>
+                    </NGi>
+                  </NGrid>
+                </div>
+
+                <div v-if="group.api.length" class="permission-category">
+                  <div class="permission-category-title">{{ $t('page.ui.apiPermissions') }}</div>
+                  <NGrid :cols="2" :x-gap="16" :y-gap="8">
+                    <NGi v-for="permission in group.api" :key="permission.code">
+                      <NCheckbox :checked="permissionChecked(permission.code)" @update:checked="value => togglePermission(permission.code, value)">
+                        {{ permission.name }}
+                      </NCheckbox>
+                    </NGi>
+                  </NGrid>
+                </div>
+              </NCard>
+            </div>
           </NForm>
         </NSpin>
         <template #footer>
@@ -413,4 +477,62 @@ void getData();
   </NSpace>
 </template>
 
-<style scoped></style>
+<style scoped>
+.permission-module-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.permission-list-heading,
+.permission-module-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.permission-list-heading {
+  padding: 4px 2px 0;
+}
+
+.permission-list-title {
+  color: var(--n-text-color);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.permission-list-description {
+  margin-top: 4px;
+  color: var(--n-text-color-3);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.permission-module-card :deep(.n-card-header) {
+  padding: 12px 14px;
+}
+
+.permission-module-card :deep(.n-card__content) {
+  padding: 12px 14px 14px;
+}
+
+.permission-module-heading {
+  color: var(--n-text-color);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.permission-category + .permission-category {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--n-divider-color);
+}
+
+.permission-category-title {
+  margin-bottom: 8px;
+  color: var(--n-text-color-2);
+  font-size: 12px;
+  font-weight: 600;
+}
+</style>
