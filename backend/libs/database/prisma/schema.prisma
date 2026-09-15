@@ -238,8 +238,8 @@ model Oauth2UserBinding {
   @@schema("public")
 }
 
-/// 外部系统门户目录。入口地址、可选 SSO 启动地址和展示信息由 EIMS 管理，访问权限由 accessMode/allowedRoles 决定。
-/// accessMode=all 表示所有已登录用户可见；accessMode=roles 时必须命中 allowedRoles；R_SUPER 可以访问所有启用系统。
+/// 外部系统门户目录。入口地址、可选 SSO 启动地址和展示信息由 EIMS 管理，访问权限由 allowedRoles 决定。
+/// allowedRoles 为空表示拒绝访问；R_SUPER 可以访问所有启用系统。
 model ExternalSystem {
   id            Int      @id @default(autoincrement())
   code          String   @unique @db.VarChar(50)
@@ -250,7 +250,6 @@ model ExternalSystem {
   entryUrl      String   @map("entry_url") @db.VarChar(2000)
   ssoStartUrl   String?  @map("sso_start_url") @db.VarChar(2000)
   authMode      String   @default("link") @map("auth_mode") @db.VarChar(20)
-  accessMode    String   @default("roles") @map("access_mode") @db.VarChar(20)
   allowedRoles  String[] @default([]) @map("allowed_roles")
   category      String   @default("业务系统") @db.VarChar(50)
   helpUrl       String?  @map("help_url") @db.VarChar(2000)

@@ -47,10 +47,6 @@ export class UpdateExternalSystemDto {
   authMode?: string;
 
   @IsOptional()
-  @IsIn(['roles', 'all'])
-  accessMode?: string;
-
-  @IsOptional()
   @IsArray()
   @ArrayMaxSize(50)
   @IsString({ each: true })

@@ -41,7 +41,6 @@ export interface ExternalSystemRecord {
   effectiveEntryUrl?: string;
   ssoStartUrl?: string | null;
   authMode: 'link' | 'oauth2';
-  accessMode: 'roles' | 'all';
   allowedRoles: string[];
   category: string;
   helpUrl?: string | null;
@@ -84,7 +83,6 @@ export interface CreateExternalSystemParams {
   entryUrl: string;
   ssoStartUrl?: string | null;
   authMode?: 'link' | 'oauth2';
-  accessMode?: 'roles' | 'all';
   allowedRoles?: string[];
   category?: string;
   helpUrl?: string;

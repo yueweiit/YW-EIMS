@@ -394,15 +394,14 @@ void getData();
               <NCheckboxGroup v-model:value="accessForm.systemCodes">
                 <NGrid :cols="2" :x-gap="16" :y-gap="8">
                   <NGi v-for="system in activeSystems" :key="system.code">
-                    <NCheckbox :value="system.code" :disabled="system.accessMode === 'all'">
+                    <NCheckbox :value="system.code">
                       {{ system.name }}（{{ system.code }}）
-                      <NTag v-if="system.accessMode === 'all'" size="small" type="success" :bordered="false">{{ $t('page.ui.allOpen') }}</NTag>
                     </NCheckbox>
                   </NGi>
                 </NGrid>
               </NCheckboxGroup>
               <div v-if="!activeSystems.length" class="text-12px text-gray-500">{{ $t('page.ui.noActiveExternalSystems') }}</div>
-              <div v-else class="mt-8px text-12px text-gray-500">{{ $t('page.ui.allOpenNotice') }}</div>
+              <div v-else class="mt-8px text-12px text-gray-500">{{ $t('page.ui.roleSystemAccessNotice') }}</div>
             </NFormItem>
 
             <div v-if="permissionGroups.length" class="permission-module-list">

@@ -54,7 +54,6 @@ export interface RoleAccessSystem {
   code: string;
   name: string;
   status: RoleStatus;
-  accessMode: 'roles' | 'all';
   sort: number;
 }
 

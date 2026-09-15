@@ -42,7 +42,6 @@ const ADMIN_SYSTEM_SELECT = {
   entryUrl: true,
   ssoStartUrl: true,
   authMode: true,
-  accessMode: true,
   allowedRoles: true,
   category: true,
   helpUrl: true,
@@ -74,7 +73,6 @@ const PORTAL_SYSTEM_SELECT = {
   entryUrl: true,
   ssoStartUrl: true,
   authMode: true,
-  accessMode: true,
   allowedRoles: true,
   category: true,
   helpUrl: true,
@@ -198,7 +196,6 @@ export class ExternalSystemService {
       dto.oauthClientId === undefined
         ? existing.oauthClientId
         : this.normalizeOptionalText(dto.oauthClientId);
-    const accessMode = dto.accessMode ?? existing.accessMode;
     await this.validateOauthClient(authMode, oauthClientId);
 
     const data: Prisma.ExternalSystemUncheckedUpdateInput = {
@@ -222,12 +219,7 @@ export class ExternalSystemService {
       );
     }
     if (dto.authMode !== undefined) data.authMode = authMode;
-    if (dto.accessMode !== undefined) {
-      data.accessMode = accessMode;
-    }
-    if (accessMode === 'all') {
-      data.allowedRoles = [];
-    } else if (dto.allowedRoles !== undefined) {
+    if (dto.allowedRoles !== undefined) {
       data.allowedRoles = await this.roleService.validateAssignableRoleCodes(
         this.normalizeRoles(dto.allowedRoles),
       );
@@ -281,7 +273,7 @@ export class ExternalSystemService {
       orderBy: [{ sort: 'asc' }, { createTime: 'asc' }],
     });
     const visibleSystems = systems.filter((system) =>
-      this.hasSystemAccess(system.accessMode, system.allowedRoles, activeRoles),
+      this.hasSystemAccess(system.allowedRoles, activeRoles),
     );
     const clientIds = visibleSystems
       .map((system) => system.oauthClientId)
@@ -326,7 +318,7 @@ export class ExternalSystemService {
     if (!system || system.status !== ACTIVE_STATUS) {
       throw new NotFoundException('外部系统不存在或已停用');
     }
-    if (!this.hasSystemAccess(system.accessMode, system.allowedRoles, activeRoles)) {
+    if (!this.hasSystemAccess(system.allowedRoles, activeRoles)) {
       throw new ForbiddenException('当前用户没有访问此系统的权限');
     }
 
@@ -391,10 +383,7 @@ export class ExternalSystemService {
       color: system.color,
       category: system.category,
       authMode: system.authMode,
-      roles:
-        system.accessMode === 'all'
-          ? userRoles
-          : system.allowedRoles.filter((role) => userRoles.includes(role)),
+      roles: system.allowedRoles.filter((role) => userRoles.includes(role)),
       bindingStatus,
       canLaunch: bindingStatus === 'bound' || bindingStatus === 'not_required',
       appUserId: binding?.appUserId ?? null,
@@ -451,27 +440,18 @@ export class ExternalSystemService {
     return this.getEffectiveEntryUrl(system.code, system.entryUrl);
   }
 
-  private hasSystemAccess(
-    accessMode: string,
-    allowedRoles: string[],
-    userRoles: string[],
-  ) {
+  private hasSystemAccess(allowedRoles: string[], userRoles: string[]) {
     if (userRoles.includes('R_SUPER')) return true;
-    if (accessMode === 'all') return true;
-    return accessMode === 'roles' && allowedRoles.some((role) => userRoles.includes(role));
+    return allowedRoles.some((role) => userRoles.includes(role));
   }
 
   private async prepareCreateData(dto: CreateExternalSystemDto) {
     const authMode = dto.authMode || 'link';
-    const accessMode = dto.accessMode || 'roles';
     const oauthClientId = this.normalizeOptionalText(dto.oauthClientId);
     await this.validateOauthClient(authMode, oauthClientId);
-    const allowedRoles =
-      accessMode === 'all'
-        ? []
-        : await this.roleService.validateAssignableRoleCodes(
-            this.normalizeRoles(dto.allowedRoles),
-          );
+    const allowedRoles = await this.roleService.validateAssignableRoleCodes(
+      this.normalizeRoles(dto.allowedRoles),
+    );
     return {
       code: this.normalizeCode(dto.code),
       name: this.requireText(dto.name, '系统名称'),
@@ -486,7 +466,6 @@ export class ExternalSystemService {
         'https:',
       ]),
       authMode,
-      accessMode,
       allowedRoles,
       category: dto.category
         ? this.requireText(dto.category, '系统分类')

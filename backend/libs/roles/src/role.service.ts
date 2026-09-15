@@ -114,7 +114,6 @@ export class RoleService {
           code: true,
           name: true,
           status: true,
-          accessMode: true,
           sort: true,
         },
         orderBy: [{ sort: 'asc' }, { createTime: 'asc' }],
@@ -190,7 +189,6 @@ export class RoleService {
       }),
       this.prisma.externalSystem.findFirst({
         where: {
-          accessMode: 'roles',
           allowedRoles: { has: existing.code },
         },
         select: { id: true },
@@ -249,11 +247,10 @@ export class RoleService {
     await this.prisma.$transaction(async (transaction) => {
       if (systemCodes !== undefined) {
         const allSystems = await transaction.externalSystem.findMany({
-          select: { id: true, code: true, accessMode: true, allowedRoles: true },
+          select: { id: true, code: true, allowedRoles: true },
         });
         const selected = new Set(systemCodes);
         for (const system of allSystems) {
-          if (system.accessMode !== 'roles') continue;
           const nextRoles = selected.has(system.code)
             ? [...new Set([...system.allowedRoles, role.code])]
             : system.allowedRoles.filter((code) => code !== role.code);
@@ -437,13 +434,9 @@ export class RoleService {
   }
 
   private async getAccessMaps(roleIds: number[]) {
-    const [systems, roleRecords, links] = await Promise.all([
+    const [systems, links] = await Promise.all([
       this.prisma.externalSystem.findMany({
-        select: { code: true, accessMode: true, allowedRoles: true },
-      }),
-      this.prisma.systemRole.findMany({
-        where: { id: { in: roleIds } },
-        select: { id: true, code: true },
+        select: { code: true, allowedRoles: true },
       }),
       roleIds.length
         ? this.prisma.systemRolePermission.findMany({
@@ -455,12 +448,7 @@ export class RoleService {
 
     const systemsByRole = new Map<string, string[]>();
     for (const system of systems) {
-      const roleCodes =
-        system.accessMode === 'all'
-          ? roleRecords
-              .map((role) => role.code)
-          : system.allowedRoles;
-      for (const roleCode of roleCodes) {
+      for (const roleCode of system.allowedRoles) {
         const roleSystems = systemsByRole.get(roleCode) || [];
         roleSystems.push(system.code);
         systemsByRole.set(roleCode, roleSystems);

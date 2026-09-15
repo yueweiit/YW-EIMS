@@ -46,7 +46,6 @@ const defaultForm: CreateExternalSystemParams = {
   entryUrl: '',
   ssoStartUrl: '',
   authMode: 'link',
-  accessMode: 'roles',
   allowedRoles: [],
   category: $t('page.ui.businessSystem'),
   helpUrl: '',
@@ -85,10 +84,6 @@ const authModeOptions = computed(() => [
   { label: $t('page.ui.ordinaryEntryDescription'), value: 'link' },
   { label: $t('page.ui.oauthBindingDescription'), value: 'oauth2' }
 ]);
-const accessModeOptions = computed(() => [
-  { label: $t('page.ui.roleAccess'), value: 'roles' },
-  { label: $t('page.ui.allLoggedInUsers'), value: 'all' }
-]);
 const statusOptions = computed(() => [
   { label: $t('page.ui.enabled'), value: '1' },
   { label: $t('page.ui.disabled'), value: '2' }
@@ -119,9 +114,7 @@ const columns = computed<DataTableColumns<ExternalSystemRecord>>(() => [
     title: $t('page.ui.allowedRoles'),
     minWidth: 190,
     render: row =>
-      row.accessMode === 'all'
-        ? $t('page.ui.allLoggedInUsers')
-        : row.allowedRoles.length
+      row.allowedRoles.length
         ? h(
             NSpace,
             { wrap: true, size: [4, 4] },
@@ -232,7 +225,6 @@ function handleEdit(row: ExternalSystemRecord) {
     entryUrl: row.entryUrl,
     ssoStartUrl: row.ssoStartUrl || '',
     authMode: row.authMode,
-    accessMode: row.accessMode,
     allowedRoles: [...row.allowedRoles],
     category: row.category,
     helpUrl: row.helpUrl || '',
@@ -283,7 +275,7 @@ async function handleSubmit() {
     return;
   }
 
-  const allowedRoles = formModel.accessMode === 'roles' ? [...(formModel.allowedRoles || [])] : [];
+  const allowedRoles = [...(formModel.allowedRoles || [])];
   startLoading();
   try {
     if (drawerType.value === 'add') {
@@ -309,7 +301,6 @@ async function handleSubmit() {
         entryUrl: formModel.entryUrl.trim(),
         ssoStartUrl: formModel.ssoStartUrl?.trim() || null,
         authMode: formModel.authMode,
-        accessMode: formModel.accessMode,
         allowedRoles,
         category: formModel.category,
         helpUrl: formModel.helpUrl,
@@ -434,12 +425,6 @@ void getData();
           <NFormItem :label="$t('page.ui.loginMode')">
             <NSelect v-model:value="formModel.authMode" :options="authModeOptions" />
           </NFormItem>
-          <NFormItem :label="$t('page.ui.accessPolicy')">
-            <NSelect v-model:value="formModel.accessMode" :options="accessModeOptions" />
-          </NFormItem>
-          <NAlert v-if="formModel.accessMode === 'all'" type="warning" :bordered="false" class="mb-16px">
-            {{ $t('page.ui.allUsersAccessNotice') }}
-          </NAlert>
           <NFormItem v-if="formModel.authMode === 'oauth2'" :label="$t('page.ui.oauthClient')" required>
             <NSelect
               v-model:value="formModel.oauthClientId"
@@ -449,7 +434,7 @@ void getData();
               :placeholder="$t('page.ui.oauthAppSelect')"
             />
           </NFormItem>
-          <NFormItem v-if="formModel.accessMode === 'roles'" :label="$t('page.ui.allowedRoles')">
+          <NFormItem :label="$t('page.ui.allowedRoles')">
             <NSelect
               v-model:value="formModel.allowedRoles"
               :options="roleOptions"
