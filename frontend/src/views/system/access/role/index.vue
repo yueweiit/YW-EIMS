@@ -67,14 +67,41 @@ const permissionModuleDefinitions = [
   { key: 'system', prefix: 'eims:system:', labelKey: 'page.ui.permissionModuleSystem' }
 ] as const;
 
+function getPermissionSubmoduleCode(permission: PermissionRecord) {
+  if (permission.type === 'menu') return permission.code;
+  if (permission.parentCode) return permission.parentCode;
+
+  const segments = permission.code.split(':');
+  return segments.length > 1 ? segments.slice(0, -1).join(':') : permission.code;
+}
+
+function buildPermissionSubmodule(key: string, permissions: PermissionRecord[]) {
+  const menu = permissions.find(permission => permission.type === 'menu');
+
+  return {
+    key,
+    label: menu?.name || permissions[0]?.name || key,
+    permissions,
+    menu: permissions.filter(permission => permission.type === 'menu'),
+    button: permissions.filter(permission => permission.type === 'button'),
+    api: permissions.filter(permission => permission.type === 'api')
+  };
+}
+
 function buildPermissionGroup(key: string, label: string, permissions: PermissionRecord[]) {
   return {
     key,
     label,
     permissions,
-    menu: permissions.filter(permission => permission.type === 'menu'),
-    button: permissions.filter(permission => permission.type === 'button'),
-    api: permissions.filter(permission => permission.type === 'api')
+    submodules: Array.from(
+      permissions.reduce((groups, permission) => {
+        const submoduleCode = getPermissionSubmoduleCode(permission);
+        const submodulePermissions = groups.get(submoduleCode) || [];
+        submodulePermissions.push(permission);
+        groups.set(submoduleCode, submodulePermissions);
+        return groups;
+      }, new Map<string, PermissionRecord[]>())
+    ).map(([submoduleCode, submodulePermissions]) => buildPermissionSubmodule(submoduleCode, submodulePermissions))
   };
 }
 
@@ -429,37 +456,46 @@ void getData();
                   </div>
                 </template>
 
-                <div v-if="group.menu.length" class="permission-category">
-                  <div class="permission-category-title">{{ $t('page.ui.menuPermissions') }}</div>
-                  <NGrid :cols="2" :x-gap="16" :y-gap="8">
-                    <NGi v-for="permission in group.menu" :key="permission.code">
-                      <NCheckbox :checked="permissionChecked(permission.code)" @update:checked="value => togglePermission(permission.code, value)">
-                        {{ permission.name }}
-                      </NCheckbox>
-                    </NGi>
-                  </NGrid>
-                </div>
+                <div class="permission-submodule-list">
+                  <div v-for="submodule in group.submodules" :key="submodule.key" class="permission-submodule">
+                    <div class="permission-submodule-heading">
+                      <span class="permission-submodule-title">{{ submodule.label }}</span>
+                      <NTag size="small" :bordered="false">{{ submodule.permissions.length }}</NTag>
+                    </div>
 
-                <div v-if="group.button.length" class="permission-category">
-                  <div class="permission-category-title">{{ $t('page.ui.buttonPermissions') }}</div>
-                  <NGrid :cols="2" :x-gap="16" :y-gap="8">
-                    <NGi v-for="permission in group.button" :key="permission.code">
-                      <NCheckbox :checked="permissionChecked(permission.code)" @update:checked="value => togglePermission(permission.code, value)">
-                        {{ permission.name }}
-                      </NCheckbox>
-                    </NGi>
-                  </NGrid>
-                </div>
+                    <div v-if="submodule.menu.length" class="permission-category">
+                      <div class="permission-category-title">{{ $t('page.ui.menuPermissions') }}</div>
+                      <NGrid :cols="2" :x-gap="12" :y-gap="8">
+                        <NGi v-for="permission in submodule.menu" :key="permission.code">
+                          <NCheckbox :checked="permissionChecked(permission.code)" @update:checked="value => togglePermission(permission.code, value)">
+                            {{ permission.name }}
+                          </NCheckbox>
+                        </NGi>
+                      </NGrid>
+                    </div>
 
-                <div v-if="group.api.length" class="permission-category">
-                  <div class="permission-category-title">{{ $t('page.ui.apiPermissions') }}</div>
-                  <NGrid :cols="2" :x-gap="16" :y-gap="8">
-                    <NGi v-for="permission in group.api" :key="permission.code">
-                      <NCheckbox :checked="permissionChecked(permission.code)" @update:checked="value => togglePermission(permission.code, value)">
-                        {{ permission.name }}
-                      </NCheckbox>
-                    </NGi>
-                  </NGrid>
+                    <div v-if="submodule.button.length" class="permission-category">
+                      <div class="permission-category-title">{{ $t('page.ui.buttonPermissions') }}</div>
+                      <NGrid :cols="2" :x-gap="12" :y-gap="8">
+                        <NGi v-for="permission in submodule.button" :key="permission.code">
+                          <NCheckbox :checked="permissionChecked(permission.code)" @update:checked="value => togglePermission(permission.code, value)">
+                            {{ permission.name }}
+                          </NCheckbox>
+                        </NGi>
+                      </NGrid>
+                    </div>
+
+                    <div v-if="submodule.api.length" class="permission-category">
+                      <div class="permission-category-title">{{ $t('page.ui.apiPermissions') }}</div>
+                      <NGrid :cols="2" :x-gap="12" :y-gap="8">
+                        <NGi v-for="permission in submodule.api" :key="permission.code">
+                          <NCheckbox :checked="permissionChecked(permission.code)" @update:checked="value => togglePermission(permission.code, value)">
+                            {{ permission.name }}
+                          </NCheckbox>
+                        </NGi>
+                      </NGrid>
+                    </div>
+                  </div>
                 </div>
               </NCard>
             </div>
@@ -516,6 +552,37 @@ void getData();
   padding: 12px 14px 14px;
 }
 
+.permission-submodule-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.permission-submodule {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--n-divider-color);
+  border-radius: 8px;
+  background: var(--n-color-embedded);
+}
+
+.permission-submodule-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.permission-submodule-title {
+  overflow: hidden;
+  color: var(--n-text-color);
+  font-size: 13px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .permission-module-heading {
   color: var(--n-text-color);
   font-size: 14px;
@@ -533,5 +600,11 @@ void getData();
   color: var(--n-text-color-2);
   font-size: 12px;
   font-weight: 600;
+}
+
+@media (max-width: 720px) {
+  .permission-submodule-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 </style>

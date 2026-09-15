@@ -540,7 +540,7 @@ const local: App.I18n.Schema = {
       buttonPermissions: '按钮权限',
       apiPermissions: '接口权限',
       functionPermissions: '功能权限',
-      permissionModuleNotice: '按业务模块分组管理菜单、按钮和接口权限',
+      permissionModuleNotice: '按业务模块和子模块分组管理菜单、按钮和接口权限',
       permissionModuleMaterial: '物料管理',
       permissionModuleMold: '模具与产品',
       permissionModuleOa: 'OA 业务',

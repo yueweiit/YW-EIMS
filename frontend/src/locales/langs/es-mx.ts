@@ -538,7 +538,7 @@ const local: App.I18n.Schema = {
       buttonPermissions: 'Permisos de botones',
       apiPermissions: 'Permisos de API',
       functionPermissions: 'Permisos funcionales',
-      permissionModuleNotice: 'Administra los permisos de menú, botones y API por módulo de negocio',
+      permissionModuleNotice: 'Administra los permisos de menú, botones y API por módulo y submódulo de negocio',
       permissionModuleMaterial: 'Materiales',
       permissionModuleMold: 'Moldes y productos',
       permissionModuleOa: 'Negocio OA',

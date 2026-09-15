@@ -544,7 +544,7 @@ const local: App.I18n.Schema = {
       buttonPermissions: 'Button permissions',
       apiPermissions: 'API permissions',
       functionPermissions: 'Function permissions',
-      permissionModuleNotice: 'Manage menu, button, and API permissions by business module',
+      permissionModuleNotice: 'Manage menu, button, and API permissions by business module and submodule',
       permissionModuleMaterial: 'Materials',
       permissionModuleMold: 'Molds & products',
       permissionModuleOa: 'OA business',
