@@ -6,7 +6,11 @@ import { OAuth2BindingService } from './oauth2-binding.service';
 describe('OAuth2BindingService conflicts', () => {
   let service: OAuth2BindingService;
   const prisma = {
-    user: { findUnique: jest.fn() },
+    user: {
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+      count: jest.fn(),
+    },
     oauth2Client: { findUnique: jest.fn() },
     oauth2UserBinding: {
       findUnique: jest.fn(),
@@ -32,6 +36,69 @@ describe('OAuth2BindingService conflicts', () => {
       ],
     }).compile();
     service = module.get(OAuth2BindingService);
+  });
+
+  it('groups every application binding under its EIMS user', async () => {
+    prisma.user.findMany.mockResolvedValue([
+      {
+        id: 7,
+        userName: 'zhangsan',
+        realName: '张三',
+        status: '1',
+        oauth2UserBindings: [binding],
+      },
+    ]);
+    prisma.user.count.mockResolvedValue(1);
+
+    await expect(
+      service.findUserPage({
+        current: 1,
+        size: 10,
+        keyword: '张三',
+        clientId: 'erp',
+      }),
+    ).resolves.toEqual({
+      records: [
+        {
+          id: 7,
+          userName: 'zhangsan',
+          realName: '张三',
+          status: '1',
+          bindings: [binding],
+        },
+      ],
+      total: 1,
+      current: 1,
+      size: 10,
+    });
+    expect(prisma.user.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          OR: [
+            {
+              userName: {
+                contains: '张三',
+                mode: 'insensitive',
+              },
+            },
+            {
+              realName: {
+                contains: '张三',
+                mode: 'insensitive',
+              },
+            },
+          ],
+          oauth2UserBindings: {
+            some: {
+              clientId: {
+                contains: 'erp',
+                mode: 'insensitive',
+              },
+            },
+          },
+        },
+      }),
+    );
   });
 
   it('directs duplicate user/application bindings to editing without overwriting', async () => {

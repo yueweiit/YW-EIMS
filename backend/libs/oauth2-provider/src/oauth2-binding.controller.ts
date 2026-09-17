@@ -13,6 +13,7 @@ import { AdminGuard } from '@eims/auth';
 import { PermissionGuard, RequirePermission } from '@eims/roles';
 import { OAuth2BindingService } from './oauth2-binding.service';
 import { CreateBindingDto } from './dto/create-binding.dto';
+import { QueryBindingUserDto } from './dto/query-binding-user.dto';
 import { UpdateBindingDto } from './dto/update-binding.dto';
 
 @Controller('oauth2/bindings')
@@ -20,6 +21,11 @@ import { UpdateBindingDto } from './dto/update-binding.dto';
 @RequirePermission('eims:system:oauth2-binding')
 export class OAuth2BindingController {
   constructor(private readonly bindingService: OAuth2BindingService) {}
+
+  @Get('users')
+  async findUserPage(@Query() query: QueryBindingUserDto) {
+    return this.bindingService.findUserPage(query);
+  }
 
   @Get()
   async findPage(

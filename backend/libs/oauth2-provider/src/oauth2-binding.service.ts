@@ -8,6 +8,7 @@ import {
 import { PrismaService } from '@eims/database';
 import { Prisma } from '@prisma/client';
 import { CreateBindingDto } from './dto/create-binding.dto';
+import { QueryBindingUserDto } from './dto/query-binding-user.dto';
 import { UpdateBindingDto } from './dto/update-binding.dto';
 
 const EXISTING_BINDING_MESSAGE =
@@ -20,6 +21,69 @@ export class OAuth2BindingService {
   private readonly logger = new Logger(OAuth2BindingService.name);
 
   constructor(private readonly prisma: PrismaService) {}
+
+  /** 按 EIMS 用户分页汇总其全部业务系统账号绑定。 */
+  async findUserPage(query: QueryBindingUserDto) {
+    const current = query.current ?? 1;
+    const size = query.size ?? 10;
+    const keyword = query.keyword?.trim();
+    const clientId = query.clientId?.trim();
+    const where: Prisma.UserWhereInput = {};
+
+    if (keyword) {
+      where.OR = [
+        { userName: { contains: keyword, mode: 'insensitive' } },
+        { realName: { contains: keyword, mode: 'insensitive' } },
+      ];
+    }
+    if (clientId) {
+      where.oauth2UserBindings = {
+        some: { clientId: { contains: clientId, mode: 'insensitive' } },
+      };
+    }
+
+    const [users, total] = await Promise.all([
+      this.prisma.user.findMany({
+        where,
+        select: {
+          id: true,
+          userName: true,
+          realName: true,
+          status: true,
+          oauth2UserBindings: {
+            select: {
+              id: true,
+              ssoUserId: true,
+              clientId: true,
+              appUserId: true,
+              appUsername: true,
+              createdAt: true,
+              updatedAt: true,
+              client: {
+                select: {
+                  clientId: true,
+                  name: true,
+                  status: true,
+                },
+              },
+            },
+            orderBy: { createdAt: 'asc' },
+          },
+        },
+        skip: (current - 1) * size,
+        take: size,
+        orderBy: { userName: 'asc' },
+      }),
+      this.prisma.user.count({ where }),
+    ]);
+
+    const records = users.map(({ oauth2UserBindings, ...user }) => ({
+      ...user,
+      bindings: oauth2UserBindings,
+    }));
+
+    return { records, total, current, size };
+  }
 
   /**
    * 分页查询绑定列表

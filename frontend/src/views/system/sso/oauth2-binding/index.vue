@@ -1,13 +1,10 @@
 <script setup lang="ts">
 import { computed, h, reactive, ref } from 'vue';
 import type { DataTableColumns } from 'naive-ui';
-import { NButton, NCard, NDataTable, NPopconfirm, NSpace, NPagination } from 'naive-ui';
+import { NButton, NDataTable, NPagination, NSpace, NTag } from 'naive-ui';
 import { useLoading } from '@sa/hooks';
-import {
-  fetchDeleteOAuth2Binding,
-  fetchOAuth2BindingPage
-} from '@/service/api';
-import type { OAuth2BindingRecord } from '@/service/api/oauth2-binding';
+import { fetchOAuth2BindingUserPage } from '@/service/api';
+import type { OAuth2BindingRecord, OAuth2BindingUserRecord } from '@/service/api/oauth2-binding';
 import { $t } from '@/locales';
 import OAuth2BindingOperateDrawer from './modules/oauth2-binding-operate-drawer.vue';
 import OAuth2BindingSearch from './modules/oauth2-binding-search.vue';
@@ -18,19 +15,25 @@ defineOptions({
 
 const { loading, startLoading, endLoading } = useLoading(false);
 
-const tableData = ref<OAuth2BindingRecord[]>([]);
+const tableData = ref<OAuth2BindingUserRecord[]>([]);
 const queryParams = reactive({
   current: 1,
   size: 10,
-  ssoUserId: undefined as number | undefined,
+  keyword: undefined as string | undefined,
   clientId: undefined as string | undefined
 });
 const total = ref(0);
 
 const drawerVisible = ref(false);
-const editRow = ref<OAuth2BindingRecord | null>(null);
+const selectedUser = ref<OAuth2BindingUserRecord | null>(null);
 
-const columns = computed<DataTableColumns<OAuth2BindingRecord>>(() => [
+function getBindingLabel(binding: OAuth2BindingRecord) {
+  const clientName = binding.client?.name || binding.clientId;
+  const accountName = binding.appUsername || binding.appUserId;
+  return `${clientName} · ${accountName}`;
+}
+
+const columns = computed<DataTableColumns<OAuth2BindingUserRecord>>(() => [
   {
     key: 'index',
     title: $t('common.index'),
@@ -41,72 +44,71 @@ const columns = computed<DataTableColumns<OAuth2BindingRecord>>(() => [
   {
     key: 'ssoUser',
     title: $t('page.ui.ssoUser'),
-    minWidth: 150,
-    render: row => {
-      const user = row.ssoUser;
-      if (!user) return '-';
-      return h('span', {}, `${user.realName || user.userName} (${user.userName})`);
-    }
+    minWidth: 190,
+    render: row =>
+      h('div', { class: 'binding-user-cell' }, [
+        h('div', { class: 'binding-user-cell__name' }, row.realName || row.userName),
+        h('div', { class: 'binding-user-cell__account' }, row.userName)
+      ])
   },
   {
-    key: 'client',
-    title: $t('page.ui.oauthClient'),
-    minWidth: 150,
-    render: row => {
-      const client = row.client;
-      if (!client) return row.clientId;
-      return h('span', {}, `${client.name} (${client.clientId})`);
-    }
+    key: 'bindings',
+    title: $t('page.ui.boundApplications'),
+    minWidth: 360,
+    render: row =>
+      row.bindings.length
+        ? h(
+            NSpace,
+            { wrap: true, size: [6, 6] },
+            {
+              default: () =>
+                row.bindings.map(binding =>
+                  h(
+                    NTag,
+                    {
+                      key: binding.id,
+                      size: 'small',
+                      type: 'success',
+                      bordered: false,
+                      class: 'binding-application-tag'
+                    },
+                    { default: () => getBindingLabel(binding) }
+                  )
+                )
+            }
+          )
+        : h(NTag, { size: 'small', bordered: false }, { default: () => $t('page.ui.noBindings') })
   },
   {
-    key: 'appUserId',
-    title: $t('page.ui.businessUserId'),
-    width: 130,
-    align: 'center'
+    key: 'bindingCount',
+    title: $t('page.ui.bindingCount'),
+    width: 100,
+    align: 'center',
+    render: row => row.bindings.length
   },
   {
-    key: 'appUsername',
-    title: $t('page.ui.businessUsername'),
-    minWidth: 130,
-    render: row => row.appUsername || '-'
-  },
-  {
-    key: 'createdAt',
-    title: $t('page.ui.createdAt'),
-    minWidth: 170
+    key: 'status',
+    title: $t('page.ui.status'),
+    width: 90,
+    align: 'center',
+    render: row =>
+      h(
+        NTag,
+        { size: 'small', type: row.status === '1' ? 'success' : 'warning', bordered: false },
+        { default: () => (row.status === '1' ? $t('page.ui.enabled') : $t('page.ui.disabled')) }
+      )
   },
   {
     key: 'operate',
     title: $t('common.operate'),
-    width: 160,
+    width: 130,
     fixed: 'right',
     align: 'center',
     render: row =>
       h(
-        NSpace,
-        { justify: 'center', size: [8, 0] },
-        {
-          default: () => [
-            h(
-              NButton,
-              { size: 'small', type: 'primary', ghost: true, onClick: () => handleEdit(row) },
-              { default: () => $t('common.edit') }
-            ),
-            h(
-              NPopconfirm,
-              { onPositiveClick: () => handleDelete(row) },
-              {
-                trigger: () =>
-                  h(
-                    NButton,
-                    { size: 'small', type: 'error', ghost: true },
-                    { default: () => $t('page.ui.unbind') }
-                  ),
-                default: () => $t('page.ui.confirmUnbind')
-              }
-            )
-          ]
-        }
+        NButton,
+        { size: 'small', type: 'primary', ghost: true, onClick: () => handleManage(row) },
+        { default: () => $t('page.ui.manageBindings') }
       )
   }
 ]);
@@ -114,7 +116,7 @@ const columns = computed<DataTableColumns<OAuth2BindingRecord>>(() => [
 async function getData() {
   startLoading();
   try {
-    const { data, error } = await fetchOAuth2BindingPage({ ...queryParams });
+    const { data, error } = await fetchOAuth2BindingUserPage({ ...queryParams });
     if (!error && data) {
       tableData.value = data.records;
       total.value = data.total;
@@ -132,28 +134,15 @@ function handleSearch() {
 }
 
 function handleReset() {
-  queryParams.ssoUserId = undefined;
+  queryParams.keyword = undefined;
   queryParams.clientId = undefined;
   queryParams.current = 1;
   void getData();
 }
 
-function handleAdd() {
-  editRow.value = null;
+function handleManage(row: OAuth2BindingUserRecord) {
+  selectedUser.value = row;
   drawerVisible.value = true;
-}
-
-function handleEdit(row: OAuth2BindingRecord) {
-  editRow.value = row;
-  drawerVisible.value = true;
-}
-
-async function handleDelete(row: OAuth2BindingRecord) {
-  const { error } = await fetchDeleteOAuth2Binding(row.id);
-  if (!error) {
-    window.$message?.success($t('page.ui.unbindSuccess'));
-    void getData();
-  }
 }
 
 function handlePageChange(page: number) {
@@ -173,13 +162,13 @@ void getData();
 <template>
   <NSpace vertical :size="16">
     <NCard :bordered="false">
-      <NSpace justify="space-between" align="center" wrap>
-        <OAuth2BindingSearch v-model="queryParams" @search="handleSearch" @reset="handleReset" />
-        <NButton type="primary" @click="handleAdd">{{ $t('page.ui.newBinding') }}</NButton>
-      </NSpace>
+      <OAuth2BindingSearch v-model="queryParams" @search="handleSearch" @reset="handleReset" />
     </NCard>
 
     <NCard :bordered="false">
+      <NAlert type="info" :bordered="false" class="mb-16px">
+        {{ $t('page.ui.bindingGroupNotice') }}
+      </NAlert>
       <NDataTable
         :columns="columns"
         :data="tableData"
@@ -204,10 +193,42 @@ void getData();
 
     <OAuth2BindingOperateDrawer
       v-model:visible="drawerVisible"
-      :row-data="editRow"
+      :user="selectedUser"
       @submitted="getData"
     />
   </NSpace>
 </template>
 
-<style scoped></style>
+<style scoped>
+.binding-user-cell {
+  min-width: 0;
+}
+
+.binding-user-cell__name {
+  overflow: hidden;
+  color: var(--n-text-color);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.binding-user-cell__account {
+  margin-top: 3px;
+  overflow: hidden;
+  color: var(--n-text-color-3);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.binding-application-tag {
+  max-width: 260px;
+}
+
+.binding-application-tag :deep(.n-tag__content) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+</style>

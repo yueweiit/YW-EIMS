@@ -9,7 +9,7 @@ interface Props {
   modelValue: {
     current: number;
     size: number;
-    ssoUserId?: number;
+    keyword?: string;
     clientId?: string;
   };
 }
@@ -29,7 +29,7 @@ function updateField(key: string, value: unknown) {
 function handleReset() {
   emit('update:modelValue', {
     ...props.modelValue,
-    ssoUserId: undefined,
+    keyword: undefined,
     clientId: undefined
   });
   emit('reset');
@@ -38,6 +38,14 @@ function handleReset() {
 
 <template>
   <NSpace :size="16" wrap>
+    <NInput
+      :value="modelValue.keyword"
+      :placeholder="$t('page.ui.bindingUserSearchPlaceholder')"
+      clearable
+      style="width: 220px"
+      @update:value="val => updateField('keyword', val)"
+      @keyup.enter="emit('search')"
+    />
     <NInput
       :value="modelValue.clientId"
       :placeholder="$t('page.ui.oauthClientId')"

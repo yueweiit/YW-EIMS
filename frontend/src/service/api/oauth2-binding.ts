@@ -16,7 +16,30 @@ export interface OAuth2BindingRecord {
   client?: {
     clientId: string;
     name: string;
+    status?: string;
   };
+}
+
+export interface OAuth2BindingUserRecord {
+  id: number;
+  userName: string;
+  realName?: string | null;
+  status: Api.Common.EnableStatus;
+  bindings: OAuth2BindingRecord[];
+}
+
+export interface OAuth2BindingUserPageParams {
+  current: number;
+  size: number;
+  keyword?: string;
+  clientId?: string;
+}
+
+export interface OAuth2BindingUserPageData {
+  records: OAuth2BindingUserRecord[];
+  total: number;
+  current: number;
+  size: number;
 }
 
 export interface OAuth2BindingPageParams {
@@ -58,6 +81,15 @@ export interface OAuth2AuthorizeRequest {
   transactionId: string;
   clientName: string;
   scopes: string[];
+}
+
+/** Get EIMS users with all of their application account bindings. */
+export function fetchOAuth2BindingUserPage(params: OAuth2BindingUserPageParams) {
+  return request<OAuth2BindingUserPageData>({
+    url: '/oauth2/bindings/users',
+    method: 'get',
+    params
+  });
 }
 
 /** Get binding list */
