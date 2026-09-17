@@ -85,6 +85,13 @@ export class OAuth2ClientService {
           createTime: true,
           updateBy: true,
           updateTime: true,
+          externalSystem: {
+            select: {
+              code: true,
+              name: true,
+              authMode: true,
+            },
+          },
         },
         skip: (current - 1) * size,
         take: size,

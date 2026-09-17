@@ -192,10 +192,13 @@ export class ExternalSystemService {
     if (!existing) throw new NotFoundException('外部系统不存在');
 
     const authMode = dto.authMode ?? existing.authMode;
-    const oauthClientId =
+    const requestedOauthClientId =
       dto.oauthClientId === undefined
         ? existing.oauthClientId
         : this.normalizeOptionalText(dto.oauthClientId);
+    // 普通入口不应继续持有 OAuth2 应用关联，否则管理页面和历史绑定会
+    // 把它误认为仍是 OAuth2 系统。保留 OAuth2 应用及绑定记录，切回时可恢复。
+    const oauthClientId = authMode === 'oauth2' ? requestedOauthClientId : null;
     await this.validateOauthClient(authMode, oauthClientId);
 
     const data: Prisma.ExternalSystemUncheckedUpdateInput = {
@@ -243,7 +246,7 @@ export class ExternalSystemService {
     if (dto.contact !== undefined) {
       data.contact = this.normalizeOptionalText(dto.contact);
     }
-    if (dto.oauthClientId !== undefined) data.oauthClientId = oauthClientId;
+    data.oauthClientId = oauthClientId;
     if (dto.sort !== undefined) data.sort = dto.sort;
     if (dto.status !== undefined) data.status = dto.status;
 
@@ -447,7 +450,9 @@ export class ExternalSystemService {
 
   private async prepareCreateData(dto: CreateExternalSystemDto) {
     const authMode = dto.authMode || 'link';
-    const oauthClientId = this.normalizeOptionalText(dto.oauthClientId);
+    const requestedOauthClientId = this.normalizeOptionalText(dto.oauthClientId);
+    const oauthClientId =
+      authMode === 'oauth2' ? requestedOauthClientId : null;
     await this.validateOauthClient(authMode, oauthClientId);
     const allowedRoles = await this.roleService.validateAssignableRoleCodes(
       this.normalizeRoles(dto.allowedRoles),

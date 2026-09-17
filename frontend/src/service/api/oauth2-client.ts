@@ -14,6 +14,11 @@ export interface OAuth2ClientRecord {
   createTime: string;
   updateBy?: string;
   updateTime: string;
+  externalSystem?: {
+    code: string;
+    name: string;
+    authMode: string;
+  } | null;
 }
 
 export interface OAuth2ClientPageParams {

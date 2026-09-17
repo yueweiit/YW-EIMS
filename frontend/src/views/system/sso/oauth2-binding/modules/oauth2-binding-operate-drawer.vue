@@ -86,25 +86,10 @@ async function loadData() {
     if (bindingResult.error || clientResult.error) return;
 
     const bindings = bindingResult.data?.records || [];
-    const clients = [...(clientResult.data?.records || [])];
+    const clients = (clientResult.data?.records || []).filter(
+      client => client.externalSystem?.authMode === 'oauth2'
+    );
     const bindingMap = new Map(bindings.map(binding => [binding.clientId, binding]));
-    const knownClientIds = new Set(clients.map(client => client.clientId));
-
-    bindings.forEach(binding => {
-      if (!knownClientIds.has(binding.clientId)) {
-        clients.push({
-          id: -binding.id,
-          clientId: binding.clientId,
-          name: binding.client?.name || binding.clientId,
-          redirectUris: [],
-          scopes: [],
-          pkceRequired: true,
-          status: binding.client?.status || '2',
-          createTime: binding.createdAt,
-          updateTime: binding.updatedAt
-        });
-      }
-    });
 
     editors.value = clients
       .map(client => createEditor(client, bindingMap.get(client.clientId)))

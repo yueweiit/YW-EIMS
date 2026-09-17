@@ -38,7 +38,10 @@ export class OAuth2BindingService {
     }
     if (clientId) {
       where.oauth2UserBindings = {
-        some: { clientId: { contains: clientId, mode: 'insensitive' } },
+        some: {
+          clientId: { contains: clientId, mode: 'insensitive' },
+          client: { externalSystem: { is: { authMode: 'oauth2' } } },
+        },
       };
     }
 
@@ -51,6 +54,9 @@ export class OAuth2BindingService {
           realName: true,
           status: true,
           oauth2UserBindings: {
+            where: {
+              client: { externalSystem: { is: { authMode: 'oauth2' } } },
+            },
             select: {
               id: true,
               ssoUserId: true,
@@ -94,7 +100,9 @@ export class OAuth2BindingService {
     ssoUserId?: number,
     clientId?: string,
   ) {
-    const where: Record<string, unknown> = {};
+    const where: Prisma.Oauth2UserBindingWhereInput = {
+      client: { externalSystem: { is: { authMode: 'oauth2' } } },
+    };
     if (ssoUserId) where.ssoUserId = ssoUserId;
     if (clientId) where.clientId = clientId;
 
@@ -151,10 +159,19 @@ export class OAuth2BindingService {
     // 验证 OAuth2 Client 存在
     const client = await this.prisma.oauth2Client.findUnique({
       where: { clientId: dto.clientId },
-      select: { clientId: true, name: true, status: true },
+      select: {
+        clientId: true,
+        name: true,
+        status: true,
+        externalSystem: { select: { authMode: true } },
+      },
     });
-    if (!client || client.status !== '1') {
-      throw new NotFoundException('OAuth2 应用不存在');
+    if (
+      !client ||
+      client.status !== '1' ||
+      client.externalSystem?.authMode !== 'oauth2'
+    ) {
+      throw new NotFoundException('OAuth2 应用不存在或未配置为 OAuth2 外部系统');
     }
 
     // 检查是否已绑定

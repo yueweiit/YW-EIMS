@@ -27,6 +27,7 @@ describe('OAuth2BindingService conflicts', () => {
     prisma.oauth2Client.findUnique.mockResolvedValue({
       clientId: 'erp',
       status: '1',
+      externalSystem: { authMode: 'oauth2' },
     });
     prisma.oauth2UserBinding.findUnique.mockResolvedValue(null);
     const module = await Test.createTestingModule({
@@ -94,6 +95,11 @@ describe('OAuth2BindingService conflicts', () => {
                 contains: 'erp',
                 mode: 'insensitive',
               },
+              client: {
+                externalSystem: {
+                  is: { authMode: 'oauth2' },
+                },
+              },
             },
           },
         },
@@ -121,6 +127,21 @@ describe('OAuth2BindingService conflicts', () => {
       status: 409,
       message: expect.stringContaining('其他SSO用户'),
     });
+    expect(prisma.oauth2UserBinding.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects binding an application that is not configured for an OAuth2 system', async () => {
+    prisma.oauth2Client.findUnique.mockResolvedValueOnce({
+      clientId: 'erp',
+      status: '1',
+      externalSystem: { authMode: 'link' },
+    });
+
+    await expect(service.create(dto)).rejects.toMatchObject({
+      status: 404,
+      message: expect.stringContaining('OAuth2 外部系统'),
+    });
+    expect(prisma.oauth2UserBinding.findUnique).not.toHaveBeenCalled();
     expect(prisma.oauth2UserBinding.create).not.toHaveBeenCalled();
   });
 
