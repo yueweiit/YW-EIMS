@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, h, reactive, ref } from 'vue';
 import type { DataTableColumns } from 'naive-ui';
-import { NButton, NDataTable, NPagination, NSpace, NTag } from 'naive-ui';
+import { NButton, NDataTable, NModal, NPagination, NSelect, NSpace, NTag } from 'naive-ui';
 import { useLoading } from '@sa/hooks';
 import { fetchOAuth2BindingUserPage } from '@/service/api';
 import type { OAuth2BindingRecord, OAuth2BindingUserRecord } from '@/service/api/oauth2-binding';
@@ -26,6 +26,18 @@ const total = ref(0);
 
 const drawerVisible = ref(false);
 const selectedUser = ref<OAuth2BindingUserRecord | null>(null);
+const userPickerVisible = ref(false);
+const userPickerLoading = ref(false);
+const userPickerId = ref<number | null>(null);
+const userPickerKeyword = ref<string | undefined>();
+const userPickerUsers = ref<OAuth2BindingUserRecord[]>([]);
+
+const userPickerOptions = computed(() =>
+  userPickerUsers.value.map(user => ({
+    label: user.realName ? `${user.realName} (${user.userName})` : user.userName,
+    value: user.id
+  }))
+);
 
 function getBindingLabel(binding: OAuth2BindingRecord) {
   const clientName = binding.client?.name || binding.clientId;
@@ -140,6 +152,48 @@ function handleReset() {
   void getData();
 }
 
+async function loadUserPickerUsers(keyword?: string) {
+  userPickerLoading.value = true;
+  try {
+    const { data, error } = await fetchOAuth2BindingUserPage({ current: 1, size: 100, keyword });
+    if (!error && data) {
+      userPickerUsers.value = data.records;
+    }
+  } finally {
+    userPickerLoading.value = false;
+  }
+}
+
+function handleAdd() {
+  userPickerId.value = null;
+  userPickerKeyword.value = undefined;
+  userPickerUsers.value = [];
+  userPickerVisible.value = true;
+  void loadUserPickerUsers();
+}
+
+function handleUserPickerSearch(keyword: string) {
+  userPickerKeyword.value = keyword.trim() || undefined;
+  void loadUserPickerUsers(userPickerKeyword.value);
+}
+
+function handleConfirmAdd() {
+  if (userPickerId.value === null) {
+    window.$message?.warning($t('page.ui.selectEimsUserRequired'));
+    return;
+  }
+
+  const user = userPickerUsers.value.find(item => item.id === userPickerId.value);
+  if (!user) {
+    window.$message?.warning($t('page.ui.selectEimsUserRequired'));
+    return;
+  }
+
+  selectedUser.value = user;
+  userPickerVisible.value = false;
+  drawerVisible.value = true;
+}
+
 function handleManage(row: OAuth2BindingUserRecord) {
   selectedUser.value = row;
   drawerVisible.value = true;
@@ -162,7 +216,12 @@ void getData();
 <template>
   <NSpace vertical :size="16">
     <NCard :bordered="false">
-      <OAuth2BindingSearch v-model="queryParams" @search="handleSearch" @reset="handleReset" />
+      <NSpace justify="space-between" align="center" wrap>
+        <OAuth2BindingSearch v-model="queryParams" @search="handleSearch" @reset="handleReset" />
+        <NButton type="primary" @click="handleAdd">
+          {{ $t('page.ui.newUserBinding') }}
+        </NButton>
+      </NSpace>
     </NCard>
 
     <NCard :bordered="false">
@@ -190,6 +249,34 @@ void getData();
         />
       </div>
     </NCard>
+
+    <NModal
+      v-model:show="userPickerVisible"
+      preset="card"
+      :title="$t('page.ui.newUserBinding')"
+      :mask-closable="false"
+      style="width: min(520px, calc(100vw - 32px))"
+    >
+      <NAlert type="info" :bordered="false" class="mb-16px">
+        {{ $t('page.ui.newUserBindingHint') }}
+      </NAlert>
+      <NSelect
+        v-model:value="userPickerId"
+        :options="userPickerOptions"
+        :loading="userPickerLoading"
+        filterable
+        remote
+        clearable
+        :placeholder="$t('page.ui.selectEimsUser')"
+        @search="handleUserPickerSearch"
+      />
+      <template #footer>
+        <NSpace justify="end">
+          <NButton @click="userPickerVisible = false">{{ $t('common.cancel') }}</NButton>
+          <NButton type="primary" @click="handleConfirmAdd">{{ $t('common.confirm') }}</NButton>
+        </NSpace>
+      </template>
+    </NModal>
 
     <OAuth2BindingOperateDrawer
       v-model:visible="drawerVisible"

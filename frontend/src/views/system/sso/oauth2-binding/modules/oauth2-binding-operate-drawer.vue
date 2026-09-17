@@ -372,7 +372,12 @@ async function handleDelete(editor: BindingEditor) {
   padding: 14px 14px 12px 17px;
   border: 1px solid var(--n-divider-color);
   border-radius: 10px;
-  background: var(--n-color);
+  background: var(--eims-surface);
+  box-shadow: 0 2px 8px rgb(22 50 61 / 4%);
+}
+
+.binding-system-card.is-bound {
+  border-color: rgb(43 141 125 / 32%);
 }
 
 .binding-system-card::before {
@@ -381,7 +386,7 @@ async function handleDelete(editor: BindingEditor) {
   bottom: 0;
   left: 0;
   width: 3px;
-  background: var(--n-divider-color);
+  background: var(--eims-line);
   content: '';
 }
 
