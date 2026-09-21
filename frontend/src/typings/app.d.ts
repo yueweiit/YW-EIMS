@@ -498,6 +498,23 @@ declare namespace App {
           };
           shell: {
             authorization: string;
+            methods: string;
+            scanTab: string;
+            passwordTab: string;
+            scanTitle: string;
+            passwordTitle: string;
+            userName: string;
+            password: string;
+            signIn: string;
+            signingIn: string;
+            scanHint: string;
+            qrLoading: string;
+            qrFailed: string;
+            qrFailedHint: string;
+            qrExpired: string;
+            qrExpiredHint: string;
+            refreshQr: string;
+            openDingTalk: string;
           };
           pwdLogin: {
             title: string;

@@ -124,6 +124,12 @@ docker compose up -d --force-recreate backend frontend
 
 ### 钉钉自动建号与登录
 
+登录页默认展示钉钉扫码，可切换为 EIMS 账号密码登录；不提供手机号、短信验证码或自助注册入口。二维码使用钉钉官方内嵌授权页，加载失败或过期时可刷新，也可打开完整钉钉授权页。账号密码登录使用 EIMS 本地账号密码，不是钉钉密码。
+
+内嵌扫码沿用 `DINGTALK_OAUTH_CLIENT_ID`、`DINGTALK_OAUTH_CLIENT_SECRET`、`DINGTALK_OAUTH_REDIRECT_URI` 和 `EIMS_FRONTEND_URL` 配置。后端 `GET /auth/dingtalk/qr-config` 仅返回公开的授权地址和有效期，不返回密钥；扫码仍经过签名 state 校验、一次性登录票据交换和 HttpOnly Cookie 会话。回调地址必须与钉钉开放平台配置一致，且返回当前部署的 EIMS 登录站点。配置说明见[钉钉网页登录文档](https://open.dingtalk.com/document/orgapp/tutorial-obtaining-user-personal-information)。
+
+更新此登录页需要同时重新构建 `backend` 和 `frontend` 镜像并重建相应容器（`docker compose build backend frontend`，成功后执行 `docker compose up -d --no-deps --force-recreate backend frontend`），仅更新前端会缺少二维码配置接口。本次登录页更新不涉及数据库迁移。前端扫码回调校验测试：在 `frontend` 执行 `pnpm exec tsx --test tests/dingtalk-login.test.ts`。
+
 EIMS 从 `DINGTALK_OA_DB_URL` 配置的钉钉员工快照中同步当前员工。`dingtalk-oa` 返回的员工数据必须包含以下字段：
 
 | 字段 | 用途 |
