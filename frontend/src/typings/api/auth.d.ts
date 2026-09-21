@@ -5,6 +5,11 @@ declare namespace Api {
    * backend api module: "auth"
    */
   namespace Auth {
+    interface DingTalkQrConfig {
+      authorizationUrl: string;
+      expiresIn: number;
+    }
+
     interface SessionResult {
       authenticated: boolean;
     }

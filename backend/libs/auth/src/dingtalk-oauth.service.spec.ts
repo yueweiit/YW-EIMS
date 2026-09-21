@@ -123,6 +123,35 @@ describe('DingTalkOAuthService', () => {
     );
   });
 
+  it('creates an embedded QR session without exposing the client secret', async () => {
+    const { service, prisma, jwtService } = createService();
+    const config = await service.getQrLoginConfig();
+    const url = new URL(config.authorizationUrl);
+
+    expect(url.origin).toBe('https://login.dingtalk.com');
+    expect(url.searchParams.get('iframe')).toBe('true');
+    expect(url.searchParams.get('state')).toBe('signed-state');
+    expect(url.searchParams.get('redirect_uri')).toBe(
+      configValues.DINGTALK_OAUTH_REDIRECT_URI,
+    );
+    expect(config.expiresIn).toBe(600);
+    expect(JSON.stringify(config)).not.toContain('client-secret');
+    expect(prisma.dingTalkOAuthState.create).toHaveBeenCalledTimes(1);
+    expect(jwtService.signAsync).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects an already consumed QR state before exchanging the code', async () => {
+    const { service, prisma, httpService } = createService();
+    (prisma.dingTalkOAuthState.updateMany as jest.Mock).mockResolvedValue({
+      count: 0,
+    });
+
+    await expect(
+      service.handleCallback('code', 'used-state'),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(httpService.post).not.toHaveBeenCalled();
+  });
+
   it('rejects a forged or expired state', async () => {
     const { service, jwtService } = createService();
     (jwtService.verifyAsync as jest.Mock).mockRejectedValue(

@@ -74,6 +74,14 @@ export class DingTalkOAuthService {
     return url.toString();
   }
 
+  async getQrLoginConfig() {
+    // Use the same signed, single-use state and callback as full-page OAuth.
+    // Only public authorization parameters reach the browser, never the secret.
+    const url = new URL(await this.getAuthorizationUrl());
+    url.searchParams.set('iframe', 'true');
+    return { authorizationUrl: url.toString(), expiresIn: 10 * 60 };
+  }
+
   async handleCallback(code: string, state: string): Promise<string> {
     this.assertConfigured();
 

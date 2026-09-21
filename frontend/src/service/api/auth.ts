@@ -61,6 +61,16 @@ export function getDingTalkAuthorizationUrl() {
   return `${baseURL}/auth/dingtalk/authorize`;
 }
 
+/** Public iframe URL with a server-signed, single-use DingTalk OAuth state. */
+export function fetchDingTalkQrConfig(signal?: AbortSignal) {
+  return request<Api.Auth.DingTalkQrConfig>({
+    url: '/auth/dingtalk/qr-config',
+    headers: { ...silentAuthHeaders },
+    signal,
+    timeout: 15000
+  });
+}
+
 /** Exchange a one-time DingTalk login ticket for the application JWT pair. */
 export function fetchDingTalkLoginToken(ticket: string) {
   return request<Api.Auth.SessionResult>({

@@ -119,6 +119,14 @@ export class AuthController {
   }
 
   @Public()
+  @Get('dingtalk/qr-config')
+  @Header('Cache-Control', 'no-store')
+  @Header('Pragma', 'no-cache')
+  async dingTalkQrConfig() {
+    return this.dingTalkOAuthService.getQrLoginConfig();
+  }
+
+  @Public()
   @Get('dingtalk/authorize')
   async dingTalkAuthorize(@Res() response: Response) {
     const url = await this.dingTalkOAuthService.getAuthorizationUrl();
