@@ -155,17 +155,17 @@ const handleDeny = () => handleConsent('false');
   width: 42px;
   height: 42px;
   flex: 0 0 auto;
-  border: 1px solid rgb(43 141 125 / 26%);
+  border: 1px solid color-mix(in srgb, var(--login-teal, #126fe1) 26%, transparent);
   border-radius: 11px;
-  color: var(--login-teal, #2b8d7d);
-  background: rgb(43 141 125 / 10%);
+  color: var(--login-teal, #126fe1);
+  background: color-mix(in srgb, var(--login-teal, #126fe1) 10%, transparent);
   font-size: 21px;
 }
 
 .consent-kicker {
   display: block;
   margin-bottom: 4px;
-  color: var(--login-teal, #2b8d7d);
+  color: var(--login-teal, #126fe1);
   font-size: 12px;
   font-weight: 700;
 }
@@ -252,8 +252,8 @@ const handleDeny = () => handleConsent('false');
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  color: var(--login-teal, #2b8d7d);
-  background: rgb(43 141 125 / 12%);
+  color: var(--login-teal, #126fe1);
+  background: color-mix(in srgb, var(--login-teal, #126fe1) 12%, transparent);
   font-size: 13px;
 }
 

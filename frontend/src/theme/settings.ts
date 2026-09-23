@@ -4,13 +4,13 @@ export const themeSettings: App.Theme.ThemeSetting = {
   grayscale: false,
   colourWeakness: false,
   recommendColor: false,
-  themeColor: '#2b8d7d',
-  themeRadius: 8,
+  themeColor: '#126fe1',
+  themeRadius: 10,
   otherColor: {
-    info: '#2b8d7d',
-    success: '#77b98b',
-    warning: '#d28a55',
-    error: '#c96968'
+    info: '#126fe1',
+    success: '#1f9d72',
+    warning: '#d88a24',
+    error: '#d94f58'
   },
   isInfoFollowPrimary: true,
   layout: {
@@ -67,22 +67,22 @@ export const themeSettings: App.Theme.ThemeSetting = {
   tokens: {
     light: {
       colors: {
-        container: 'rgb(255, 253, 249)',
-        layout: 'rgb(241, 244, 239)',
-        inverted: 'rgb(20, 56, 67)',
-        'base-text': 'rgb(22, 50, 61)'
+        container: 'rgb(255, 255, 255)',
+        layout: 'rgb(247, 249, 252)',
+        inverted: 'rgb(20, 39, 72)',
+        'base-text': 'rgb(32, 45, 64)'
       },
       boxShadow: {
-        header: '0 1px 0 rgb(220 231 223 / 100%)',
-        sider: '1px 0 0 rgb(220 231 223 / 100%)',
-        tab: '0 1px 0 rgb(220 231 223 / 100%)'
+        header: '0 1px 0 rgb(229 233 240 / 100%)',
+        sider: '1px 0 0 rgb(229 233 240 / 100%)',
+        tab: '0 1px 0 rgb(229 233 240 / 100%)'
       }
     },
     dark: {
       colors: {
-        container: 'rgb(20, 40, 49)',
-        layout: 'rgb(13, 27, 36)',
-        'base-text': 'rgb(237, 245, 237)'
+        container: 'rgb(26, 35, 50)',
+        layout: 'rgb(17, 24, 35)',
+        'base-text': 'rgb(232, 237, 245)'
       }
     }
   }
@@ -94,13 +94,13 @@ export const themeSettings: App.Theme.ThemeSetting = {
  * If publish new version, use `overrideThemeSettings` to override certain theme settings
  */
 export const overrideThemeSettings: Partial<App.Theme.ThemeSetting> = {
-  themeColor: '#2b8d7d',
-  themeRadius: 8,
+  themeColor: '#126fe1',
+  themeRadius: 10,
   otherColor: {
-    info: '#2b8d7d',
-    success: '#77b98b',
-    warning: '#d28a55',
-    error: '#c96968'
+    info: '#126fe1',
+    success: '#1f9d72',
+    warning: '#d88a24',
+    error: '#d94f58'
   },
   tab: {
     ...themeSettings.tab,
@@ -109,22 +109,22 @@ export const overrideThemeSettings: Partial<App.Theme.ThemeSetting> = {
   tokens: {
     light: {
       colors: {
-        container: 'rgb(255, 253, 249)',
-        layout: 'rgb(241, 244, 239)',
-        inverted: 'rgb(20, 56, 67)',
-        'base-text': 'rgb(22, 50, 61)'
+        container: 'rgb(255, 255, 255)',
+        layout: 'rgb(247, 249, 252)',
+        inverted: 'rgb(20, 39, 72)',
+        'base-text': 'rgb(32, 45, 64)'
       },
       boxShadow: {
-        header: '0 1px 0 rgb(220 231 223 / 100%)',
-        sider: '1px 0 0 rgb(220 231 223 / 100%)',
-        tab: '0 1px 0 rgb(220 231 223 / 100%)'
+        header: '0 1px 0 rgb(229 233 240 / 100%)',
+        sider: '1px 0 0 rgb(229 233 240 / 100%)',
+        tab: '0 1px 0 rgb(229 233 240 / 100%)'
       }
     },
     dark: {
       colors: {
-        container: 'rgb(20, 40, 49)',
-        layout: 'rgb(13, 27, 36)',
-        'base-text': 'rgb(237, 245, 237)'
+        container: 'rgb(26, 35, 50)',
+        layout: 'rgb(17, 24, 35)',
+        'base-text': 'rgb(232, 237, 245)'
       }
     }
   }
