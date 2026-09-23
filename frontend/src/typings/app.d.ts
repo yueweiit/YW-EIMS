@@ -575,15 +575,13 @@ declare namespace App {
             desc5: string;
           };
           creativity: string;
+          systemsUnit: string;
           externalSystemsTitle: string;
-          statusLive: string;
+          externalSystemsDescription: string;
           launchSystem: string;
           checkAccess: string;
           openingSystem: string;
           accessMapLabel: string;
-          accessNoteTitle: string;
-          accessNoteDescription: string;
-          openInNewWindow: string;
           externalSystems: {
             budget: string;
             erp: string;

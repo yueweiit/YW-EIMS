@@ -293,7 +293,7 @@ const local: App.I18n.Schema = {
         qrExpired: 'QR code expired',
         qrExpiredHint: 'Refresh the code and scan again',
         refreshQr: 'Refresh QR code',
-        openDingTalk: 'Open DingTalk authorization',
+        openDingTalk: 'Open DingTalk authorization'
       },
       pwdLogin: {
         title: 'Password Login',
@@ -355,15 +355,13 @@ const local: App.I18n.Schema = {
         desc5: 'Soybean just wrote some of the workbench pages casually, and it was enough to see!'
       },
       creativity: 'Creativity',
+      systemsUnit: 'systems',
       externalSystemsTitle: 'Business systems',
-      statusLive: 'Live access status',
+      externalSystemsDescription: 'Choose a system and EIMS will validate access for your current account.',
       launchSystem: 'Enter system',
       checkAccess: 'Review access',
       openingSystem: 'Opening',
       accessMapLabel: 'Access map',
-      accessNoteTitle: 'Before you enter',
-      accessNoteDescription: 'After signing in, open any business system you are authorized to use. Contact an administrator if access is unavailable.',
-      openInNewWindow: 'Open in new window',
       externalSystems: {
         budget: 'Budget System',
         erp: 'ERP System',
@@ -422,7 +420,8 @@ const local: App.I18n.Schema = {
       oauthPermissionList: 'The application will receive the following permissions:',
       oauthDeny: 'Deny',
       oauthLoading: 'Reading authorization request',
-      oauthAfterAuthorize: 'After authorization, the application can access information within the permissions listed above.',
+      oauthAfterAuthorize:
+        'After authorization, the application can access information within the permissions listed above.',
       enabled: 'Enabled',
       disabled: 'Disabled',
       bound: 'Account bound',
@@ -435,6 +434,11 @@ const local: App.I18n.Schema = {
       systemEntryUnavailable: 'The system entry is unavailable. Contact an administrator.',
       systemEntryRetry: 'The system entry is temporarily unavailable. Try again later.',
       feedbackAdmin: 'Contact the IT administrator to report a problem.',
+      loadingSystems: 'Loading business systems',
+      systemsLoadFailed: 'Business systems could not be loaded',
+      systemsLoadFailedDescription:
+        'The accessible systems could not be retrieved. Check your connection and try again.',
+      retryLoad: 'Reload systems',
       noAccessibleSystems: 'No accessible systems',
       connectedBusinessSystems: 'Connected enterprise business system',
       usageGuide: 'User guide',
@@ -483,7 +487,8 @@ const local: App.I18n.Schema = {
       fillSystemNameEntry: 'Enter the system name and entry URL.',
       fillSystemCode: 'Enter the system code.',
       systemCodeInvalid: 'Use 2–50 lowercase letters, digits, underscores or hyphens, starting with a letter or digit.',
-      systemCodeHint: 'Use 2–50 letters, digits, underscores or hyphens, starting with a letter or digit. Uppercase letters are converted to lowercase, e.g. paymentrequest.',
+      systemCodeHint:
+        'Use 2–50 letters, digits, underscores or hyphens, starting with a letter or digit. Uppercase letters are converted to lowercase, e.g. paymentrequest.',
       newExternalSystem: 'Add system',
       newExternalCatalog: 'Add system catalog entry',
       editExternalCatalog: 'Edit system catalog entry',
@@ -496,7 +501,8 @@ const local: App.I18n.Schema = {
       businessSystem: 'Business system',
       entryUrl: 'Entry URL',
       ssoStartUrl: 'SSO start URL',
-      ssoStartUrlPlaceholder: 'Optional, e.g. https://crm.example.com/front/sso/eims/start; uses the entry URL when empty',
+      ssoStartUrlPlaceholder:
+        'Optional, e.g. https://crm.example.com/front/sso/eims/start; uses the entry URL when empty',
       oauthAppSelect: 'Select a registered OAuth2 application',
       allowedRolesPlaceholder: 'Select roles allowed to access the system; empty means deny access',
       icon: 'Icon',
@@ -507,7 +513,8 @@ const local: App.I18n.Schema = {
       feedbackUrlPlaceholder: 'Optional HTTP/HTTPS or mailto URL',
       contact: 'Contact',
       contactPlaceholder: 'Shown when no feedback URL is configured, e.g. IT administrator',
-      accessPolicyNotice: 'External systems use role-based access, and an empty role list denies access. With OAuth2 binding, users must also have a matching account binding.',
+      accessPolicyNotice:
+        'External systems use role-based access, and an empty role list denies access. With OAuth2 binding, users must also have a matching account binding.',
       ssoUser: 'SSO user',
       businessUserId: 'Business system user ID',
       businessUsername: 'Business system username',
@@ -521,30 +528,36 @@ const local: App.I18n.Schema = {
       selectApp: 'Select an application',
       enterBusinessUserId: 'Enter the business system user ID',
       bindingSuccess: 'Bound successfully',
-      bindingAlreadyExists: 'This user is already bound to this application with business system user ID {appUserId}. Edit the existing binding to make changes.',
+      bindingAlreadyExists:
+        'This user is already bound to this application with business system user ID {appUserId}. Edit the existing binding to make changes.',
       editExistingBinding: 'Edit existing binding',
-      bindingConflictNotice: 'This user is already bound to the application or the business system user ID is in use. Check the existing bindings and use Edit to make changes.',
+      bindingConflictNotice:
+        'This user is already bound to the application or the business system user ID is in use. Check the existing bindings and use Edit to make changes.',
       saveSuccess: 'Saved successfully',
       selectEimsUser: 'Select an EIMS user',
       selectTargetApp: 'Select a target application',
       businessUserIdPlaceholder: 'Unique ID used by the external system to match users (enter as text)',
       businessUsernamePlaceholder: 'Username in the business system (optional, for display)',
-      erpBindingNotice: 'For ERP binding, enter the ERP user’s custom_eims_app_user_id value as text. Do not enter the ERP username or database primary key.',
+      erpBindingNotice:
+        'For ERP binding, enter the ERP user’s custom_eims_app_user_id value as text. Do not enter the ERP username or database primary key.',
       bindingUserSearchPlaceholder: 'Search username or real name',
-      bindingGroupNotice: 'Bindings are grouped by EIMS user. Use Manage bindings to maintain all business-system accounts for that user in one place.',
+      bindingGroupNotice:
+        'Bindings are grouped by EIMS user. Use Manage bindings to maintain all business-system accounts for that user in one place.',
       boundApplications: 'Bound system accounts',
       bindingCount: 'Bindings',
       manageBindings: 'Manage bindings',
       manageUserBindings: 'Manage account bindings: {name}',
       boundApplicationCount: '{count} systems bound',
-      bindingManagementNotice: 'Each system keeps an independent account mapping. Bind, update, or remove accounts here without selecting the EIMS user again.',
+      bindingManagementNotice:
+        'Each system keeps an independent account mapping. Bind, update, or remove accounts here without selecting the EIMS user again.',
       boundStatus: 'Bound',
       unboundStatus: 'Not bound',
       noBindings: 'No bindings',
       applicationDisabled: 'Application disabled',
       noOAuthApplications: 'No OAuth2 applications',
       newUserBinding: 'Add user binding',
-      newUserBindingHint: 'Select an EIMS user first, then configure that user’s accounts across all business systems in one place.',
+      newUserBindingHint:
+        'Select an EIMS user first, then configure that user’s accounts across all business systems in one place.',
       selectEimsUserRequired: 'Select an EIMS user to configure',
       roleName: 'Role name',
       roleNameOrCode: 'Role name or code',
@@ -565,11 +578,13 @@ const local: App.I18n.Schema = {
       roleDisabled: 'Role disabled',
       roleEnabled: 'Role enabled',
       roleAccessSaved: 'Role access permissions saved',
-      roleNotice: 'The role code is stored in user accounts and used for permission checks. Avoid changing it after creation. R_SUPER is reserved by the system and cannot be disabled or deleted.',
+      roleNotice:
+        'The role code is stored in user accounts and used for permission checks. Avoid changing it after creation. R_SUPER is reserved by the system and cannot be disabled or deleted.',
       newRole: 'Add role',
       editRole: 'Edit role',
       configurePermission: 'Configure permissions: {name}',
-      permissionNotice: 'Menu permissions control page visibility. Button and API permissions are used by business pages and backend checks. Business systems are granted explicitly by role; an empty role list denies access.',
+      permissionNotice:
+        'Menu permissions control page visibility. Button and API permissions are used by business pages and backend checks. Business systems are granted explicitly by role; an empty role list denies access.',
       allowBusinessSystems: 'Allowed business systems',
       noActiveExternalSystems: 'No enabled external systems',
       roleSystemAccessNotice: 'Systems are granted explicitly by role; an empty role list denies access.',
@@ -677,7 +692,8 @@ const local: App.I18n.Schema = {
       addMaterialRow: 'Add row',
       removeMaterialRow: 'Remove row',
       materialBatchAdd: 'Add materials',
-      materialBatchAddHint: 'Enter multiple materials at once. Select a prefix to preview the code; the submitted code is final.',
+      materialBatchAddHint:
+        'Enter multiple materials at once. Select a prefix to preview the code; the submitted code is final.',
       materialBatchAddRowRequired: 'Please complete the applicant, material name, and code prefix in row {row}.',
       materialBatchAddSuccess: 'Added {count} materials successfully',
       codePreview: 'Code preview',
@@ -874,7 +890,8 @@ const local: App.I18n.Schema = {
     required: 'Cannot be empty',
     userName: {
       required: 'Please enter user name',
-      invalid: 'User name must be 4-16 characters and can include Chinese, letters, numbers, underscores (_) and hyphens (-)'
+      invalid:
+        'User name must be 4-16 characters and can include Chinese, letters, numbers, underscores (_) and hyphens (-)'
     },
     phone: {
       required: 'Please enter phone number',

@@ -288,7 +288,7 @@ const local: App.I18n.Schema = {
         qrExpired: 'El código QR venció',
         qrExpiredHint: 'Actualiza el código y vuelve a escanear',
         refreshQr: 'Actualizar código QR',
-        openDingTalk: 'Abrir autorización de DingTalk',
+        openDingTalk: 'Abrir autorización de DingTalk'
       },
       pwdLogin: {
         title: 'Iniciar con contraseña',
@@ -349,15 +349,13 @@ const local: App.I18n.Schema = {
         desc5: 'El panel de trabajo está listo para usarse.'
       },
       creativity: 'Creatividad',
+      systemsUnit: 'sistemas',
       externalSystemsTitle: 'Sistemas empresariales',
-      statusLive: 'Estado de acceso en tiempo real',
+      externalSystemsDescription: 'Elige un sistema y EIMS validará el acceso de tu cuenta actual.',
       launchSystem: 'Entrar al sistema',
       checkAccess: 'Revisar acceso',
       openingSystem: 'Abriendo',
       accessMapLabel: 'Mapa de acceso',
-      accessNoteTitle: 'Antes de entrar',
-      accessNoteDescription: 'Después de iniciar sesión, abre cualquier sistema autorizado para ti. Contacta con un administrador si no puedes acceder.',
-      openInNewWindow: 'Abrir en una ventana nueva',
       externalSystems: {
         budget: 'Sistema presupuestario',
         erp: 'Sistema ERP',
@@ -403,7 +401,8 @@ const local: App.I18n.Schema = {
     },
     ui: {
       dingTalkLogin: 'Iniciar sesión con DingTalk',
-      dingTalkLoginFailed: 'Error al iniciar sesión con DingTalk. Confirma que la cuenta esté vinculada o contacta con un administrador.',
+      dingTalkLoginFailed:
+        'Error al iniciar sesión con DingTalk. Confirma que la cuenta esté vinculada o contacta con un administrador.',
       thirdPartyApp: 'Aplicación de terceros',
       oauthMissingTransaction: 'La solicitud de autorización OAuth no contiene un identificador de transacción.',
       oauthInvalidRequest: 'La solicitud de autorización OAuth no es válida, ya se usó o expiró.',
@@ -416,7 +415,8 @@ const local: App.I18n.Schema = {
       oauthPermissionList: 'La aplicación obtendrá los siguientes permisos:',
       oauthDeny: 'Rechazar',
       oauthLoading: 'Leyendo la solicitud de autorización',
-      oauthAfterAuthorize: 'Después de autorizar, la aplicación podrá acceder a la información incluida en los permisos anteriores.',
+      oauthAfterAuthorize:
+        'Después de autorizar, la aplicación podrá acceder a la información incluida en los permisos anteriores.',
       enabled: 'Habilitado',
       disabled: 'Deshabilitado',
       bound: 'Cuenta vinculada',
@@ -424,11 +424,17 @@ const local: App.I18n.Schema = {
       notRequired: 'No requiere vinculación',
       notConfigured: 'Pendiente de configuración',
       userNotBound: 'Tu cuenta no está vinculada a este sistema. Contacta con un administrador.',
-      systemNotConfigured: 'Este sistema no ha completado la configuración de inicio de sesión unificado. Contacta con un administrador.',
+      systemNotConfigured:
+        'Este sistema no ha completado la configuración de inicio de sesión unificado. Contacta con un administrador.',
       systemCannotLaunch: 'No puedes acceder a este sistema en este momento.',
       systemEntryUnavailable: 'La entrada del sistema no está disponible. Contacta con un administrador.',
       systemEntryRetry: 'La entrada del sistema no está disponible temporalmente. Inténtalo más tarde.',
       feedbackAdmin: 'Contacta con el administrador de TI para informar del problema.',
+      loadingSystems: 'Cargando sistemas empresariales',
+      systemsLoadFailed: 'No se pudieron cargar los sistemas empresariales',
+      systemsLoadFailedDescription:
+        'No se pudieron obtener los sistemas accesibles. Comprueba tu conexión e inténtalo de nuevo.',
+      retryLoad: 'Volver a cargar',
       noAccessibleSystems: 'No hay sistemas accesibles',
       connectedBusinessSystems: 'Sistema empresarial conectado',
       usageGuide: 'Guía de uso',
@@ -476,8 +482,10 @@ const local: App.I18n.Schema = {
       oauthAppRequired: 'Selecciona una aplicación OAuth2 para este método de inicio.',
       fillSystemNameEntry: 'Ingresa el nombre y la URL de entrada del sistema.',
       fillSystemCode: 'Ingresa el código del sistema.',
-      systemCodeInvalid: 'Usa entre 2 y 50 letras minúsculas, dígitos, guiones bajos o guiones, comenzando con una letra o un dígito.',
-      systemCodeHint: 'Usa entre 2 y 50 letras, dígitos, guiones bajos o guiones, comenzando con una letra o un dígito. Las mayúsculas se convierten en minúsculas, p. ej., paymentrequest.',
+      systemCodeInvalid:
+        'Usa entre 2 y 50 letras minúsculas, dígitos, guiones bajos o guiones, comenzando con una letra o un dígito.',
+      systemCodeHint:
+        'Usa entre 2 y 50 letras, dígitos, guiones bajos o guiones, comenzando con una letra o un dígito. Las mayúsculas se convierten en minúsculas, p. ej., paymentrequest.',
       newExternalSystem: 'Añadir sistema',
       newExternalCatalog: 'Añadir entrada del catálogo',
       editExternalCatalog: 'Editar entrada del catálogo',
@@ -490,7 +498,8 @@ const local: App.I18n.Schema = {
       businessSystem: 'Sistema empresarial',
       entryUrl: 'URL de entrada',
       ssoStartUrl: 'URL de inicio SSO',
-      ssoStartUrlPlaceholder: 'Opcional, p. ej., https://crm.example.com/front/sso/eims/start; usa la URL de entrada si está vacía',
+      ssoStartUrlPlaceholder:
+        'Opcional, p. ej., https://crm.example.com/front/sso/eims/start; usa la URL de entrada si está vacía',
       oauthAppSelect: 'Selecciona una aplicación OAuth2 registrada',
       allowedRolesPlaceholder: 'Selecciona los roles autorizados; vacío significa denegar el acceso',
       icon: 'Icono',
@@ -501,7 +510,8 @@ const local: App.I18n.Schema = {
       feedbackUrlPlaceholder: 'URL opcional HTTP/HTTPS o mailto',
       contact: 'Contacto',
       contactPlaceholder: 'Se muestra sin URL de comentarios, p. ej., administrador de TI',
-      accessPolicyNotice: 'Los sistemas externos usan acceso por roles y una lista vacía deniega el acceso. Con vinculación OAuth2, también se requiere una vinculación de cuenta coincidente.',
+      accessPolicyNotice:
+        'Los sistemas externos usan acceso por roles y una lista vacía deniega el acceso. Con vinculación OAuth2, también se requiere una vinculación de cuenta coincidente.',
       ssoUser: 'Usuario SSO',
       businessUserId: 'ID de usuario del sistema empresarial',
       businessUsername: 'Nombre de usuario del sistema empresarial',
@@ -515,30 +525,37 @@ const local: App.I18n.Schema = {
       selectApp: 'Selecciona una aplicación',
       enterBusinessUserId: 'Ingresa el ID de usuario del sistema empresarial',
       bindingSuccess: 'Vinculado correctamente',
-      bindingAlreadyExists: 'Este usuario ya está vinculado a esta aplicación con el ID de usuario empresarial {appUserId}. Edita la vinculación existente para realizar cambios.',
+      bindingAlreadyExists:
+        'Este usuario ya está vinculado a esta aplicación con el ID de usuario empresarial {appUserId}. Edita la vinculación existente para realizar cambios.',
       editExistingBinding: 'Editar vinculación existente',
-      bindingConflictNotice: 'El usuario ya está vinculado a la aplicación o el ID de usuario empresarial está ocupado. Revisa las vinculaciones existentes y usa Editar para realizar cambios.',
+      bindingConflictNotice:
+        'El usuario ya está vinculado a la aplicación o el ID de usuario empresarial está ocupado. Revisa las vinculaciones existentes y usa Editar para realizar cambios.',
       saveSuccess: 'Guardado correctamente',
       selectEimsUser: 'Selecciona un usuario de EIMS',
       selectTargetApp: 'Selecciona la aplicación de destino',
-      businessUserIdPlaceholder: 'ID único usado para identificar al usuario en el sistema externo (introdúcelo como texto)',
+      businessUserIdPlaceholder:
+        'ID único usado para identificar al usuario en el sistema externo (introdúcelo como texto)',
       businessUsernamePlaceholder: 'Usuario del sistema empresarial (opcional, para mostrar)',
-      erpBindingNotice: 'Para vincular ERP, introduce como texto el valor custom_eims_app_user_id del usuario de ERP. No introduzcas el nombre de usuario ni la clave primaria de la base de datos.',
+      erpBindingNotice:
+        'Para vincular ERP, introduce como texto el valor custom_eims_app_user_id del usuario de ERP. No introduzcas el nombre de usuario ni la clave primaria de la base de datos.',
       bindingUserSearchPlaceholder: 'Buscar por usuario o nombre real',
-      bindingGroupNotice: 'Las vinculaciones se agrupan por usuario de EIMS. Usa Administrar vinculaciones para mantener todas sus cuentas empresariales en un solo lugar.',
+      bindingGroupNotice:
+        'Las vinculaciones se agrupan por usuario de EIMS. Usa Administrar vinculaciones para mantener todas sus cuentas empresariales en un solo lugar.',
       boundApplications: 'Cuentas de sistemas vinculadas',
       bindingCount: 'Vinculaciones',
       manageBindings: 'Administrar vinculaciones',
       manageUserBindings: 'Administrar vinculaciones: {name}',
       boundApplicationCount: '{count} sistemas vinculados',
-      bindingManagementNotice: 'Cada sistema conserva una cuenta independiente. Vincula, modifica o elimina cuentas aquí sin volver a seleccionar al usuario de EIMS.',
+      bindingManagementNotice:
+        'Cada sistema conserva una cuenta independiente. Vincula, modifica o elimina cuentas aquí sin volver a seleccionar al usuario de EIMS.',
       boundStatus: 'Vinculado',
       unboundStatus: 'Sin vincular',
       noBindings: 'Sin vinculaciones',
       applicationDisabled: 'Aplicación deshabilitada',
       noOAuthApplications: 'No hay aplicaciones OAuth2',
       newUserBinding: 'Añadir vinculación de usuario',
-      newUserBindingHint: 'Selecciona primero un usuario de EIMS y configura en un solo lugar sus cuentas de todos los sistemas empresariales.',
+      newUserBindingHint:
+        'Selecciona primero un usuario de EIMS y configura en un solo lugar sus cuentas de todos los sistemas empresariales.',
       selectEimsUserRequired: 'Selecciona un usuario de EIMS para configurar',
       roleName: 'Nombre del rol',
       roleNameOrCode: 'Nombre o código del rol',
@@ -559,11 +576,13 @@ const local: App.I18n.Schema = {
       roleDisabled: 'Rol deshabilitado',
       roleEnabled: 'Rol habilitado',
       roleAccessSaved: 'Permisos de acceso del rol guardados',
-      roleNotice: 'El código del rol se guarda en las cuentas y se usa para comprobar permisos. Evita cambiarlo después de crearlo. R_SUPER está reservado por el sistema y no se puede deshabilitar ni eliminar.',
+      roleNotice:
+        'El código del rol se guarda en las cuentas y se usa para comprobar permisos. Evita cambiarlo después de crearlo. R_SUPER está reservado por el sistema y no se puede deshabilitar ni eliminar.',
       newRole: 'Añadir rol',
       editRole: 'Editar rol',
       configurePermission: 'Configurar permisos: {name}',
-      permissionNotice: 'Los permisos de menú controlan la visibilidad de las páginas. Los permisos de botones y API se usan en las páginas de negocio y las comprobaciones del backend. Los sistemas empresariales se conceden explícitamente por rol; una lista vacía deniega el acceso.',
+      permissionNotice:
+        'Los permisos de menú controlan la visibilidad de las páginas. Los permisos de botones y API se usan en las páginas de negocio y las comprobaciones del backend. Los sistemas empresariales se conceden explícitamente por rol; una lista vacía deniega el acceso.',
       allowBusinessSystems: 'Sistemas empresariales permitidos',
       noActiveExternalSystems: 'No hay sistemas externos habilitados',
       roleSystemAccessNotice: 'Los sistemas se conceden explícitamente por rol; una lista vacía deniega el acceso.',
@@ -632,7 +651,8 @@ const local: App.I18n.Schema = {
       auditSystem: 'Sistema',
       auditDescription: 'Descripción',
       eventName: 'Nombre del evento',
-      auditNotice: 'Los registros de auditoría no guardan contraseñas, tokens, secretos, códigos de autorización ni state.',
+      auditNotice:
+        'Los registros de auditoría no guardan contraseñas, tokens, secretos, códigos de autorización ni state.',
       entityMold: 'Molde',
       entityProduct: 'Producto',
       entityMaterial: 'Material',
@@ -671,8 +691,10 @@ const local: App.I18n.Schema = {
       addMaterialRow: 'Añadir fila',
       removeMaterialRow: 'Eliminar fila',
       materialBatchAdd: 'Añadir materiales',
-      materialBatchAddHint: 'Ingresa varios materiales a la vez. Selecciona un prefijo para previsualizar el código; el código enviado será el definitivo.',
-      materialBatchAddRowRequired: 'Completa el solicitante, el nombre del material y el prefijo de código en la fila {row}.',
+      materialBatchAddHint:
+        'Ingresa varios materiales a la vez. Selecciona un prefijo para previsualizar el código; el código enviado será el definitivo.',
+      materialBatchAddRowRequired:
+        'Completa el solicitante, el nombre del material y el prefijo de código en la fila {row}.',
       materialBatchAddSuccess: 'Se añadieron {count} materiales correctamente',
       codePreview: 'Vista previa del código',
       codePreviewPlaceholder: 'Selecciona un prefijo para previsualizar',
@@ -719,7 +741,8 @@ const local: App.I18n.Schema = {
       approvalCanceled: 'Cancelada',
       approvalRejected: 'Rechazada',
       approvalDetailsEmpty: 'Los detalles de la aprobación están vacíos.',
-      approvalCannotPush: 'El estado de aprobación es {status}; las aprobaciones canceladas o rechazadas no se pueden enviar.',
+      approvalCannotPush:
+        'El estado de aprobación es {status}; las aprobaciones canceladas o rechazadas no se pueden enviar.',
       noPushableRows: 'No se identificaron filas de detalle para enviar.',
       orgXingming: 'Xingming',
       orgXingcheng: 'Xingcheng',
@@ -767,7 +790,8 @@ const local: App.I18n.Schema = {
       importSheetSuffix: ' importación',
       templateFileSuffix: ' plantilla de importación',
       dataFileSuffix: ' datos',
-      excelRequiredHeaderHint: 'No se encontraron columnas coincidentes. Asegúrate de que los encabezados incluyan: {headers}',
+      excelRequiredHeaderHint:
+        'No se encontraron columnas coincidentes. Asegúrate de que los encabezados incluyan: {headers}',
       materialRecords: 'materiales',
       moldRecords: 'moldes',
       productRecords: 'productos',
@@ -868,7 +892,8 @@ const local: App.I18n.Schema = {
     required: 'Este campo es obligatorio',
     userName: {
       required: 'Ingresa el nombre de usuario',
-      invalid: 'El nombre de usuario debe tener entre 4 y 16 caracteres y puede incluir letras, números, guiones y guiones bajos'
+      invalid:
+        'El nombre de usuario debe tener entre 4 y 16 caracteres y puede incluir letras, números, guiones y guiones bajos'
     },
     phone: {
       required: 'Ingresa el número de teléfono',

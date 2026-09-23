@@ -19,8 +19,8 @@ defineOptions({
   min-width: 0;
   min-height: calc(100% + 32px);
   margin: -16px;
-  padding: clamp(16px, 2.4vw, 34px);
-  padding-bottom: calc(clamp(16px, 2.4vw, 34px) + var(--soy-footer-height, 48px) + 32px);
+  padding: clamp(16px, 2vw, 28px);
+  padding-bottom: calc(clamp(16px, 2vw, 28px) + var(--soy-footer-height, 48px) + 32px);
   overflow: visible;
   background: var(--eims-canvas);
 }

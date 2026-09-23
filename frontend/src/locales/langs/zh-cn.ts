@@ -289,7 +289,7 @@ const local: App.I18n.Schema = {
         qrExpired: '二维码已过期',
         qrExpiredHint: '刷新二维码后重新扫码',
         refreshQr: '刷新二维码',
-        openDingTalk: '在钉钉授权页打开',
+        openDingTalk: '在钉钉授权页打开'
       },
       pwdLogin: {
         title: '密码登录',
@@ -351,15 +351,13 @@ const local: App.I18n.Schema = {
         desc5: 'Soybean 刚才把工作台页面随便写了一些，凑合能看了！'
       },
       creativity: '创意',
+      systemsUnit: '个系统',
       externalSystemsTitle: '业务系统入口',
-      statusLive: '实时权限状态',
+      externalSystemsDescription: '选择业务系统，EIMS 将根据当前账号完成访问校验。',
       launchSystem: '进入系统',
       checkAccess: '查看访问状态',
       openingSystem: '正在打开',
       accessMapLabel: '入口地图',
-      accessNoteTitle: '进入前检查',
-      accessNoteDescription: '登录后即可进入已授权的业务系统；无法进入时请联系管理员。',
-      openInNewWindow: '新窗口打开',
       externalSystems: {
         budget: '预算系统',
         erp: 'ERP系统',
@@ -431,6 +429,10 @@ const local: App.I18n.Schema = {
       systemEntryUnavailable: '系统入口暂时不可用，请联系管理员',
       systemEntryRetry: '系统入口暂时不可用，请稍后重试',
       feedbackAdmin: '请联系信息化管理员反馈问题',
+      loadingSystems: '正在加载业务系统',
+      systemsLoadFailed: '业务系统加载失败',
+      systemsLoadFailedDescription: '未能读取可访问的业务系统，请检查网络连接后重试。',
+      retryLoad: '重新加载',
       noAccessibleSystems: '暂无可访问的系统',
       connectedBusinessSystems: '已接入的企业业务系统',
       usageGuide: '使用说明',
@@ -503,7 +505,8 @@ const local: App.I18n.Schema = {
       feedbackUrlPlaceholder: '可选，http/https 或 mailto 地址',
       contact: '联系方式',
       contactPlaceholder: '未配置反馈地址时展示，如 信息化管理员',
-      accessPolicyNotice: '外部系统统一按角色授权，空角色表示拒绝访问。选择 OAuth2 绑定后，用户还必须存在对应的账号绑定才能进入。',
+      accessPolicyNotice:
+        '外部系统统一按角色授权，空角色表示拒绝访问。选择 OAuth2 绑定后，用户还必须存在对应的账号绑定才能进入。',
       ssoUser: 'SSO 用户',
       businessUserId: '业务系统用户ID',
       businessUsername: '业务系统用户名',
@@ -525,7 +528,8 @@ const local: App.I18n.Schema = {
       selectTargetApp: '选择目标应用',
       businessUserIdPlaceholder: '外部系统用于匹配用户的唯一ID（按字符串填写）',
       businessUsernamePlaceholder: '业务系统中的用户名（可选，方便展示）',
-      erpBindingNotice: 'ERP 绑定时，请填写 ERP 用户的 custom_eims_app_user_id 字段值，按字符串填写，不是 ERP 用户名或数据库主键。',
+      erpBindingNotice:
+        'ERP 绑定时，请填写 ERP 用户的 custom_eims_app_user_id 字段值，按字符串填写，不是 ERP 用户名或数据库主键。',
       bindingUserSearchPlaceholder: '输入用户名或真实姓名',
       bindingGroupNotice: '账号绑定按 EIMS 用户集中归纳。点击“管理绑定”即可在同一处维护该用户的全部业务系统账号。',
       boundApplications: '已绑定系统账号',
@@ -565,7 +569,8 @@ const local: App.I18n.Schema = {
       newRole: '新增角色',
       editRole: '编辑角色',
       configurePermission: '配置权限：{name}',
-      permissionNotice: '系统权限控制首页入口，功能权限控制 EIMS 菜单、按钮和接口。业务系统由角色明确授权；空角色表示拒绝访问。R_SUPER 自动拥有全部权限。',
+      permissionNotice:
+        '系统权限控制首页入口，功能权限控制 EIMS 菜单、按钮和接口。业务系统由角色明确授权；空角色表示拒绝访问。R_SUPER 自动拥有全部权限。',
       allowBusinessSystems: '允许访问的业务系统',
       noActiveExternalSystems: '暂无启用的外部系统',
       roleSystemAccessNotice: '系统由角色明确授权，空角色表示拒绝访问。',
