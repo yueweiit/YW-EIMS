@@ -87,24 +87,14 @@ async function openSystem(system: PortalSystemRecord) {
   if (isLaunching(system.code)) return;
 
   setLaunching(system.code, true);
-  // Keep the tab creation inside the user gesture. The backend validates the
-  // final destination before the placeholder tab is redirected.
-  const popup = window.open('', '_blank');
   try {
     const { data, error } = await fetchPortalSystemLaunch(system.code);
     if (error || !data?.url) {
-      popup?.close();
       window.$message?.error($t('page.ui.systemEntryUnavailable'));
       return;
     }
-    if (popup) {
-      popup.location.replace(data.url);
-      popup.opener = null;
-    } else {
-      window.location.assign(data.url);
-    }
+    window.location.assign(data.url);
   } catch {
-    popup?.close();
     window.$message?.error($t('page.ui.systemEntryRetry'));
   } finally {
     setLaunching(system.code, false);
