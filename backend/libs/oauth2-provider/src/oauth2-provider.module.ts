@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from '@eims/auth';
+import { RoleModule } from '@eims/roles';
 import { OAuth2Controller } from './oauth2.controller';
 import { OAuth2ClientController } from './oauth2-client.controller';
 import { OAuth2BindingController } from './oauth2-binding.controller';
@@ -11,8 +12,12 @@ import { OpenIdService } from './openid.service';
 import { ClientAuthGuard } from './guards/client-auth.guard';
 
 @Module({
-  imports: [ConfigModule, AuthModule],
-  controllers: [OAuth2Controller, OAuth2ClientController, OAuth2BindingController],
+  imports: [ConfigModule, AuthModule, RoleModule],
+  controllers: [
+    OAuth2Controller,
+    OAuth2ClientController,
+    OAuth2BindingController,
+  ],
   providers: [
     OAuth2Service,
     OAuth2ClientService,

@@ -9,6 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '@eims/database';
+import { RoleService } from '@eims/roles';
 import { OpenIdService } from './openid.service';
 import type {
   OAuth2TokenResponse,
@@ -23,6 +24,7 @@ export class OAuth2Service {
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
     private readonly openidService: OpenIdService,
+    private readonly roleService: RoleService,
   ) {}
 
   /**
@@ -106,7 +108,9 @@ export class OAuth2Service {
       ? [...new Set(scope.split(/\s+/).filter(Boolean))]
       : ['openid'];
     if (requestedScopes.length === 0) {
-      throw new BadRequestException('invalid_scope: at least one scope is required');
+      throw new BadRequestException(
+        'invalid_scope: at least one scope is required',
+      );
     }
     const allowedScopes =
       client.scopes.length > 0 ? client.scopes : ['openid', 'profile', 'email'];
@@ -196,6 +200,7 @@ export class OAuth2Service {
     if (!user || user.status !== '1') {
       throw new UnauthorizedException('用户不存在或已被禁用');
     }
+    await this.assertExternalSystemAccess(request.clientId, user.id);
 
     const now = new Date();
     const consumed = await this.prisma.oauth2AuthorizationRequest.updateMany({
@@ -355,6 +360,8 @@ export class OAuth2Service {
         );
       }
     }
+
+    await this.assertExternalSystemAccess(clientId, authCode.userId);
 
     // Atomically consume the code
     const consumed = await this.prisma.oauth2AuthorizationCode.updateMany({
@@ -522,6 +529,8 @@ export class OAuth2Service {
       );
     }
 
+    await this.assertExternalSystemAccess(clientId, tokenRecord.userId);
+
     // Rotate refresh token: revoke old, create new
     const revoked = await this.prisma.oauth2RefreshToken.updateMany({
       where: { id: tokenRecord.id, revokedAt: null, expiresAt: { gt: now } },
@@ -656,6 +665,8 @@ export class OAuth2Service {
         );
       }
 
+      await this.assertExternalSystemAccess(payload.client_id, user.id);
+
       const scopes = tokenRecord.scopes;
       const userInfo: OAuth2UserInfo = {
         sub: String(user.id),
@@ -776,9 +787,47 @@ export class OAuth2Service {
     });
     return Boolean(
       client?.status === '1' &&
-        client.redirectUris.includes(redirectUri) &&
-        this.isAllowedRedirectUri(redirectUri),
+      client.redirectUris.includes(redirectUri) &&
+      this.isAllowedRedirectUri(redirectUri),
     );
+  }
+
+  private async assertExternalSystemAccess(
+    clientId: string,
+    userId: number,
+  ): Promise<void> {
+    const system = await this.prisma.externalSystem.findUnique({
+      where: { oauthClientId: clientId },
+      select: { status: true, authMode: true, allowedRoles: true },
+    });
+    // OAuth clients without a portal catalog entry retain their existing policy.
+    if (!system) return;
+    if (system.status !== '1' || system.authMode !== 'oauth2') {
+      throw new ForbiddenException('当前外部系统不可用');
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { status: true, roles: true },
+    });
+    if (!user || user.status !== '1') {
+      throw new UnauthorizedException('用户不存在或已被禁用');
+    }
+    const activeRoles = await this.roleService.getActiveRoleCodes(user.roles);
+    if (
+      !activeRoles.includes('R_SUPER') &&
+      !system.allowedRoles.some((role) => activeRoles.includes(role))
+    ) {
+      throw new ForbiddenException('当前用户没有访问此系统的权限');
+    }
+
+    const binding = await this.prisma.oauth2UserBinding.findUnique({
+      where: { ssoUserId_clientId: { ssoUserId: userId, clientId } },
+      select: { id: true },
+    });
+    if (!binding) {
+      throw new ForbiddenException('当前用户尚未绑定该系统账号');
+    }
   }
 
   private async loadAuthorizationRequest(
@@ -811,7 +860,10 @@ export class OAuth2Service {
     ) {
       throw new BadRequestException('OAuth 授权请求无效、已使用或已过期');
     }
-    if (!browserNonce || !this.matchesHash(browserNonce, request.browserNonceHash)) {
+    if (
+      !browserNonce ||
+      !this.matchesHash(browserNonce, request.browserNonceHash)
+    ) {
       throw new BadRequestException('OAuth 授权请求不属于当前浏览器');
     }
     return request;
