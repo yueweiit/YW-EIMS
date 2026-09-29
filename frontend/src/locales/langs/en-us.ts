@@ -355,7 +355,6 @@ const local: App.I18n.Schema = {
         desc5: 'Soybean just wrote some of the workbench pages casually, and it was enough to see!'
       },
       creativity: 'Creativity',
-      systemsUnit: 'systems',
       externalSystemsTitle: 'Business systems',
       externalSystemsDescription: 'Choose a system and EIMS will validate access for your current account.',
       launchSystem: 'Enter system',

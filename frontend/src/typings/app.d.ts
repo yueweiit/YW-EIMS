@@ -575,7 +575,6 @@ declare namespace App {
             desc5: string;
           };
           creativity: string;
-          systemsUnit: string;
           externalSystemsTitle: string;
           externalSystemsDescription: string;
           launchSystem: string;

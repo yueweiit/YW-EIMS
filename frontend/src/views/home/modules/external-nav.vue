@@ -144,10 +144,6 @@ onMounted(() => {
           <h2>{{ $t('page.home.externalSystemsTitle') }}</h2>
           <p>{{ $t('page.home.externalSystemsDescription') }}</p>
         </div>
-        <div class="section-count">
-          <strong>{{ systems.length }}</strong>
-          <span>{{ $t('page.home.systemsUnit') }}</span>
-        </div>
       </div>
 
       <NSpin :show="loading" :description="$t('page.ui.loadingSystems')" class="systems-loader">
@@ -308,24 +304,6 @@ onMounted(() => {
   margin: 0;
   color: var(--portal-ink-soft);
   font-size: 13px;
-}
-
-.section-count {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 5px;
-  flex: 0 0 auto;
-  padding: 8px 12px;
-  border: 1px solid var(--portal-line);
-  border-radius: 10px;
-  color: var(--portal-ink-soft);
-  background: var(--portal-card);
-  font-size: 11px;
-}
-
-.section-count strong {
-  color: var(--portal-primary);
-  font-size: 16px;
 }
 
 .systems-grid,
@@ -646,10 +624,6 @@ onMounted(() => {
 @media (max-width: 560px) {
   .section-heading {
     align-items: flex-start;
-  }
-
-  .section-count {
-    margin-top: 19px;
   }
 
   .system-card-actions {

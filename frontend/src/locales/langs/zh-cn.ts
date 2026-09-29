@@ -351,7 +351,6 @@ const local: App.I18n.Schema = {
         desc5: 'Soybean 刚才把工作台页面随便写了一些，凑合能看了！'
       },
       creativity: '创意',
-      systemsUnit: '个系统',
       externalSystemsTitle: '业务系统入口',
       externalSystemsDescription: '选择业务系统，EIMS 将根据当前账号完成访问校验。',
       launchSystem: '进入系统',

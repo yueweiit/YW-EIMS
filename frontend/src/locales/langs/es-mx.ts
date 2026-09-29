@@ -349,7 +349,6 @@ const local: App.I18n.Schema = {
         desc5: 'El panel de trabajo está listo para usarse.'
       },
       creativity: 'Creatividad',
-      systemsUnit: 'sistemas',
       externalSystemsTitle: 'Sistemas empresariales',
       externalSystemsDescription: 'Elige un sistema y EIMS validará el acceso de tu cuenta actual.',
       launchSystem: 'Entrar al sistema',
