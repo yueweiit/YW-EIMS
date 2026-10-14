@@ -140,6 +140,10 @@ async function getData() {
   }
 }
 
+function handleQueryParamsUpdate(value: Partial<typeof queryParams>) {
+  Object.assign(queryParams, value);
+}
+
 function handleSearch() {
   queryParams.current = 1;
   void getData();
@@ -217,7 +221,12 @@ void getData();
   <NSpace vertical :size="16">
     <NCard :bordered="false">
       <NSpace justify="space-between" align="center" wrap>
-        <OAuth2BindingSearch v-model="queryParams" @search="handleSearch" @reset="handleReset" />
+        <OAuth2BindingSearch
+          :model-value="queryParams"
+          @update:model-value="handleQueryParamsUpdate"
+          @search="handleSearch"
+          @reset="handleReset"
+        />
         <NButton type="primary" @click="handleAdd">
           {{ $t('page.ui.newUserBinding') }}
         </NButton>
