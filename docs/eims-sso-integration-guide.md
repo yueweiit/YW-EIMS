@@ -130,7 +130,7 @@ curl -X POST "${EIMS_ISSUER}/oauth/token" \
   --data-urlencode "code_verifier=${CODE_VERIFIER}"
 ```
 
-`client_id`、`client_secret` 也可以按表单字段提交，但只能在外部系统服务端提交。Token 响应示例：
+`client_id`、`client_secret` 也可以按表单字段提交，但只能在外部系统服务端提交。Token 端点成功时返回 HTTP `200 OK`，响应头包含 `Cache-Control: no-store` 和 `Pragma: no-cache`。响应体示例：
 
 ```json
 {

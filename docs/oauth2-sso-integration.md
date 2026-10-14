@@ -140,7 +140,7 @@ grant_type=authorization_code
 &client_secret={你的client_secret}
 ```
 
-**成功响应：**
+**成功响应（HTTP 200）：**
 
 ```json
 {
@@ -152,12 +152,12 @@ grant_type=authorization_code
 }
 ```
 
-**错误响应：**
+**错误响应示例（HTTP 401）：**
 
 ```json
 {
-  "statusCode": 401,
-  "message": "invalid_grant: authorization code is invalid or expired"
+  "error": "invalid_grant",
+  "error_description": "authorization code is invalid or expired"
 }
 ```
 
