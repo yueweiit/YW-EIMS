@@ -8,6 +8,7 @@ import {
   Res,
   Headers,
   Header,
+  HttpCode,
   HttpStatus,
   UnauthorizedException,
   BadRequestException,
@@ -180,6 +181,7 @@ export class OAuth2Controller {
    */
   @Public()
   @Post('token')
+  @HttpCode(HttpStatus.OK)
   @Header('Cache-Control', 'no-store')
   @Header('Pragma', 'no-cache')
   @RawResponse()
