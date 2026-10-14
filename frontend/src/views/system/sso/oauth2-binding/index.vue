@@ -23,6 +23,7 @@ const queryParams = reactive({
   clientId: undefined as string | undefined
 });
 const total = ref(0);
+let latestListRequestId = 0;
 
 const drawerVisible = ref(false);
 const selectedUser = ref<OAuth2BindingUserRecord | null>(null);
@@ -126,17 +127,19 @@ const columns = computed<DataTableColumns<OAuth2BindingUserRecord>>(() => [
 ]);
 
 async function getData() {
+  latestListRequestId += 1;
+  const requestId = latestListRequestId;
   startLoading();
   try {
     const { data, error } = await fetchOAuth2BindingUserPage({ ...queryParams });
-    if (!error && data) {
+    if (requestId === latestListRequestId && !error && data) {
       tableData.value = data.records;
       total.value = data.total;
       queryParams.current = data.current;
       queryParams.size = data.size;
     }
   } finally {
-    endLoading();
+    if (requestId === latestListRequestId) endLoading();
   }
 }
 
