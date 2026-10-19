@@ -2,6 +2,8 @@
 
 YW-EIMS（Enterprise Information Management System）是一个前后端分离的企业信息管理系统，面向基础资料、模具/产品管理、OA 审批和 ERPNext 集成等业务场景。
 
+开发与项目分析从 [知识库总索引](docs/knowledge/README.md) 开始，按任务阅读模块、数据库、API、认证和国际化文档。知识库区分源码静态核实与实际环境验收。
+
 ## 技术栈
 
 | 部分 | 技术 |
@@ -89,7 +91,7 @@ DATABASE_URL=postgresql://eims:strong-password@postgres:5432/eims?schema=public
 docker compose up -d --build
 ```
 
-前端默认通过 `APP_PORT` 暴露，访问 `http://localhost:8003`（可在 `.env` 中修改）。后端 API 通过前端 Nginx 的 `/api` 反向代理访问，不需要单独暴露宿主机端口。Docker 环境下 OAuth2/OIDC 的 `OAUTH2_ISSUER` 应配置为浏览器可访问的前端根地址，例如 `http://localhost:8003`，不要追加 `/api`。
+前端通过 `APP_PORT` 暴露；Compose 未配置该变量时默认端口为 `8006`，实际值以部署环境为准。后端 API 通过前端 Nginx 的 `/api` 反向代理访问，不需要单独暴露宿主机端口。Docker 环境下 OAuth2/OIDC 的 `OAUTH2_ISSUER` 应配置为浏览器可访问的前端根地址，不要追加 `/api`。生产配置必须使用 HTTPS；本地 HTTP 测试需显式使用 development 模式。
 
 ### 外部系统门户和 SSO 配置
 
@@ -99,9 +101,9 @@ docker compose up -d --build
 
 `frontend/public/config/external-systems.json` 仅保留作旧版本运行时配置参考，不再承担权限控制，也不应放入 `client_secret`。新系统应先在 EIMS 的 OAuth2 应用管理中注册客户端，再在外部系统目录中选择 OAuth2 应用，并在 OAuth2 账号绑定中维护用户对应的业务账号。ERP 的 `clientId`、`clientSecret`、EIMS 地址和回调地址仍只配置在 ERP 后端。
 
-`EXTERNAL_BUDGET_URL`、`EXTERNAL_ERP_URL`、`EXTERNAL_MES_URL`、`EXTERNAL_CRM_URL` 和 `EXTERNAL_LEMOS_URL` 是后端运行时的入口覆盖配置，优先级高于数据库中的 `entryUrl`；对应的 `EXTERNAL_*_SSO_START_URL` 是 OAuth2 系统的 SSO 启动地址覆盖配置，优先级高于目录中的 `ssoStartUrl`。它们仅对对应的预置系统编码生效；其他自定义系统仍使用数据库配置。修改这些变量后需要重启 backend 容器，seed 不会覆盖已有目录记录。DeepLinkERP 的启动地址应填写 `https://deeplinkerp.com/api/method/custom_filters.overrides.oauth.login_via_eims`，不能填写 ERP 首页，也不能把 OAuth 回调地址当作启动地址。生产环境这些地址必须使用 HTTPS；本地测试请将 `NODE_ENV` 设为 `development`。
+`EXTERNAL_BUDGET_URL`、`EXTERNAL_ERP_URL`、`EXTERNAL_MES_URL`、`EXTERNAL_CRM_URL` 和 `EXTERNAL_LEMOS_URL` 是后端运行时的入口覆盖配置，优先级高于数据库中的 `entryUrl`。OAuth2 启动优先使用目录中的非空 `ssoStartUrl`，未填写时才使用对应 `EXTERNAL_*_SSO_START_URL`，最后回退到有效入口地址。环境变量仅对对应的预置系统编码生效；其他自定义系统使用数据库配置。修改这些变量后需要在授权部署时重建或重启相应运行环境；seed 不会覆盖已有目录记录。DeepLinkERP 的启动地址应填写 `https://deeplinkerp.com/api/method/custom_filters.overrides.oauth.login_via_eims`，不能填写 ERP 首页，也不能把 OAuth 回调地址当作启动地址。生产环境这些地址必须使用 HTTPS；本地测试请将 `NODE_ENV` 设为 `development`。
 
-访问策略选择“按角色授权”时，允许角色留空表示拒绝访问；只有明确选择“所有已登录用户”才会对所有已登录用户开放。选择“OAuth2 绑定”后，只有完成对应业务账号绑定的用户可以从门户进入。业务系统内部的菜单和接口权限仍必须由业务系统后端自行校验。
+当前门户按启用角色授权，允许角色留空拒绝普通用户；已移除“所有已登录用户”策略。启用的 `R_SUPER` 可访问所有启用系统，但选择“OAuth2 绑定”后仍须完成对应业务账号绑定。业务系统内部的菜单和接口权限仍必须由业务系统后端自行校验。
 
 ### 3. 执行数据库迁移和种子数据
 

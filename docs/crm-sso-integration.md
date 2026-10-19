@@ -12,6 +12,8 @@ CRM 作为 OAuth 2.0/OIDC 客户端，EIMS 作为统一认证中心。用户访�
 
 本方案沿用 EIMS 当前 ERP 的 SSO 机制，不共享数据库、不传递用户密码、不把 `client_secret` 放到浏览器。
 
+本文是 CRM 接入方案，不能作为 CRM 已部署或已联调的证明。EIMS 当前实现边界见 [OAuth2 模块知识库](modules/oauth2/README.md)。
+
 EIMS 会将授权请求保存在短期服务端事务中，授权页地址只包含随机 `transaction_id`；CRM 不需要读取或拼接该事务，也不能依赖浏览器地址栏中的 OAuth 参数。
 
 如果 CRM 首页未登录时不能稳定地自动跳转，EIMS 外部系统目录中的“SSO 启动地址”应配置为 CRM 的服务端启动接口，例如 `https://crm.example.com/front/sso/eims/start`。该地址不是 OAuth 回调地址；回调地址仍只填写在 OAuth2 应用的回调白名单中。
@@ -203,7 +205,7 @@ token={REFRESH_TOKEN}&client_id={CRM_CLIENT_ID}&client_secret={CRM_CLIENT_SECRET
 - 生产环境 EIMS、CRM 及回调地址必须使用 HTTPS。
 - `client_secret` 只保存在 CRM 服务端密钥管理或环境变量中，不得提交代码仓库。
 - `redirect_uri` 必须与 EIMS 注册值逐字符一致，包含协议、域名、端口、路径和尾部斜杠。
-- 必须校验 `state`；建议启用 PKCE `S256`。
+- 必须校验 `state`；新 CRM 接入使用 PKCE `S256`，与本文授权及换码流程保持一致。
 - 不记录 Authorization header、token、code、secret；必要时只记录请求追踪 ID 和错误类型。
 - CRM 不应直接验证或解析 access token 后放行，用户身份以 `/oauth/userinfo` 校验结果为准；如本地验证 JWT，必须校验签名、`iss`、`aud`、`exp` 和 `kid`。
 - EIMS RSA 公私钥需要持久化。容器重建不能导致 OAuth 签名密钥变化；当前 Docker Compose 已通过 `oauth2-keys` 卷持久化。

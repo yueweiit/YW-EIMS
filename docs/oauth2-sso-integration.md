@@ -4,7 +4,7 @@
 
 ## 一、概述
 
-EIMS 提供标准 OAuth 2.0 + OIDC 单点登录服务。第三方系统（ERP、HR、CRM 等）接入后，用户只需登录 EIMS 即可免登访问所有已接入的系统。
+EIMS 提供 OAuth 2.0 授权码／刷新令牌及 OIDC 能力。第三方系统接入后，用户可复用 EIMS 登录身份，但仍需通过客户端授权、门户角色策略（若关联门户）、账号绑定和目标系统自身权限校验。
 
 ### 接入前提
 
@@ -138,6 +138,7 @@ grant_type=authorization_code
 &redirect_uri={你的回调地址}
 &client_id={你的client_id}
 &client_secret={你的client_secret}
+&code_verifier={发起授权时保存的原始verifier}
 ```
 
 **成功响应（HTTP 200）：**
@@ -227,7 +228,7 @@ grant_type=refresh_token
 &client_secret={你的client_secret}
 ```
 
-返回格式与首次获取 token 相同。
+返回新的 `access_token`、`token_type`、`expires_in` 和 `refresh_token`；当前刷新响应不返回新的 `id_token`。客户端必须替换旧刷新令牌，并按需要保留首次授权码交换获得的 ID Token。
 
 ---
 
@@ -242,7 +243,7 @@ token={要撤销的refresh_token}
 &client_secret={你的client_secret}
 ```
 
-成功返回 HTTP 200（无论 token 是否存在）。
+成功返回空 JSON 对象（客户端认证通过后，不因 token 不存在而报错）。当前 Controller 未设置 `@HttpCode(200)`，Nest POST 默认成功状态为 HTTP 201；调用方应兼容成功的 2xx。代码依据见 [OAuth2Controller](../backend/libs/oauth2-provider/src/oauth2.controller.ts)。
 
 ---
 
@@ -284,7 +285,8 @@ curl -X POST https://eims.example.com/oauth/token \
   -d "code=你的code" \
   -d "redirect_uri=你的回调地址" \
   -d "client_id=你的client_id" \
-  -d "client_secret=你的client_secret"
+  -d "client_secret=你的client_secret" \
+  -d "code_verifier=发起授权时保存的原始verifier"
 
 # 3. 用 token 获取用户信息
 curl https://eims.example.com/oauth/userinfo \
@@ -292,7 +294,7 @@ curl https://eims.example.com/oauth/userinfo \
 ```
 
 ### Q: 没有绑定关系会怎样？
-A: `/oauth/userinfo` 仍然会返回 `sub`（EIMS 用户 ID），但你需要在自己系统里处理"未绑定"的情况，比如提示用户联系管理员绑定账号。
+A: 若客户端已关联门户系统，EIMS 会在相关授权／令牌访问检查中拒绝未绑定账号。未关联门户的客户端保留原策略，UserInfo 可能返回 `sub` 而没有 `app_user_id`，目标系统仍应拒绝未绑定登录并提示联系管理员。具体边界见 [OAuth2 模块](modules/oauth2/README.md)。
 
 ### Q: 支持 OIDC 发现吗？
 A: 支持。访问 `GET /oauth/.well-known/openid-configuration` 可以获取所有端点信息，支持标准 OIDC 客户端库自动配置。
