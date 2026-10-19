@@ -15,6 +15,7 @@ describe('OAuth2BindingService conflicts', () => {
     oauth2UserBinding: {
       findUnique: jest.fn(),
       create: jest.fn(),
+      findFirst: jest.fn(),
       update: jest.fn(),
     },
   };
@@ -118,15 +119,36 @@ describe('OAuth2BindingService conflicts', () => {
     expect(prisma.oauth2UserBinding.update).not.toHaveBeenCalled();
   });
 
-  it('rejects a target account already assigned to another user', async () => {
-    prisma.oauth2UserBinding.findUnique
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce({ ...binding, ssoUserId: 8 });
+  it('requires confirmation before sharing an account without writing', async () => {
+    prisma.oauth2UserBinding.findFirst.mockResolvedValue({ id: 11 });
 
     await expect(service.create(dto)).rejects.toMatchObject({
       status: 409,
-      message: expect.stringContaining('其他SSO用户'),
+      message: 'OAUTH2_SHARED_ACCOUNT_CONFIRMATION_REQUIRED',
     });
+    expect(prisma.oauth2UserBinding.create).not.toHaveBeenCalled();
+    expect(prisma.oauth2UserBinding.findFirst).toHaveBeenCalledWith({
+      where: { clientId: 'erp', appUserId: 'ERP-007' },
+      select: { id: true },
+    });
+  });
+
+  it('allows sharing after confirmation without changing the other binding', async () => {
+    prisma.oauth2UserBinding.create.mockResolvedValue(binding);
+    await expect(
+      service.create({ ...dto, confirmSharedAccount: true }),
+    ).resolves.toEqual(binding);
+    expect(prisma.oauth2UserBinding.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining(dto) }),
+    );
+    expect(prisma.oauth2UserBinding.update).not.toHaveBeenCalled();
+  });
+
+  it('still rejects a duplicate user/application even with confirmation', async () => {
+    prisma.oauth2UserBinding.findUnique.mockResolvedValue(binding);
+    await expect(
+      service.create({ ...dto, confirmSharedAccount: true }),
+    ).rejects.toMatchObject({ status: 409 });
     expect(prisma.oauth2UserBinding.create).not.toHaveBeenCalled();
   });
 
@@ -158,7 +180,7 @@ describe('OAuth2BindingService conflicts', () => {
 
   it.each([
     [['sso_user_id', 'client_id'], '编辑已有绑定'],
-    [['client_id', 'app_user_id'], '其他SSO用户'],
+    [['client_id', 'app_user_id'], '数据库迁移'],
   ])(
     'returns an actionable 409 for a concurrent create conflict on %j',
     async (target, message) => {
@@ -178,21 +200,24 @@ describe('OAuth2BindingService conflicts', () => {
     },
   );
 
-  it("rejects editing a binding to another user's target account", async () => {
-    prisma.oauth2UserBinding.findUnique
-      .mockResolvedValueOnce(binding)
-      .mockResolvedValueOnce({ id: 11 });
+  it('requires confirmation when changing to a shared account', async () => {
+    prisma.oauth2UserBinding.findUnique.mockResolvedValueOnce(binding);
+    prisma.oauth2UserBinding.findFirst.mockResolvedValue({ id: 11 });
 
     await expect(
       service.update(10, { appUserId: 'occupied' }),
     ).rejects.toMatchObject({
       status: 409,
-      message: expect.stringContaining('其他SSO用户'),
+      message: 'OAUTH2_SHARED_ACCOUNT_CONFIRMATION_REQUIRED',
     });
     expect(prisma.oauth2UserBinding.update).not.toHaveBeenCalled();
+    expect(prisma.oauth2UserBinding.findFirst).toHaveBeenCalledWith({
+      where: { clientId: 'erp', appUserId: 'occupied', id: { not: 10 } },
+      select: { id: true },
+    });
   });
 
-  it('returns a 409 when another request claims the target during an update', async () => {
+  it('explains a missing database migration instead of falsely reporting success', async () => {
     prisma.oauth2UserBinding.findUnique.mockResolvedValueOnce(binding);
     prisma.oauth2UserBinding.update.mockRejectedValue(
       new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
@@ -206,8 +231,29 @@ describe('OAuth2BindingService conflicts', () => {
       service.update(10, { appUserId: 'occupied' }),
     ).rejects.toMatchObject({
       status: 409,
-      message: expect.stringContaining('其他SSO用户'),
+      message: expect.stringContaining('数据库迁移'),
     });
+  });
+
+  it('updates to a shared account after confirmation and preserves the binding owner', async () => {
+    prisma.oauth2UserBinding.findUnique.mockResolvedValueOnce(binding);
+    prisma.oauth2UserBinding.update.mockResolvedValue({
+      ...binding,
+      appUserId: 'shared',
+    });
+    await expect(
+      service.update(10, { appUserId: ' shared ', confirmSharedAccount: true }),
+    ).resolves.toMatchObject({
+      ssoUserId: 7,
+      clientId: 'erp',
+      appUserId: 'shared',
+    });
+    expect(prisma.oauth2UserBinding.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 10 },
+        data: { appUserId: 'shared', appUsername: null },
+      }),
+    );
   });
 
   it('allows editing the display name without changing the account binding', async () => {
@@ -220,6 +266,7 @@ describe('OAuth2BindingService conflicts', () => {
         appUsername: ' finance ',
       }),
     ).resolves.toEqual(binding);
+    expect(prisma.oauth2UserBinding.findFirst).not.toHaveBeenCalled();
     expect(prisma.oauth2UserBinding.update).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { id: 10 },

@@ -1,4 +1,5 @@
 import {
+  IsBoolean,
   IsInt,
   IsNotEmpty,
   IsOptional,
@@ -8,6 +9,10 @@ import {
 } from 'class-validator';
 
 export class CreateBindingDto {
+  @IsOptional()
+  @IsBoolean()
+  confirmSharedAccount?: boolean;
+
   @IsInt()
   @Min(1)
   ssoUserId!: number;
@@ -25,5 +30,4 @@ export class CreateBindingDto {
   @IsString()
   @MaxLength(100)
   appUsername?: string;
-
 }

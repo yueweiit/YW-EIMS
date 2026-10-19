@@ -13,8 +13,8 @@ import { UpdateBindingDto } from './dto/update-binding.dto';
 
 const EXISTING_BINDING_MESSAGE =
   '该用户已绑定此应用，请在账号绑定列表中编辑已有绑定';
-const ACCOUNT_IN_USE_MESSAGE =
-  '该业务系统用户ID已被其他SSO用户绑定，请核对账号或更换业务系统用户ID；如需重新分配，请先确认并解除原绑定';
+const SHARED_ACCOUNT_CONFIRMATION_REQUIRED =
+  'OAUTH2_SHARED_ACCOUNT_CONFIRMATION_REQUIRED';
 
 @Injectable()
 export class OAuth2BindingService {
@@ -171,7 +171,9 @@ export class OAuth2BindingService {
       client.status !== '1' ||
       client.externalSystem?.authMode !== 'oauth2'
     ) {
-      throw new NotFoundException('OAuth2 应用不存在或未配置为 OAuth2 外部系统');
+      throw new NotFoundException(
+        'OAuth2 应用不存在或未配置为 OAuth2 外部系统',
+      );
     }
 
     // 检查是否已绑定
@@ -187,18 +189,11 @@ export class OAuth2BindingService {
       throw new ConflictException(EXISTING_BINDING_MESSAGE);
     }
 
-    // 检查业务系统用户ID是否已被其他 SSO 用户绑定
-    const conflictBinding = await this.prisma.oauth2UserBinding.findUnique({
-      where: {
-        clientId_appUserId: {
-          clientId: dto.clientId,
-          appUserId,
-        },
-      },
-    });
-    if (conflictBinding) {
-      throw new ConflictException(ACCOUNT_IN_USE_MESSAGE);
-    }
+    await this.confirmSharedAccount(
+      dto.clientId,
+      appUserId,
+      dto.confirmSharedAccount,
+    );
 
     const binding = await this.prisma.oauth2UserBinding
       .create({
@@ -252,18 +247,12 @@ export class OAuth2BindingService {
     if (!existing) throw new NotFoundException('绑定关系不存在');
 
     if (existing.appUserId !== appUserId) {
-      const conflictBinding = await this.prisma.oauth2UserBinding.findUnique({
-        where: {
-          clientId_appUserId: {
-            clientId: existing.clientId,
-            appUserId,
-          },
-        },
-        select: { id: true },
-      });
-      if (conflictBinding && conflictBinding.id !== id) {
-        throw new ConflictException(ACCOUNT_IN_USE_MESSAGE);
-      }
+      await this.confirmSharedAccount(
+        existing.clientId,
+        appUserId,
+        dto.confirmSharedAccount,
+        id,
+      );
     }
 
     return this.prisma.oauth2UserBinding
@@ -285,6 +274,27 @@ export class OAuth2BindingService {
       .catch((error: unknown) => this.throwBindingConflict(error));
   }
 
+  private async confirmSharedAccount(
+    clientId: string,
+    appUserId: string,
+    confirmed?: boolean,
+    excludeId?: number,
+  ) {
+    if (confirmed === true) return;
+    const shared = await this.prisma.oauth2UserBinding.findFirst({
+      where: {
+        clientId,
+        appUserId,
+        ...(excludeId ? { id: { not: excludeId } } : {}),
+      },
+      select: { id: true },
+    });
+    if (shared) {
+      // Stable identifier survives the existing exception envelope in msg.
+      throw new ConflictException(SHARED_ACCOUNT_CONFIRMATION_REQUIRED);
+    }
+  }
+
   private throwBindingConflict(error: unknown): never {
     // Another request may create a binding after the pre-checks have passed.
     if (
@@ -296,7 +306,9 @@ export class OAuth2BindingService {
         throw new ConflictException(EXISTING_BINDING_MESSAGE);
       }
       if (Array.isArray(target) && target.includes('app_user_id')) {
-        throw new ConflictException(ACCOUNT_IN_USE_MESSAGE);
+        throw new ConflictException(
+          '数据库尚未启用共享账号绑定，请联系管理员完成数据库迁移',
+        );
       }
       throw new ConflictException(
         '账号绑定已存在或业务系统用户ID已被占用，请刷新绑定列表后核对',

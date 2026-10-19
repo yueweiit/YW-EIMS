@@ -11,6 +11,7 @@ import {
 import type { OAuth2BindingRecord, OAuth2BindingUserRecord } from '@/service/api/oauth2-binding';
 import type { OAuth2ClientRecord } from '@/service/api/oauth2-client';
 import { $t } from '@/locales';
+import { saveWithSharedAccountConfirmation } from '@/utils/oauth2-binding';
 
 defineOptions({
   name: 'OAuth2BindingOperateDrawer'
@@ -43,6 +44,7 @@ const editors = ref<BindingEditor[]>([]);
 const savingClientId = ref<string | null>(null);
 const deletingBindingId = ref<number | null>(null);
 const operationPending = computed(() => Boolean(savingClientId.value) || Boolean(deletingBindingId.value));
+let latestLoadId = 0;
 
 const drawerTitle = computed(() =>
   $t('page.ui.manageUserBindings', {
@@ -54,6 +56,7 @@ const boundCount = computed(() => editors.value.filter(editor => editor.bindingI
 watch(
   () => [props.visible, props.user?.id] as const,
   ([visible]) => {
+    latestLoadId += 1;
     if (visible && props.user) {
       void loadData();
     } else if (!visible) {
@@ -77,12 +80,15 @@ function createEditor(client: OAuth2ClientRecord, binding?: OAuth2BindingRecord)
 async function loadData() {
   if (!props.user) return;
 
+  const loadId = ++latestLoadId;
+  const userId = props.user.id;
   startLoading();
   try {
     const [bindingResult, clientResult] = await Promise.all([
-      fetchOAuth2BindingPage({ current: 1, size: 100, ssoUserId: props.user.id }),
+      fetchOAuth2BindingPage({ current: 1, size: 100, ssoUserId: userId }),
       fetchOAuth2ClientPage({ current: 1, size: 100 })
     ]);
+    if (loadId !== latestLoadId || !props.visible || props.user?.id !== userId) return;
     if (bindingResult.error || clientResult.error) return;
 
     const bindings = bindingResult.data?.records || [];
@@ -99,12 +105,33 @@ async function loadData() {
         return left.clientName.localeCompare(right.clientName);
       });
   } finally {
-    endLoading();
+    if (loadId === latestLoadId) endLoading();
   }
 }
 
 function handleClose() {
+  if (operationPending.value) return;
   emit('update:visible', false);
+}
+
+function confirmSharedAccount(editor: BindingEditor, appUserId: string): Promise<boolean> {
+  return new Promise(resolve => {
+    if (!window.$dialog) {
+      resolve(false);
+      return;
+    }
+    window.$dialog.warning({
+      title: $t('page.ui.sharedAccountTitle'),
+      content: $t('page.ui.sharedAccountNotice', { system: editor.clientName, account: appUserId }),
+      positiveText: $t('page.ui.confirmSharedAccount'),
+      negativeText: $t('common.cancel'),
+      maskClosable: false,
+      onPositiveClick: () => { resolve(true); },
+      onNegativeClick: () => { resolve(false); },
+      onClose: () => { resolve(false); },
+      onAfterLeave: () => { resolve(false); }
+    });
+  });
 }
 
 function isErpClient(editor: BindingEditor) {
@@ -127,17 +154,31 @@ async function handleSave(editor: BindingEditor) {
   savingClientId.value = editor.clientId;
   editor.errorMessage = '';
   try {
-    const result = editor.bindingId
-      ? await fetchUpdateOAuth2Binding(editor.bindingId, {
+    // Keep the confirmed user, application and account fixed across the two requests.
+    const ssoUserId = props.user.id;
+    const bindingId = editor.bindingId;
+    const clientId = editor.clientId;
+    const appUsername = editor.appUsername.trim();
+    const save = (confirmed = false) => bindingId
+      ? fetchUpdateOAuth2Binding(bindingId, {
           appUserId,
-          appUsername: editor.appUsername.trim() || null
+          appUsername: appUsername || null,
+          confirmSharedAccount: confirmed
         })
-      : await fetchCreateOAuth2Binding({
-          ssoUserId: props.user.id,
-          clientId: editor.clientId,
+      : fetchCreateOAuth2Binding({
+          ssoUserId,
+          clientId,
           appUserId,
-          appUsername: editor.appUsername.trim() || undefined
+          appUsername: appUsername || undefined,
+          confirmSharedAccount: confirmed
         });
+
+    const result = await saveWithSharedAccountConfirmation(save, async () => {
+      if (!props.visible || props.user?.id !== ssoUserId) return false;
+      const confirmed = await confirmSharedAccount(editor, appUserId);
+      return confirmed && props.visible && props.user?.id === ssoUserId;
+    });
+    if (!result) return;
 
     if (result.error?.response?.status === 409) {
       const message: unknown = result.error.response.data?.msg;

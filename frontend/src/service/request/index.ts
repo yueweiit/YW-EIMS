@@ -3,6 +3,7 @@ import { BACKEND_ERROR_CODE, createFlatRequest, createRequest } from '@sa/axios'
 import { useAuthStore } from '@/store/modules/auth';
 import { getServiceBaseURL } from '@/utils/service';
 import { $t } from '@/locales';
+import { isSharedAccountConfirmation } from '@/utils/oauth2-binding';
 import { getAuthorization, getCsrfToken, handleExpiredRequest, showErrorMsg } from './shared';
 import type { RequestInstanceState } from './type';
 
@@ -139,6 +140,8 @@ export const request = createFlatRequest(
       // A 409 represents a business conflict (for example, deleting data that is still referenced),
       // so present the backend's explanation as a warning instead of a generic request error.
       if (error.response?.status === 409) {
+        // The binding editor presents this reason as a localized confirmation dialog.
+        if (isSharedAccountConfirmation(error)) return;
         window.$message?.warning(message);
         return;
       }

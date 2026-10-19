@@ -57,6 +57,7 @@ export interface OAuth2BindingPageData {
 }
 
 export interface CreateOAuth2BindingParams {
+  confirmSharedAccount?: boolean;
   ssoUserId: number;
   clientId: string;
   appUserId: string;
@@ -64,6 +65,7 @@ export interface CreateOAuth2BindingParams {
 }
 
 export interface UpdateOAuth2BindingParams {
+  confirmSharedAccount?: boolean;
   appUserId: string;
   appUsername?: string | null;
 }

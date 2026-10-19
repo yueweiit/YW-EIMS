@@ -531,7 +531,11 @@ const local: App.I18n.Schema = {
         'This user is already bound to this application with business system user ID {appUserId}. Edit the existing binding to make changes.',
       editExistingBinding: 'Edit existing binding',
       bindingConflictNotice:
-        'This user is already bound to the application or the business system user ID is in use. Check the existing bindings and use Edit to make changes.',
+        'The binding was not saved. Refresh and check existing bindings; each user can have only one account per application.',
+      sharedAccountTitle: 'Confirm shared external account',
+      sharedAccountNotice:
+        'Account "{account}" in "{system}" is already bound to another EIMS user. Continuing will share its permissions, and the external system may attribute actions to the same account. Continue binding?',
+      confirmSharedAccount: 'Continue binding',
       saveSuccess: 'Saved successfully',
       selectEimsUser: 'Select an EIMS user',
       selectTargetApp: 'Select a target application',

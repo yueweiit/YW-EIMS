@@ -143,9 +143,9 @@ Authorization: Bearer {ACCESS_TOKEN}
 EIMS 后台路径：
 
 - “OAuth2 应用管理”：创建 CRM 应用、配置回调地址和 scope。
-- “OAuth2 账号绑定”：将 EIMS 用户与 CRM 的 `app_user_id`、`app_username` 建立一对一绑定。
+- “OAuth2 账号绑定”：将 EIMS 用户映射到 CRM 的 `app_user_id`、`app_username`。
 
-同一个 CRM 用户只能绑定一个 EIMS 用户；同一个 EIMS 用户在 CRM 应用下也只能绑定一个 CRM 用户。
+同一个 EIMS 用户在 CRM 应用下只能绑定一个 CRM 用户。应用共享账号迁移后，多个 EIMS 用户可绑定同一 CRM 用户，页面检测到共享时需确认提示；CRM 权限和操作记录可能归于同一账号，需实际联调确认 CRM 的身份策略兼容。迁移与确认协议见 [OAuth2 模块文档](modules/oauth2/README.md)。
 
 ## 7. CRM 侧伪代码
 

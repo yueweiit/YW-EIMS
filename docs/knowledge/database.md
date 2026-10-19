@@ -48,7 +48,7 @@ erDiagram
 
 - 用户名、钉钉 unionId／userId、客户端 ID、物料 code、模具／产品 itemCode 等设唯一约束。
 - Mold 另有 `(moldCode, phoneCode)` 唯一约束；Product 为 `(productCode, phoneCode, colorCode)`；ProductCode 为 `(productCode, colorCode)`。
-- OAuth 绑定同时唯一约束 `(ssoUserId, clientId)` 和 `(clientId, appUserId)`，防止同客户端重复绑定两端身份。
+- OAuth 绑定保留 `(ssoUserId, clientId)` 唯一约束，每个 EIMS 用户在同一应用只能绑定一个账号；`(clientId, appUserId)` 为普通索引，允许多个 EIMS 用户共享外部账号。生效前须应用 `20261019090000_allow_shared_oauth2_accounts` 迁移，当前仅准备脚本，未执行数据库迁移。
 - 角色权限使用复合主键；ERPNext 映射唯一键为 `(type, sourceKey)`；同步日志没有业务对象唯一键，允许多次尝试留痕。
 - ErpTax.rateValue 为 Decimal(10,4)；OA 推单金额计算当前使用 JavaScript number，不因缓存字段使用 Decimal 就具备财务精度保证。
 - 事务、条件更新、序列行锁和不受事务保护的边界见[可靠性](reliability.md)及模块文档。

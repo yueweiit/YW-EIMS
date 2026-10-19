@@ -231,7 +231,7 @@ model Oauth2UserBinding {
   client  Oauth2Client @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
 
   @@unique([ssoUserId, clientId])
-  @@unique([clientId, appUserId])
+  @@index([clientId, appUserId])
   @@index([ssoUserId])
   @@index([clientId])
   @@map("oauth2_user_bindings")

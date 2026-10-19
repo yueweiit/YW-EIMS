@@ -1,4 +1,5 @@
 import {
+  IsBoolean,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -6,6 +7,10 @@ import {
 } from 'class-validator';
 
 export class UpdateBindingDto {
+  @IsOptional()
+  @IsBoolean()
+  confirmSharedAccount?: boolean;
+
   @IsString()
   @IsNotEmpty()
   @MaxLength(255)
@@ -15,5 +20,4 @@ export class UpdateBindingDto {
   @IsString()
   @MaxLength(100)
   appUsername?: string | null;
-
 }

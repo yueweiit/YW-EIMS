@@ -624,7 +624,11 @@ declare namespace App {
             };
           };
         };
-        ui: Record<string, string>;
+        ui: Record<string, string> & {
+          sharedAccountTitle: string;
+          sharedAccountNotice: string;
+          confirmSharedAccount: string;
+        };
       };
       form: {
         required: string;

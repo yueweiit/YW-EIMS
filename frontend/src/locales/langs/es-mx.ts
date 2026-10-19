@@ -528,7 +528,11 @@ const local: App.I18n.Schema = {
         'Este usuario ya está vinculado a esta aplicación con el ID de usuario empresarial {appUserId}. Edita la vinculación existente para realizar cambios.',
       editExistingBinding: 'Editar vinculación existente',
       bindingConflictNotice:
-        'El usuario ya está vinculado a la aplicación o el ID de usuario empresarial está ocupado. Revisa las vinculaciones existentes y usa Editar para realizar cambios.',
+        'No se guardó la vinculación. Actualiza y revisa las vinculaciones existentes; cada usuario solo puede tener una cuenta por aplicación.',
+      sharedAccountTitle: 'Confirmar cuenta externa compartida',
+      sharedAccountNotice:
+        'La cuenta "{account}" en "{system}" ya está vinculada a otro usuario de EIMS. Al continuar, compartirán sus permisos y el sistema externo podría atribuir las acciones a la misma cuenta. ¿Deseas continuar?',
+      confirmSharedAccount: 'Continuar vinculación',
       saveSuccess: 'Guardado correctamente',
       selectEimsUser: 'Selecciona un usuario de EIMS',
       selectTargetApp: 'Selecciona la aplicación de destino',

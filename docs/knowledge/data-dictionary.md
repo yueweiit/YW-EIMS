@@ -15,7 +15,7 @@
 | Oauth2AuthorizationRequest | transactionId 唯一、browserNonceHash、state、nonce、expiresAt、consumedAt | 服务端授权事务，浏览器仅携带不透明事务 ID |
 | Oauth2AuthorizationCode.code | String 唯一 | 短期一次性授权码；绑定客户端、用户、回调及 PKCE |
 | Oauth2AccessToken / Oauth2RefreshToken | tokenHash 唯一；familyId、expiresAt、revokedAt | 外部 OAuth 令牌记录，与 EIMS AuthRefreshSession 分离 |
-| Oauth2UserBinding.appUserId | String(255)，两组复合唯一键 | 外部本地用户标识，去首尾空白，不转换为数值；appUsername 仅辅助展示 |
+| Oauth2UserBinding.appUserId | String(255)，与 clientId 组成普通索引 | 外部本地用户标识，去首尾空白，不转换为数值；允许跨 EIMS 用户共享，保留 `(ssoUserId, clientId)` 唯一约束；appUsername 仅辅助展示 |
 | ExternalSystem.code / authMode | code 唯一；authMode 默认 `link` | 稳定系统编码／入口模式 `link`、`oauth2` |
 | ExternalSystem.allowedRoles | String[] 默认空 | 允许的启用 EIMS 角色；空数组拒绝普通用户，R_SUPER 特例；无全员访问策略 |
 | ExternalSystem.entryUrl / ssoStartUrl / oauthClientId | URL 字符串／可空 URL／可空唯一外键 | 入口、SSO 发起地址、关联客户端；地址优先级见[门户](../modules/portal/README.md) |
